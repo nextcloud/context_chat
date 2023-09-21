@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<info>
+    <id>cwyd</id>
+    <name>Chat with your documents</name>
+    <summary>Chat with your documents</summary>
+    <description><![CDATA[
+    Plop
+]]></description>
+    <version>1.0.0</version>
+    <licence>agpl</licence>
+    <author>Julien Veyssier</author>
+    <namespace>Cwyd</namespace>
+    <documentation>
+        <developer>https://github.com/nextcloud/cwyd</developer>
+    </documentation>
+    <category>integration</category>
+    <website>https://github.com/nextcloud/cwyd</website>
+    <bugs>https://github.com/nextcloud/cwyd/issues</bugs>
+    <screenshot>https://github.com/nextcloud/cwyd/raw/main/img/screenshot1.jpg</screenshot>
+    <screenshot>https://github.com/nextcloud/cwyd/raw/main/img/screenshot2.jpg</screenshot>
+    <screenshot>https://github.com/nextcloud/cwyd/raw/main/img/screenshot3.jpg</screenshot>
+    <dependencies>
+        <nextcloud min-version="28" max-version="28"/>
+    </dependencies>
+    <!--background-jobs>
+		<job>OCA\Cwyd\Cron\CleanupImageGenerations</job>
+	</background-jobs-->
+	<commands>
+		<command>OCA\Cwyd\Command\ScanFiles</command>
+	</commands>
+    <!--settings>
+        <admin>OCA\Cwyd\Settings\Admin</admin>
+        <admin-section>OCA\Cwyd\Settings\AdminSection</admin-section>
+        <personal>OCA\Cwyd\Settings\Personal</personal>
+        <personal-section>OCA\Cwyd\Settings\PersonalSection</personal-section>
+    </settings-->
+</info>
