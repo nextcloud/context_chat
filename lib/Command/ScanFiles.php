@@ -12,6 +12,7 @@
 
 namespace OCA\Cwyd\Command;
 
+use OCA\Cwyd\AppInfo\Application;
 use OCA\Cwyd\Service\ScanService;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -32,19 +33,23 @@ class ScanFiles extends Command {
 			->setDescription('Scan user files')
 			->addArgument(
 				'user_id',
-				InputArgument::OPTIONAL,
+				InputArgument::REQUIRED,
 				'The user ID to scan the storage of'
 			)
 			->addOption('mimetype', 'm', InputOption::VALUE_OPTIONAL, 'The mime type filter');
 	}
 
 	protected function execute(InputInterface $input, OutputInterface $output) {
-		$mimeTypeFilter = $input->getOption('mimetype');
+		$mimeTypeFilter = $input->getOption('mimetype') !== null
+			? explode(',', $input->getOption('mimetype'))
+			: Application::MIMETYPES;
+
 		$userId = $input->getArgument('user_id');
 		$scan = $this->scanService->scanUserFiles($userId, $mimeTypeFilter);
 		foreach ($scan as $s) {
 			$output->writeln('[' . $userId . '] Scanned ' . $s);
 		}
+
 		return 0;
 	}
 }

@@ -11,13 +11,14 @@
 
 namespace OCA\Cwyd\Service;
 
+use OCA\Cwyd\AppInfo\Application;
+use OCA\Cwyd\Type\Source;
 use OCP\Files\File;
 use OCP\Files\Folder;
 use OCP\Files\IRootFolder;
 use OCP\IConfig;
 use OCP\IL10N;
 use Psr\Log\LoggerInterface;
-use OCP\Http\Client\IClientService;
 
 class ScanService {
 
@@ -27,36 +28,71 @@ class ScanService {
 		private IL10N $l10n,
 		private IConfig $config,
 		private LangRopeService $langRopeService,
-		IClientService $clientService
 	) {
 	}
 
-	public function scanUserFiles(string $userId, ?string $mimeTypeFilter): \Generator {
-		$userFolder = $this->root->getUserFolder($userId);
-		foreach ($this->scanDirectory($userId, $userFolder) as $fileName) {
-			yield $fileName;
+	public function scanUserFiles(string $userId, array $mimeTypeFilter, ?string $directory = null): \Generator {
+		if ($directory === null) {
+			$userFolder = $this->root->getUserFolder($userId);
+		} else {
+			$userFolder = $this->root->getUserFolder($userId)->get($directory);
 		}
+
+		yield from ($this->scanDirectory($userId, $mimeTypeFilter, $userFolder));
 		return [];
 	}
 
-	public function scanDirectory(string $userId, Folder $directory): \Generator {
+	public function scanDirectory(string $userId, array $mimeTypeFilter, Folder $directory): \Generator {
+		$sources = [];
+		$size = 0;
 		foreach ($directory->getDirectoryListing() as $node) {
 			if ($node instanceof File) {
-				$this->scanFile($userId, $node);
+				if (!in_array($node->getMimeType(), $mimeTypeFilter)) {
+					continue;
+				}
+
+				$node_size = $node->getSize();
+
+				if ($size + $node_size > Application::CWYD_MAX_SIZE || count($sources) >= Application::CWYD_MAX_FILES) {
+					$this->indexSources($userId, $sources);
+					$sources = [];
+					$size = 0;
+				}
+
+				try {
+					$fileHandle = $node->fopen('r');
+				} catch (\Exception $e) {
+					$this->logger->error('Could not open file ' . $node->getPath() . ' for reading: ' . $e->getMessage());
+					continue;
+				}
+
+				$source = new Source(
+					$node->getPath(),
+					$fileHandle,
+					$node->getMTime(),
+					$node->getMimeType(),
+				);
+				$sources[] = $source;
+				$size += $node_size;
+
 				yield $node->getPath();
+				continue;
 			}
 		}
+
 		foreach ($directory->getDirectoryListing() as $node) {
 			if ($node instanceof Folder) {
-				foreach ($this->scanDirectory($userId, $node) as $fileName) {
-					yield $fileName;
-				}
+				yield from $this->scanDirectory($userId, $mimeTypeFilter, $node);
 			}
+		}
+
+		if (count($sources) > 0) {
+			$this->indexSources($userId, $sources);
 		}
 		return [];
 	}
 
-	public function scanFile(string $userId, File $file): void {
-		$this->langRopeService->indexFile($userId, $file);
+	public function indexSources(string $userId, array $sources): void {
+		$this->langRopeService->indexFiles($userId, $sources);
 	}
 }

@@ -15,12 +15,13 @@ use Exception;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\ServerException;
 use OCA\Cwyd\AppInfo\Application;
+use OCA\Cwyd\Type\Source;
 use OCP\Files\File;
 use OCP\Http\Client\IClient;
+use OCP\Http\Client\IClientService;
 use OCP\IConfig;
 use OCP\IL10N;
 use Psr\Log\LoggerInterface;
-use OCP\Http\Client\IClientService;
 use Throwable;
 
 class LangRopeService {
@@ -35,40 +36,54 @@ class LangRopeService {
 		$this->client = $clientService->newClient();
 	}
 
-	public function indexFile(string $userId, File $file): void {
+	public function indexFiles(string $userId, array $sources): void {
 		$params = [
 			[
-				'name' => 'user_id',
-				'content' => $userId,
+				'name' => 'userId',
+				'contents' => $userId,
 			],
-			[
-				'name' => $file->getPath(),
-				'content' => $file->getContent(),
-			],
+			...array_map(function (Source $source) {
+				return [
+					'name' => $source->reference, // actual path of the file
+					'filename' => $source->reference, // just the name of the file (Guzzle's work)
+					'contents' => $source->content,
+					'headers' => [
+						'type' => 'mimetype: ' . $source->mimeType,
+						'modified' => $source->modified,
+					]
+				];
+			}, $sources),
 		];
-		$this->request('index', $params, 'POST', 'multipart/form-data');
+
+		$this->request('loadFiles', $params, 'POST', 'multipart/form-data');
 	}
 
-	public function indexString(string $userId, string $content, string $reference): void {
+	public function indexString(string $userId, array $sources): void {
 		$params = [
 			[
-				'name' => 'user_id',
-				'content' => $userId,
+				'name' => 'userId',
+				'contents' => $userId,
 			],
-			[
-				'name' => $reference,
-				'content' => $content,
-			],
+			...array_map(function (Source $source) {
+				return [
+					'name' => $source->reference,
+					'contents' => $source->content,
+					'headers' => [
+						'type' => 'type: ' . $source->mimeType,
+						'modified' => $source->modified,
+					]
+				];
+			}, $sources),
 		];
-		$this->request('index', $params, 'POST', 'multipart/form-data');
+		$this->request('loadTexts', $params, 'POST', 'multipart/form-data');
 	}
 
 	public function query(string $userId, string $prompt): array {
 		$params = [
-			'prompt' => $prompt,
-			'user_id' => $userId,
+			'query' => $prompt,
+			'userId' => $userId,
 		];
-		return $this->request('query', $params, 'GET');
+		return $this->request('ask', $params, 'GET');
 	}
 
 	/**
