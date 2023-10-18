@@ -67,7 +67,7 @@ class ScanService {
 				}
 
 				$source = new Source(
-					$node->getPath(),
+					'file: ' . $node->getId(),
 					$fileHandle,
 					$node->getMTime(),
 					$node->getMimeType(),
@@ -80,19 +80,20 @@ class ScanService {
 			}
 		}
 
+		if (count($sources) > 0) {
+			$this->indexSources($userId, $sources);
+		}
+
 		foreach ($directory->getDirectoryListing() as $node) {
 			if ($node instanceof Folder) {
 				yield from $this->scanDirectory($userId, $mimeTypeFilter, $node);
 			}
 		}
 
-		if (count($sources) > 0) {
-			$this->indexSources($userId, $sources);
-		}
 		return [];
 	}
 
 	public function indexSources(string $userId, array $sources): void {
-		$this->langRopeService->indexFiles($userId, $sources);
+		$this->langRopeService->indexSources($userId, $sources);
 	}
 }

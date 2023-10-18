@@ -16,7 +16,6 @@ use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\ServerException;
 use OCA\Cwyd\AppInfo\Application;
 use OCA\Cwyd\Type\Source;
-use OCP\Files\File;
 use OCP\Http\Client\IClient;
 use OCP\Http\Client\IClientService;
 use OCP\IConfig;
@@ -36,7 +35,7 @@ class LangRopeService {
 		$this->client = $clientService->newClient();
 	}
 
-	public function indexFiles(string $userId, array $sources): void {
+	private function indexFiles(string $userId, array $sources): void {
 		$params = [
 			[
 				'name' => 'userId',
@@ -44,13 +43,13 @@ class LangRopeService {
 			],
 			...array_map(function (Source $source) {
 				return [
-					'name' => $source->reference, // actual path of the file
-					'filename' => $source->reference, // just the name of the file (Guzzle's work)
+					'name' => $source->reference, // 'file: 555'
+					'filename' => $source->reference,
 					'contents' => $source->content,
 					'headers' => [
-						'type' => 'mimetype: ' . $source->mimeType,
+						'type' => $source->type,
 						'modified' => $source->modified,
-					]
+					],
 				];
 			}, $sources),
 		];
@@ -58,24 +57,44 @@ class LangRopeService {
 		$this->request('loadFiles', $params, 'POST', 'multipart/form-data');
 	}
 
-	public function indexString(string $userId, array $sources): void {
+	private function indexTexts(string $userId, array $sources): void {
 		$params = [
-			[
-				'name' => 'userId',
-				'contents' => $userId,
-			],
-			...array_map(function (Source $source) {
+			'userId' => $userId,
+			'texts' => array_map(function (Source $source) {
 				return [
 					'name' => $source->reference,
 					'contents' => $source->content,
-					'headers' => [
-						'type' => 'type: ' . $source->mimeType,
-						'modified' => $source->modified,
-					]
+					'type' => $source->type,
+					'modified' => $source->modified,
 				];
 			}, $sources),
 		];
-		$this->request('loadTexts', $params, 'POST', 'multipart/form-data');
+
+		$this->request('loadTexts', $params, 'POST', 'application/json');
+	}
+
+	public function indexSources(string $userId, array $sources): void {
+		if (count($sources) === 0) {
+			return;
+		}
+
+		// checks if all the references are only files
+		if (array_reduce($sources, function (bool $carry, Source $source) {
+			return $carry && str_starts_with($source->reference, 'file: ');
+		}, true)) {
+			$this->indexFiles($userId, $sources);
+			return;
+		}
+
+		// lly for texts
+		if (array_reduce($sources, function (bool $carry, Source $source) {
+			return $carry && !str_starts_with($source->reference, 'file: ');
+		}, true)) {
+			$this->indexTexts($userId, $sources);
+			return;
+		}
+
+		$this->logger->error('Error: malformed sources');
 	}
 
 	public function query(string $userId, string $prompt): array {
@@ -83,7 +102,7 @@ class LangRopeService {
 			'query' => $prompt,
 			'userId' => $userId,
 		];
-		return $this->request('ask', $params, 'GET');
+		return $this->request('query', $params, 'GET');
 	}
 
 	/**

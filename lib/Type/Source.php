@@ -16,7 +16,7 @@ class Source {
 		public string $reference,
 		public mixed $content,
 		public string $modified,
-		public string $mimeType = 'text/plain',
+		public string $type,
 	) {
 	}
 }
