@@ -22,9 +22,9 @@
     <dependencies>
         <nextcloud min-version="28" max-version="28"/>
     </dependencies>
-    <!--background-jobs>
-		<job>OCA\Cwyd\Cron\CleanupImageGenerations</job>
-	</background-jobs-->
+    <background-jobs>
+		<job>OCA\Cwyd\BackgroundJobs\SchedulerJob</job>
+	</background-jobs>
 	<commands>
 		<command>OCA\Cwyd\Command\ScanFiles</command>
 	</commands>
