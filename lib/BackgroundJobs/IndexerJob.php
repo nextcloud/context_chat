@@ -10,6 +10,7 @@ use OCA\Cwyd\Db\QueueFile;
 use OCA\Cwyd\Service\LangRopeService;
 use OCA\Cwyd\Service\QueueService;
 use OCA\Cwyd\Service\StorageService;
+use OCA\Cwyd\Type\Source;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\IJobList;
 use OCP\BackgroundJob\TimedJob;
@@ -17,7 +18,11 @@ use OCP\DB\Exception;
 use OCP\Files\Config\ICachedMountInfo;
 use OCP\Files\Config\IUserMountCache;
 use OCP\Files\File;
+use OCP\Files\InvalidPathException;
 use OCP\Files\IRootFolder;
+use OCP\Files\NotFoundException;
+use OCP\Files\NotPermittedException;
+use OCP\Lock\LockedException;
 use Psr\Log\LoggerInterface;
 
 class IndexerJob extends TimedJob {
@@ -99,20 +104,32 @@ class IndexerJob extends TimedJob {
         return 2000;
     }
 
-	/**
-	 * @param QueueFile[] $files
-	 * @return void
-	 * @throws \RuntimeException|\ErrorException
-	 */
+    /**
+     * @param QueueFile[] $files
+     * @return void
+     * @throws \RuntimeException|\ErrorException
+     */
 	protected function index(array $files) : void {
         foreach ($files as $queueFile) {
             $file = current($this->rootFolder->getById($queueFile->getFileId()));
             if (!$file instanceof File) {
                 continue;
             }
+            try {
+                $fileHandle = $file->fopen('r');
+            } catch (LockedException|NotPermittedException $e) {
+                $this->logger->error('Could not open file ' . $file->getPath() . ' for reading', ['exception' => $e]);
+                continue;
+            }
             $userIds = $this->storageService->getUsersForFileId($queueFile->getFileId());
             foreach ($userIds as $userId) {
-                $this->langRopeService->indexFile($userId, $file);
+                try {
+                    $source = new Source($userId, 'file: ' . $file->getId(), $fileHandle, $file->getMtime(), $file->getMimeType());
+                } catch (InvalidPathException|NotFoundException $e) {
+                    $this->logger->error('Could not find file ' . $file->getPath(), ['exception' => $e]);
+                    continue 2;
+                }
+                $this->langRopeService->indexSources($userId, [$source]);
             }
         }
     }

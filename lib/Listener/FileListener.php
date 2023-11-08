@@ -1,13 +1,13 @@
 <?php
 /*
  * Copyright (c) 2022 The Recognize contributors.
+ * Copyright (c) 2023 Marcel Klehr <mklehr@gmx.net>
  * This file is licensed under the Affero General Public License version 3 or later. See the COPYING file.
  */
 declare(strict_types=1);
 namespace OCA\Cwyd\Listener;
 
 use OCA\Cwyd\Db\QueueFile;
-use OCA\Cwyd\Service\LangRopeService;
 use OCA\Cwyd\Service\QueueService;
 use OCA\Cwyd\Service\StorageService;
 use OCP\DB\Exception;
@@ -37,8 +37,7 @@ class FileListener implements IEventListener {
         private QueueService $queue,
         private StorageService $storageService,
         private IManager $shareManager,
-        private IRootFolder $rootFolder,
-        private LangRopeService $langRopeService) {
+        private IRootFolder $rootFolder) {
 	}
 
 	public function handle(Event $event): void {
@@ -75,7 +74,7 @@ class FileListener implements IEventListener {
                         if (!$file instanceof File) {
                             continue;
                         }
-                        $this->langRopeService->indexFile($userId, $file);
+                        $this->postInsert($file, false, true);
 					}
 				}
 			} else {
@@ -86,7 +85,7 @@ class FileListener implements IEventListener {
                     if (!$node instanceof File) {
                         continue;
                     }
-                    $this->langRopeService->indexFile($userId, $node);
+                    $this->postInsert($node, false, true);
 				}
 			}
 		}
@@ -107,7 +106,7 @@ class FileListener implements IEventListener {
 				}
 				$files = $this->storageService->getFilesInMount($mount->getNumericStorageId(), $node->getId(), 0, 0);
 				foreach ($files as $fileId) {
-					// TODO: remove index entry of $fileId for $userIds
+					$this->postInsert(current($this->rootFolder->getById($fileId)), false, true);
 				}
 			} else {
                 // TODO: remove index entry of $node for $userIds
