@@ -46,7 +46,25 @@ class LangRopeService {
 		return $exApp;
 	}
 
-	public function indexSources(string $userId, array $sources): void {
+	public function deleteSources(string $userId, string ...$sourceNames): void {
+		if (count($sourceNames) === 0) {
+			return;
+	  }
+
+		$params = [
+			'userId' => $userId,
+			'sourceNames' => $sourceNames,
+		];
+
+		$exApp = $this->getExApp();
+		if ($exApp === null) {
+			return;
+		}
+		$this->requestToExApp($userId, $exApp, '/deleteSources', 'POST', $params);
+	}
+
+	// variable number of args to type check array $sources
+	public function indexSources(string $userId, Source ...$sources): void {
 		if (count($sources) === 0) {
 			return;
 		}
