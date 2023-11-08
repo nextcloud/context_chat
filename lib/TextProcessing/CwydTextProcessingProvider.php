@@ -22,8 +22,8 @@ class CwydTextProcessingProvider implements IProvider {
 
 	public function process(string $prompt): string {
 		$response = $this->langRopeService->query($this->userId, $prompt);
-		if (isset($response['answer']) && $response['answer']) {
-			return $response['answer'];
+		if (isset($response['result']) && $response['result']) {
+			return $response['result'];
 		}
 		throw new \Exception('No result in Cwyd response. ' . ($response['error'] ?? ''));
 	}

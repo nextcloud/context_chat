@@ -11,17 +11,18 @@
 
 namespace OCA\Cwyd\Service;
 
-use Exception;
-use GuzzleHttp\Exception\ClientException;
-use GuzzleHttp\Exception\ServerException;
+use DateTime;
+use OCA\AppAPI\Db\ExApp;
+use OCA\AppAPI\Service\AppAPIService;
 use OCA\Cwyd\AppInfo\Application;
-use OCP\Files\File;
+use OCA\Cwyd\Type\Source;
+use OCP\App\IAppManager;
 use OCP\Http\Client\IClient;
+use OCP\Http\Client\IClientService;
+use OCP\Http\Client\IResponse;
 use OCP\IConfig;
 use OCP\IL10N;
 use Psr\Log\LoggerInterface;
-use OCP\Http\Client\IClientService;
-use Throwable;
 
 class LangRopeService {
 	private IClient $client;
@@ -30,74 +31,101 @@ class LangRopeService {
 		private LoggerInterface $logger,
 		private IL10N $l10n,
 		private IConfig $config,
-		IClientService $clientService
+		private IAppManager $appManager,
+		private AppAPIService $appAPIService,
+		IClientService $clientService,
 	) {
 		$this->client = $clientService->newClient();
 	}
 
-	public function indexFile(string $userId, File $file): void {
-		$params = [
-			[
-				'name' => 'user_id',
-				'content' => $userId,
-			],
-			[
-				'name' => $file->getPath(),
-				'content' => $file->getContent(),
-			],
-		];
-		$this->request('index', $params, 'POST', 'multipart/form-data');
-	}
+	public function indexSources(string $userId, array $sources): void {
+		if (count($sources) === 0) {
+			return;
+		}
 
-	public function indexString(string $userId, string $content, string $reference): void {
 		$params = [
-			[
-				'name' => 'user_id',
-				'content' => $userId,
-			],
-			[
-				'name' => $reference,
-				'content' => $content,
-			],
+			...array_map(function (Source $source) {
+				return [
+					'name' => 'sources',
+					'filename' => $source->reference, // 'file: 555'
+					'contents' => $source->content,
+					'headers' => [
+						'userId' => $source->userId,
+						'type' => $source->type,
+						'modified' => $source->modified,
+					],
+				];
+			}, $sources),
 		];
-		$this->request('index', $params, 'POST', 'multipart/form-data');
+
+		$exApp = $this->appAPIService->getExApp('schackles');
+		$this->requestToExApp($userId, $exApp, '/loadSources', 'PUT', $params, 'multipart/form-data');
 	}
 
 	public function query(string $userId, string $prompt): array {
 		$params = [
-			'prompt' => $prompt,
-			'user_id' => $userId,
+			'query' => $prompt,
+			'userId' => $userId,
 		];
-		return $this->request('query', $params, 'GET');
+
+		$exApp = $this->appAPIService->getExApp('schackles');
+		return $this->requestToExApp($userId, $exApp, '/query', 'GET', $params);
+	}
+
+	private static function getExAppUrl(string $protocol, string $host, int $port): string {
+		return sprintf('%s://%s:%s', $protocol, $host, $port);
 	}
 
 	/**
-	 * Make an HTTP request to the LangRope API
-	 * @param string $endPoint The path to reach
-	 * @param array $params Query parameters (key/val pairs)
-	 * @param string $method HTTP query method
-	 * @param string|null $contentType
-	 * @return array decoded request result or error
+	 * Request to ExApp with AppAPI auth headers
+	 *
+	 * @param string|null $userId
+	 * @param ExApp $exApp
+	 * @param string $route
+	 * @param string $method
+	 * @param array $params
+	 *
+	 * @return array|IResponse|null
 	 */
-	public function request(string $endPoint, array $params = [], string $method = 'GET', ?string $contentType = null): array {
-		try {
-			$serviceUrl = $this->config->getAppValue(Application::APP_ID, 'url', Application::LANGROPE_BASE_URL) ?: Application::LANGROPE_BASE_URL;
-			$timeout = $this->config->getAppValue(Application::APP_ID, 'request_timeout', Application::CWYD_DEFAULT_REQUEST_TIMEOUT) ?: Application::CWYD_DEFAULT_REQUEST_TIMEOUT;
-			$timeout = (int) $timeout;
+	public function requestToExApp(
+		?string $userId,
+		ExApp $exApp,
+		string $route,
+		string $method = 'POST',
+		array $params = [],
+		?string $contentType = null,
+	): array | IResponse | null {
+		if (!class_exists('\OCA\AppAPI\Db\ExApp')) {
+			$this->logger->error('ExApp class not found, please install the AppAPI app from the Nextcloud AppStore');
+			return ['error' => 'ExApp class not found, please install the AppAPI app from the Nextcloud AppStore'];
+		}
 
-			$url = $serviceUrl . '/' . $endPoint;
+		try {
+			$url = self::getExAppUrl(
+				$exApp->getProtocol(),
+				$exApp->getHost(),
+				$exApp->getPort()
+			) . $route;
+
+			$timeout = $this->config->getAppValue(Application::APP_ID, 'request_timeout', Application::CWYD_DEFAULT_REQUEST_TIMEOUT) ?: Application::CWYD_DEFAULT_REQUEST_TIMEOUT;
+
 			$options = [
-				'timeout' => $timeout,
 				'headers' => [
-					'User-Agent' => 'Nextcloud CWYD app',
+					'AA-VERSION' => $this->appManager->getAppVersion(Application::APP_ID, false),
+					'EX-APP-ID' => $exApp->getAppid(),
+					'EX-APP-VERSION' => $exApp->getVersion(),
+					'AUTHORIZATION-APP-API' => base64_encode($userId . ':' . $exApp->getSecret()),
 				],
+				'nextcloud' => [
+					'allow_local_address' => true, // it's required as we are using ExApp appid as hostname (usually local)
+				],
+				'timeout' => $timeout,
 			];
 
 			if ($contentType === null) {
 				$options['headers']['Content-Type'] = 'application/json';
 			} elseif ($contentType === 'multipart/form-data') {
-				// no header in this case
-				// $options['headers']['Content-Type'] = $contentType;
+				// no header in this case, $options['multipart'] sets the Content-Type
 			} else {
 				$options['headers']['Content-Type'] = $contentType;
 			}
@@ -115,40 +143,50 @@ class LangRopeService {
 				}
 			}
 
-			if ($method === 'GET') {
-				$response = $this->client->get($url, $options);
-			} else if ($method === 'POST') {
-				$response = $this->client->post($url, $options);
-			} else if ($method === 'PUT') {
-				$response = $this->client->put($url, $options);
-			} else if ($method === 'DELETE') {
-				$response = $this->client->delete($url, $options);
-			} else {
-				return ['error' => $this->l10n->t('Bad HTTP method')];
+			switch ($method) {
+				case 'GET':
+					$response = $this->client->get($url, $options);
+					break;
+				case 'POST':
+					$response = $this->client->post($url, $options);
+					break;
+				case 'PUT':
+					$response = $this->client->put($url, $options);
+					break;
+				case 'DELETE':
+					$response = $this->client->delete($url, $options);
+					break;
+				default:
+					return ['error' => $this->l10n->t('Bad HTTP method')];
 			}
-			$body = $response->getBody();
-			$respCode = $response->getStatusCode();
 
-			if ($respCode >= 400) {
-				return ['error' => $this->l10n->t('Bad credentials')];
-			} else {
-				return json_decode($body, true) ?: [];
+			$resContentType = $response->getHeader('Content-Type');
+			$statusCode = $response->getStatusCode();
+			$body = $response->getBody();
+
+			if (strpos($resContentType, 'application/json') !== false) {
+				$body = json_decode($body, true);
 			}
-		} catch (ClientException | ServerException $e) {
-			$responseBody = $e->getResponse()->getBody();
-			$parsedResponseBody = json_decode($responseBody, true);
-			if ($e->getResponse()->getStatusCode() === 404) {
-				$this->logger->debug('Cwyd API error : ' . $e->getMessage(), ['response_body' => $responseBody, 'exception' => $e]);
-			} else {
-				$this->logger->warning('Cwyd API error : ' . $e->getMessage(), ['response_body' => $responseBody, 'exception' => $e]);
+
+			if ($statusCode >= 400 || isset($body['error'])) {
+				$this->logger->error(
+					sprintf('Error during request to ExApp %s: %s', $exApp->getAppid(), $body['error']),
+					['response' => $response]
+				);
+				return [
+					'error' => $this->l10n->t('Error during request to ExApp') . $exApp->getAppid() . ': ' . $body['error']
+				];
 			}
+
+			return $body;
+		} catch (\Exception $e) {
+			$this->logger->error(
+				sprintf('Error during request to ExApp %s: %s', $exApp->getAppid(), $e->getMessage()),
+				['exception' => $e]
+			);
 			return [
-				'error' => $e->getMessage(),
-				'body' => $parsedResponseBody,
+				'error' => $this->l10n->t('Error during request to ExApp') . $exApp->getAppid() . ': ' . $e->getMessage()
 			];
-		} catch (Exception | Throwable $e) {
-			$this->logger->warning('Cwyd API error : ' . $e->getMessage(), ['exception' => $e]);
-			return ['error' => $e->getMessage()];
 		}
 	}
 }

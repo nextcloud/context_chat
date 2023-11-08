@@ -11,14 +11,13 @@ namespace OCA\Cwyd\AppInfo;
 
 use OCA\Cwyd\Listener\FileListener;
 use OCA\Cwyd\TextProcessing\CwydTextProcessingProvider;
+use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use OCP\Files\Cache\CacheEntryInsertedEvent;
 use OCP\Files\Events\Node\BeforeNodeDeletedEvent;
 use OCP\Files\Events\Node\NodeCreatedEvent;
 use OCP\Files\Events\Node\NodeWrittenEvent;
 use OCP\Files\Events\NodeRemovedFromCache;
-
 use OCP\AppFramework\App;
-use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use OCP\AppFramework\Bootstrap\IBootContext;
 use OCP\AppFramework\Bootstrap\IBootstrap;
 use OCP\Share\Events\ShareCreatedEvent;
@@ -30,6 +29,14 @@ class Application extends App implements IBootstrap {
 
 	public const LANGROPE_BASE_URL = 'http://localhost:8008';
 	public const CWYD_DEFAULT_REQUEST_TIMEOUT = 60 * 4;
+	// max size per file + max size of the batch of files to be embedded in a single request
+	public const CWYD_MAX_SIZE = 20 * 1024 * 1024; // 20MB
+	public const CWYD_MAX_FILES = 100;
+	public const MIMETYPES = [
+		'text/plain',
+		'text/markdown',
+		'application/json',
+	];
 
 	public function __construct(array $urlParams = []) {
 		parent::__construct(self::APP_ID, $urlParams);
