@@ -11,12 +11,12 @@ namespace OCA\Cwyd\AppInfo;
 
 use OCA\Cwyd\Listener\FileListener;
 use OCA\Cwyd\TextProcessing\CwydTextProcessingProvider;
+use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use OCP\Files\Cache\CacheEntryInsertedEvent;
 use OCP\Files\Events\Node\BeforeNodeDeletedEvent;
 use OCP\Files\Events\Node\NodeCreatedEvent;
 use OCP\Files\Events\Node\NodeWrittenEvent;
 use OCP\Files\Events\NodeRemovedFromCache;
-
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
 use OCP\AppFramework\Bootstrap\IBootstrap;
