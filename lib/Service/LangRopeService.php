@@ -6,14 +6,13 @@
  * later. See the COPYING file.
  *
  * @author Julien Veyssier
+ * @author Anupam Kumar
+ * @author AppAPI Developers
  * @copyright Julien Veyssier 2023
  */
 
 namespace OCA\Cwyd\Service;
 
-use DateTime;
-use OCA\AppAPI\Db\ExApp;
-use OCA\AppAPI\Service\AppAPIService;
 use OCA\Cwyd\AppInfo\Application;
 use OCA\Cwyd\Type\Source;
 use OCP\App\IAppManager;
@@ -32,10 +31,19 @@ class LangRopeService {
 		private IL10N $l10n,
 		private IConfig $config,
 		private IAppManager $appManager,
-		private AppAPIService $appAPIService,
 		IClientService $clientService,
 	) {
 		$this->client = $clientService->newClient();
+	}
+
+	private function getExApp() {
+		if (!class_exists('\OCA\AppAPI\Db\ExApp')) {
+			$this->logger->error('ExApp class not found, please install the AppAPI app from the Nextcloud AppStore');
+			return null;
+		}
+
+		$exApp = \OCP\Server::get(\OCA\AppAPI\Service\AppAPIService::class)->getExApp('schackles');
+		return $exApp;
 	}
 
 	public function indexSources(string $userId, array $sources): void {
@@ -43,22 +51,23 @@ class LangRopeService {
 			return;
 		}
 
-		$params = [
-			...array_map(function (Source $source) {
-				return [
-					'name' => 'sources',
-					'filename' => $source->reference, // 'file: 555'
-					'contents' => $source->content,
-					'headers' => [
-						'userId' => $source->userId,
-						'type' => $source->type,
-						'modified' => $source->modified,
-					],
-				];
-			}, $sources),
-		];
+		$params = array_map(function (Source $source) {
+			return [
+				'name' => 'sources',
+				'filename' => $source->reference, // 'file: 555'
+				'contents' => $source->content,
+				'headers' => [
+					'userId' => $source->userId,
+					'type' => $source->type,
+					'modified' => $source->modified,
+				],
+			];
+		}, $sources);
 
-		$exApp = $this->appAPIService->getExApp('schackles');
+		$exApp = $this->getExApp();
+		if ($exApp === null) {
+			return;
+		}
 		$this->requestToExApp($userId, $exApp, '/loadSources', 'PUT', $params, 'multipart/form-data');
 	}
 
@@ -68,7 +77,10 @@ class LangRopeService {
 			'userId' => $userId,
 		];
 
-		$exApp = $this->appAPIService->getExApp('schackles');
+		$exApp = $this->getExApp();
+		if ($exApp === null) {
+			return ['error' => $this->l10n->t('ExApp class not found, please install the AppAPI app from the Nextcloud AppStore')];
+		}
 		return $this->requestToExApp($userId, $exApp, '/query', 'GET', $params);
 	}
 
@@ -89,17 +101,12 @@ class LangRopeService {
 	 */
 	public function requestToExApp(
 		?string $userId,
-		ExApp $exApp,
+		\OCA\AppAPI\Db\ExApp $exApp,
 		string $route,
 		string $method = 'POST',
 		array $params = [],
 		?string $contentType = null,
 	): array | IResponse | null {
-		if (!class_exists('\OCA\AppAPI\Db\ExApp')) {
-			$this->logger->error('ExApp class not found, please install the AppAPI app from the Nextcloud AppStore');
-			return ['error' => 'ExApp class not found, please install the AppAPI app from the Nextcloud AppStore'];
-		}
-
 		try {
 			$url = self::getExAppUrl(
 				$exApp->getProtocol(),

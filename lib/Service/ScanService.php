@@ -6,6 +6,7 @@
  * later. See the COPYING file.
  *
  * @author Julien Veyssier
+ * @author Anupam Kumar
  * @copyright Julien Veyssier 2023
  */
 
