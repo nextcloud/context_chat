@@ -67,6 +67,7 @@ class ScanService {
 				}
 
 				$source = new Source(
+					$userId,
 					'file: ' . $node->getId(),
 					$fileHandle,
 					$node->getMTime(),

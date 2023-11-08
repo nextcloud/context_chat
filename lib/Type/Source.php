@@ -13,9 +13,10 @@ namespace OCA\Cwyd\Type;
 
 class Source {
 	public function __construct(
+		public string $userId,
 		public string $reference,
 		public mixed $content,
-		public string $modified,
+		public int | string $modified,
 		public string $type,
 	) {
 	}
