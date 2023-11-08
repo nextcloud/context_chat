@@ -5,6 +5,7 @@
  * This file is licensed under the Affero General Public License version 3 or later. See the COPYING file.
  */
 declare(strict_types=1);
+
 namespace OCA\Cwyd\Service;
 
 use OC\Files\Cache\CacheQueryBuilder;
@@ -30,23 +31,25 @@ class StorageService {
 		'OC\Files\Mount\ObjectHomeMountProvider',
 	];
 
-    public const MIME_TYPES = [
-      'text/plain'
-    ];
+	public const MIME_TYPES = [
+		'text/plain'
+	];
 
 	public function __construct(
-        private IDBConnection $db,
-        private LoggerInterface $logger,
-        private SystemConfig $systemConfig,
-        private IMimeTypeLoader $mimeTypes,
-        private IUserMountCache $userMountCache) {
+		private IDBConnection   $db,
+		private LoggerInterface $logger,
+		private SystemConfig    $systemConfig,
+		private IMimeTypeLoader $mimeTypes,
+		private IUserMountCache $userMountCache)
+	{
 	}
 
 	/**
 	 * @return \Generator<array{root_id: int, override_root: int, storage_id: int}>
 	 * @throws \OCP\DB\Exception
 	 */
-	public function getMounts(): \Generator {
+	public function getMounts(): \Generator
+	{
 		$qb = $this->db->getQueryBuilder();
 		$qb->selectDistinct(['root_id', 'storage_id', 'mount_provider_class']) // to avoid scanning each occurrence of a groupfolder
 			->from('mounts')
@@ -74,7 +77,7 @@ class StorageService {
 						$overrideRoot = intval($root['fileid']);
 					}
 				} catch (Exception $e) {
-					$this->logger->error('Could not fetch home storage files root for storage '.$storageId, ['exception' => $e]);
+					$this->logger->error('Could not fetch home storage files root for storage ' . $storageId, ['exception' => $e]);
 					continue;
 				}
 			}
@@ -95,7 +98,8 @@ class StorageService {
 	 * @param int $maxResults
 	 * @return \Generator<int,int,mixed,void>
 	 */
-	public function getFilesInMount(int $storageId, int $rootId, int $lastFileId = 0, int $maxResults = 100) : \Generator {
+	public function getFilesInMount(int $storageId, int $rootId, int $lastFileId = 0, int $maxResults = 100): \Generator
+	{
 		$qb = new CacheQueryBuilder($this->db, $this->systemConfig, $this->logger);
 		try {
 			$result = $qb->selectFileCache()
@@ -114,12 +118,12 @@ class StorageService {
 			return;
 		}
 
-		$mimeTypes = array_map(fn ($mimeType) => $this->mimeTypes->getId($mimeType), self::MIME_TYPES);
+		$mimeTypes = array_map(fn($mimeType) => $this->mimeTypes->getId($mimeType), self::MIME_TYPES);
 
 		$qb = new CacheQueryBuilder($this->db, $this->systemConfig, $this->logger);
 
 		try {
-			$path = $root['path'] === '' ? '' :  $root['path'] . '/';
+			$path = $root['path'] === '' ? '' : $root['path'] . '/';
 
 			$qb->selectFileCache()
 				->whereStorageId($storageId)
@@ -142,20 +146,21 @@ class StorageService {
 			/** @var array */
 			$file = $files->fetch()
 		) {
-			yield (int) $file['fileid'];
+			yield (int)$file['fileid'];
 		}
 
 		$files->closeCursor();
 	}
 
-    /**
-     * @param int $fileId
-     * @return string[]
-     */
-    public function getUsersForFileId(int $fileId): array {
-        $mountInfos = $this->userMountCache->getMountsForFileId($fileId);
-        return array_map(static function (ICachedMountInfo $mountInfo) {
-            return $mountInfo->getUser()->getUID();
-        }, $mountInfos);
-    }
+	/**
+	 * @param int $fileId
+	 * @return string[]
+	 */
+	public function getUsersForFileId(int $fileId): array
+	{
+		$mountInfos = $this->userMountCache->getMountsForFileId($fileId);
+		return array_map(static function (ICachedMountInfo $mountInfo) {
+			return $mountInfo->getUser()->getUID();
+		}, $mountInfos);
+	}
 }
