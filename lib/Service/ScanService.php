@@ -96,6 +96,6 @@ class ScanService {
 	}
 
 	public function indexSources(string $userId, array $sources): void {
-		$this->langRopeService->indexSources($userId, ...$sources);
+		$this->langRopeService->indexSources($userId, $sources);
 	}
 }

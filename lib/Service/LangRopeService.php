@@ -46,7 +46,12 @@ class LangRopeService {
 		return $exApp;
 	}
 
-	public function deleteSources(string $userId, string ...$sourceNames): void {
+	/**
+	 * @param string $userId
+	 * @param Source[] $sourceNames
+	 * @return void
+	 */
+	public function deleteSources(string $userId, array $sourceNames): void {
 		if (count($sourceNames) === 0) {
 			return;
 	  }
@@ -63,8 +68,12 @@ class LangRopeService {
 		$this->requestToExApp($userId, $exApp, '/deleteSources', 'POST', $params);
 	}
 
-	// variable number of args to type check array $sources
-	public function indexSources(string $userId, Source ...$sources): void {
+	/**
+	 * @param string $userId
+	 * @param Source[] $sources
+	 * @return void
+	 */
+	public function indexSources(string $userId, array $sources): void {
 		if (count($sources) === 0) {
 			return;
 		}
