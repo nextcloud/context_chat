@@ -4,6 +4,7 @@
  * This file is licensed under the Affero General Public License version 3 or later. See the COPYING file.
  */
 declare(strict_types=1);
+
 namespace OCA\Cwyd\Service;
 
 
@@ -11,17 +12,18 @@ use OCA\Cwyd\BackgroundJobs\IndexerJob;
 use OCA\Cwyd\Db\QueueFile;
 use OCA\Cwyd\Db\QueueMapper;
 use OCP\BackgroundJob\IJobList;
+
 class QueueService {
 
 	public function __construct(
-        private QueueMapper $queueMapper,
-        private IJobList $jobList) {
+		private QueueMapper $queueMapper,
+		private IJobList    $jobList) {
 	}
 
 	/**
 	 * @throws \OCP\DB\Exception
 	 */
-	public function insertIntoQueue(QueueFile $file) : void {
+	public function insertIntoQueue(QueueFile $file): void {
 		// Only add to queue if it's not in there already
 		if ($this->queueMapper->existsQueueItem($file)) {
 			return;
@@ -37,7 +39,7 @@ class QueueService {
 	 * @param string|null $userId
 	 * @return void
 	 */
-	public function scheduleJob(QueueFile $file) : void {
+	public function scheduleJob(QueueFile $file): void {
 		if (!$this->jobList->has(IndexerJob::class, [
 			'storageId' => $file->getStorageId(),
 			'rootId' => $file->getRootId(),
@@ -56,7 +58,7 @@ class QueueService {
 	 * @return QueueFile[]
 	 * @throws \OCP\DB\Exception
 	 */
-	public function getFromQueue(int $storageId, int $rootId, int $batchSize) : array {
+	public function getFromQueue(int $storageId, int $rootId, int $batchSize): array {
 		return $this->queueMapper->getFromQueue($storageId, $rootId, $batchSize);
 	}
 
@@ -66,7 +68,7 @@ class QueueService {
 	 * @return void
 	 * @throws \OCP\DB\Exception
 	 */
-	public function removeFromQueue(QueueFile $queueFile) : void {
+	public function removeFromQueue(QueueFile $queueFile): void {
 		$this->queueMapper->removeFromQueue($queueFile);
 	}
 
@@ -74,10 +76,10 @@ class QueueService {
 		$this->queueMapper->clearQueue();
 	}
 
-    /**
-     * @throws \OCP\DB\Exception
-     */
-    public function count(): int {
+	/**
+	 * @throws \OCP\DB\Exception
+	 */
+	public function count(): int {
 		return $this->queueMapper->count();
 	}
 }
