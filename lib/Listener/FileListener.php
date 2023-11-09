@@ -8,8 +8,10 @@ declare(strict_types=1);
 namespace OCA\Cwyd\Listener;
 
 use OCA\Cwyd\Db\QueueFile;
+use OCA\Cwyd\Service\LangRopeService;
 use OCA\Cwyd\Service\QueueService;
 use OCA\Cwyd\Service\StorageService;
+use OCA\Cwyd\Type\Source;
 use OCP\DB\Exception;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -25,6 +27,8 @@ use OCP\Files\InvalidPathException;
 use OCP\Files\IRootFolder;
 use OCP\Files\Node;
 use OCP\Files\NotFoundException;
+use OCP\Files\NotPermittedException;
+use OCP\Lock\LockedException;
 use OCP\Share\Events\ShareCreatedEvent;
 use OCP\Share\Events\ShareDeletedEvent;
 use OCP\Share\IManager;
@@ -37,7 +41,8 @@ class FileListener implements IEventListener {
         private QueueService $queue,
         private StorageService $storageService,
         private IManager $shareManager,
-        private IRootFolder $rootFolder) {
+        private IRootFolder $rootFolder,
+		private LangRopeService $langRopeService) {
 	}
 
 	public function handle(Event $event): void {
@@ -145,7 +150,37 @@ class FileListener implements IEventListener {
 	}
 
 	public function postDelete(Node $node, bool $recurse = true): void {
-		// TODO: remove node from index
+		if ($node->getType() === FileInfo::TYPE_FOLDER) {
+			if (!$recurse) {
+				return;
+			}
+			// For normal inserts we probably get one event per node, but, when removing an ignore file,
+			// we only get the folder passed here, so we recurse.
+			try {
+				/** @var Folder $node */
+				foreach ($node->getDirectoryListing() as $child) {
+					$this->postDelete($child);
+				}
+			} catch (NotFoundException $e) {
+				$this->logger->debug($e->getMessage(), ['exception' => $e]);
+			}
+			return;
+		}
+		try {
+			$fileHandle = $node->fopen('r');
+		} catch (LockedException|NotPermittedException $e) {
+			$this->logger->error('Could not open file ' . $node->getPath() . ' for reading', ['exception' => $e]);
+			return;
+		}
+		foreach ($this->storageService->getUsersForFileId($node->getId()) as $userId) {
+			try {
+				$source = new Source($userId, 'file: ' . $node->getId(), $fileHandle, $node->getMtime(), $node->getMimeType());
+			} catch (InvalidPathException|NotFoundException $e) {
+				$this->logger->error('Could not find file ' . $node->getPath(), ['exception' => $e]);
+				break;
+			}
+			$this->langRopeService->deleteSources($userId, [$source]);
+		}
 	}
 
 	/**
