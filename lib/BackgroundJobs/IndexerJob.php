@@ -136,6 +136,11 @@ class IndexerJob extends TimedJob
 				}
 				$this->langRopeService->indexSources($userId, [$source]);
 			}
+			try {
+				$this->queue->removeFromQueue($queueFile);
+			} catch (Exception $e) {
+				$this->logger->error('Could not remove file from queue', ['exception' => $e]);
+			}
 		}
 	}
 }
