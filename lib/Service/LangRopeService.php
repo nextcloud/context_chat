@@ -46,6 +46,33 @@ class LangRopeService {
 		return $exApp;
 	}
 
+	/**
+	 * @param string $userId
+	 * @param Source[] $sourceNames
+	 * @return void
+	 */
+	public function deleteSources(string $userId, array $sourceNames): void {
+		if (count($sourceNames) === 0) {
+			return;
+	  }
+
+		$params = [
+			'userId' => $userId,
+			'sourceNames' => $sourceNames,
+		];
+
+		$exApp = $this->getExApp();
+		if ($exApp === null) {
+			return;
+		}
+		$this->requestToExApp($userId, $exApp, '/deleteSources', 'POST', $params);
+	}
+
+	/**
+	 * @param string $userId
+	 * @param Source[] $sources
+	 * @return void
+	 */
 	public function indexSources(string $userId, array $sources): void {
 		if (count($sources) === 0) {
 			return;
