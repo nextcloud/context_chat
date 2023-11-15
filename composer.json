@@ -1,12 +1,54 @@
 {
-    "name": "nextcloud/cwyd",
-    "authors": [
-        {
-            "name": "Julien Veyssier",
-            "email": "julien-nc@posteo.net"
-        }
-    ],
-    "require": {
-        "php": ">=8.1"
-    }
+	"name": "nextcloud/cwyd",
+	"description": "CWYD Companion App",
+	"type": "project",
+	"license": "AGPL-3.0-or-later",
+	"authors": [
+		{
+			"name": "Julien Veyssier",
+			"email": "julien-nc@posteo.net"
+		},
+		{
+			"name": "Anupam Kumar",
+			"email": "kyteinsky@gmail.com"
+		},
+		{
+			"name": "Marcel Klehr",
+			"email": "mklehr@gmx.net"
+		}
+	],
+	"require-dev": {
+		"nextcloud/coding-standard": "^1.1",
+		"nextcloud/ocp": "dev-master",
+		"roave/security-advisories": "dev-latest",
+		"psalm/phar": "^5.15",
+		"friendsofphp/php-cs-fixer": "3.38"
+	},
+	"scripts": {
+		"lint": "find . -name \\*.php -not -path './vendor/*' -print0 | xargs -0 -n1 php -l",
+		"cs:check": "php-cs-fixer fix --dry-run --diff",
+		"cs:fix": "php-cs-fixer fix",
+		"psalm": "psalm.phar --threads=1",
+		"psalm:update-baseline": "psalm.phar --threads=1 --update-baseline",
+		"psalm:update-baseline:force": "psalm.phar --threads=1 --update-baseline --set-baseline=tests/psalm-baseline.xml",
+		"psalm:clear": "psalm.phar --clear-cache && psalm.phar --clear-global-cache",
+		"psalm:fix": "psalm.phar --alter --issues=InvalidReturnType,InvalidNullableReturnType,MissingParamType,InvalidFalsableReturnType"
+	},
+	"config": {
+		"optimize-autoloader": true,
+		"classmap-authoritative": true,
+		"platform": {
+			"php": "8.1"
+		}
+	},
+	"autoload": {
+		"psr-4": {
+			"OCA\\Cwyd\\": "lib/"
+		}
+	},
+	"autoload-dev": {
+		"psr-4": {
+			"OCP\\": "vendor/nextcloud/ocp/OCP"
+		}
+	}
 }
