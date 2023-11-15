@@ -43,6 +43,10 @@ jobs:
 
     name: PHP CS fixer lint
 
+    strategy:
+      matrix:
+        php-versions: [ "8.1", "8.2" ]
+
     steps:
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
@@ -50,7 +54,7 @@ jobs:
       - name: Set up php
         uses: shivammathur/setup-php@4bd44f22a98a19e0950cbad5f31095157cc9621b # v2
         with:
-          php-version: 8.1
+          php-version: ${{ matrix.php-versions }}
           coverage: none
           ini-file: development
         env:
