@@ -10,6 +10,7 @@ use OCP\TextProcessing\IProviderWithUserId;
 
 /**
  * @template-implements IProviderWithUserId<CwydTaskType>
+ * @template-implements IProvider<CwydTaskType>
  */
 class CwydProvider implements IProvider, IProviderWithUserId {
 

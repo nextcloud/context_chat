@@ -9,6 +9,10 @@ use OCP\TextProcessing\FreePromptTaskType;
 use OCP\TextProcessing\IProvider;
 use OCP\TextProcessing\IProviderWithUserId;
 
+/**
+ * @template-implements IProviderWithUserId<FreePromptTaskType>
+ * @template-implements IProvider<FreePromptTaskType>
+ */
 class FreePromptProvider implements IProvider, IProviderWithUserId {
 
 	private ?string $userId = null;
