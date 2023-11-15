@@ -7,7 +7,6 @@ declare(strict_types=1);
 
 namespace OCA\Cwyd\Service;
 
-
 use OCA\Cwyd\BackgroundJobs\IndexerJob;
 use OCA\Cwyd\Db\QueueFile;
 use OCA\Cwyd\Db\QueueMapper;

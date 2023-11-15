@@ -40,16 +40,14 @@ class StorageService {
 		private LoggerInterface $logger,
 		private SystemConfig    $systemConfig,
 		private IMimeTypeLoader $mimeTypes,
-		private IUserMountCache $userMountCache)
-	{
+		private IUserMountCache $userMountCache) {
 	}
 
 	/**
 	 * @return \Generator<array{root_id: int, override_root: int, storage_id: int}>
 	 * @throws \OCP\DB\Exception
 	 */
-	public function getMounts(): \Generator
-	{
+	public function getMounts(): \Generator {
 		$qb = $this->db->getQueryBuilder();
 		$qb->selectDistinct(['root_id', 'storage_id', 'mount_provider_class']) // to avoid scanning each occurrence of a groupfolder
 			->from('mounts')
@@ -98,8 +96,7 @@ class StorageService {
 	 * @param int $maxResults
 	 * @return \Generator<int,int,mixed,void>
 	 */
-	public function getFilesInMount(int $storageId, int $rootId, int $lastFileId = 0, int $maxResults = 100): \Generator
-	{
+	public function getFilesInMount(int $storageId, int $rootId, int $lastFileId = 0, int $maxResults = 100): \Generator {
 		$qb = new CacheQueryBuilder($this->db, $this->systemConfig, $this->logger);
 		try {
 			$result = $qb->selectFileCache()
@@ -118,7 +115,7 @@ class StorageService {
 			return;
 		}
 
-		$mimeTypes = array_map(fn($mimeType) => $this->mimeTypes->getId($mimeType), self::MIME_TYPES);
+		$mimeTypes = array_map(fn ($mimeType) => $this->mimeTypes->getId($mimeType), self::MIME_TYPES);
 
 		$qb = new CacheQueryBuilder($this->db, $this->systemConfig, $this->logger);
 
@@ -156,8 +153,7 @@ class StorageService {
 	 * @param int $fileId
 	 * @return string[]
 	 */
-	public function getUsersForFileId(int $fileId): array
-	{
+	public function getUsersForFileId(int $fileId): array {
 		$mountInfos = $this->userMountCache->getMountsForFileId($fileId);
 		return array_map(static function (ICachedMountInfo $mountInfo) {
 			return $mountInfo->getUser()->getUID();

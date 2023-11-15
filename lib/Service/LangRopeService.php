@@ -54,7 +54,7 @@ class LangRopeService {
 	public function deleteSources(string $userId, array $sourceNames): void {
 		if (count($sourceNames) === 0) {
 			return;
-	  }
+		}
 
 		$params = [
 			'userId' => $userId,

@@ -26,8 +26,7 @@ use OCP\Files\NotPermittedException;
 use OCP\Lock\LockedException;
 use Psr\Log\LoggerInterface;
 
-class IndexerJob extends TimedJob
-{
+class IndexerJob extends TimedJob {
 
 	public function __construct(
 		ITimeFactory            $time,
@@ -38,8 +37,7 @@ class IndexerJob extends TimedJob
 		private LangRopeService $langRopeService,
 		private StorageService  $storageService,
 		private IRootFolder     $rootFolder,
-	)
-	{
+	) {
 		parent::__construct($time);
 		$this->setInterval(60 * 5);
 		$this->setTimeSensitivity(self::TIME_INSENSITIVE);
@@ -52,8 +50,7 @@ class IndexerJob extends TimedJob
 	 * @throws \ErrorException
 	 * @throws \Throwable
 	 */
-	public function run($argument): void
-	{
+	public function run($argument): void {
 		/**
 		 * @var int $storageId
 		 */
@@ -104,8 +101,7 @@ class IndexerJob extends TimedJob
 	/**
 	 * @return int
 	 */
-	protected function getBatchSize(): int
-	{
+	protected function getBatchSize(): int {
 		return 2000;
 	}
 

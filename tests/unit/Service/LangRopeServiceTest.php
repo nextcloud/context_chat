@@ -2,7 +2,6 @@
 
 namespace OCA\Cwyd\Tests;
 
-
 use OCA\Cwyd\AppInfo\Application;
 
 class LangRopeServiceTest extends \PHPUnit\Framework\TestCase {

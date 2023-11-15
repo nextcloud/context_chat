@@ -37,22 +37,23 @@ use Psr\Log\LoggerInterface;
 class FileListener implements IEventListener {
 
 	public function __construct(
-        private LoggerInterface $logger,
-        private QueueService $queue,
-        private StorageService $storageService,
-        private IManager $shareManager,
-        private IRootFolder $rootFolder,
+		private LoggerInterface $logger,
+		private QueueService $queue,
+		private StorageService $storageService,
+		private IManager $shareManager,
+		private IRootFolder $rootFolder,
 		private LangRopeService $langRopeService) {
 	}
 
 	public function handle(Event $event): void {
-        if ($event instanceof NodeWrittenEvent) {
-            $node = $event->getNode();
-            if ($node instanceof File) {
-                return;
-            }
-            $this->postInsert($node, false, true);
-        }
+		if ($event instanceof NodeWrittenEvent) {
+			$node = $event->getNode();
+			if ($node instanceof File) {
+				return;
+			}
+			$this->postInsert($node, false, true);
+		}
+
 		if ($event instanceof ShareCreatedEvent) {
 			$share = $event->getShare();
 			$ownerId = $share->getShareOwner();
@@ -75,22 +76,22 @@ class FileListener implements IEventListener {
 						if ($userId === $ownerId) {
 							continue;
 						}
-                        $file = current($this->rootFolder->getById($fileId));
-                        if (!$file instanceof File) {
-                            continue;
-                        }
-                        $this->postInsert($file, false, true);
+						$file = current($this->rootFolder->getById($fileId));
+						if (!$file instanceof File) {
+							continue;
+						}
+						$this->postInsert($file, false, true);
 					}
 				}
 			} else {
 				foreach ($userIds as $userId) {
-                    if ($userId === $ownerId) {
-                        continue;
-                    }
-                    if (!$node instanceof File) {
-                        continue;
-                    }
-                    $this->postInsert($node, false, true);
+					if ($userId === $ownerId) {
+						continue;
+					}
+					if (!$node instanceof File) {
+						continue;
+					}
+					$this->postInsert($node, false, true);
 				}
 			}
 		}
@@ -114,7 +115,7 @@ class FileListener implements IEventListener {
 					$this->postInsert(current($this->rootFolder->getById($fileId)), false, true);
 				}
 			} else {
-                // TODO: remove index entry of $node for $userIds
+				// TODO: remove index entry of $node for $userIds
 			}
 		}
 		if ($event instanceof BeforeNodeDeletedEvent) {
@@ -134,7 +135,7 @@ class FileListener implements IEventListener {
 				return;
 			}
 			$this->postInsert($node);
-            return;
+			return;
 		}
 		if ($event instanceof NodeRemovedFromCache) {
 			$cacheEntry = $event->getStorage()->getCache()->get($event->getPath());
