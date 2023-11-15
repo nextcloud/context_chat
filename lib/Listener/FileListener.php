@@ -34,6 +34,9 @@ use OCP\Share\Events\ShareDeletedEvent;
 use OCP\Share\IManager;
 use Psr\Log\LoggerInterface;
 
+/**
+ * @template-implements IEventListener<Event>
+ */
 class FileListener implements IEventListener {
 
 	public function __construct(
@@ -151,7 +154,7 @@ class FileListener implements IEventListener {
 	}
 
 	public function postDelete(Node $node, bool $recurse = true): void {
-		if ($node->getType() === FileInfo::TYPE_FOLDER) {
+		if (!$node instanceof File) {
 			if (!$recurse) {
 				return;
 			}

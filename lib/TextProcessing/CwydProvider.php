@@ -8,6 +8,9 @@ use OCP\IL10N;
 use OCP\TextProcessing\IProvider;
 use OCP\TextProcessing\IProviderWithUserId;
 
+/**
+ * @template-implements IProviderWithUserId<CwydTaskType>
+ */
 class CwydProvider implements IProvider, IProviderWithUserId {
 
 	private ?string $userId = null;

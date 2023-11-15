@@ -78,7 +78,7 @@ class QueueService {
 	/**
 	 * @throws \OCP\DB\Exception
 	 */
-	public function count(): int {
+	public function count(): int|false {
 		return $this->queueMapper->count();
 	}
 }
