@@ -1,4 +1,4 @@
-const path = require('path')
+// const path = require('path')
 const webpackConfig = require('@nextcloud/webpack-vue-config')
 const ESLintPlugin = require('eslint-webpack-plugin')
 const StyleLintPlugin = require('stylelint-webpack-plugin')
@@ -13,9 +13,8 @@ webpackConfig.stats = {
 	modules: false,
 }
 
-const appId = 'cwyd'
+// const appId = 'cwyd'
 webpackConfig.entry = {
-	reference: { import: path.join(__dirname, 'src', 'reference.js'), filename: appId + '-reference.js' },
 }
 
 webpackConfig.plugins.push(
