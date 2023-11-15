@@ -7,7 +7,6 @@
 declare(strict_types=1);
 namespace OCA\Cwyd\BackgroundJobs;
 
-
 use OCA\Cwyd\Db\QueueFile;
 use OCA\Cwyd\Service\QueueService;
 use OCA\Cwyd\Service\StorageService;
@@ -21,10 +20,10 @@ class StorageCrawlJob extends QueuedJob {
 	public const BATCH_SIZE = 2000;
 
 	public function __construct(ITimeFactory $timeFactory,
-                                private LoggerInterface $logger,
-                                private QueueService $queue,
-                                private IJobList $jobList,
-                                private StorageService $storageService) {
+		private LoggerInterface $logger,
+		private QueueService $queue,
+		private IJobList $jobList,
+		private StorageService $storageService) {
 		parent::__construct($timeFactory);
 	}
 
@@ -49,12 +48,12 @@ class StorageCrawlJob extends QueuedJob {
 			$queueFile->setFileId($fileId);
 			$queueFile->setUpdate(false);
 			try {
-                $this->queue->insertIntoQueue($queueFile);
+				$this->queue->insertIntoQueue($queueFile);
 			} catch (Exception $e) {
 				$this->logger->error('Failed to add file to queue', ['exception' => $e]);
 				return;
 			}
-            $i++;
+			$i++;
 		}
 
 		if ($i > 0) {

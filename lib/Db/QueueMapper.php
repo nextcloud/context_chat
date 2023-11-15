@@ -15,7 +15,7 @@ use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\IDBConnection;
 
 /**
- * @template-implements QBMapper<QueueFile>
+ * @template-extends QBMapper<QueueFile>
  */
 class QueueMapper extends QBMapper {
 	/**
@@ -106,7 +106,7 @@ class QueueMapper extends QBMapper {
 	/**
 	 * @throws \OCP\DB\Exception
 	 */
-	public function count() : int {
+	public function count() : int|false {
 		$qb = $this->db->getQueryBuilder();
 		$result = $qb->select($qb->func()->count('id'))
 			->from($this->getTableName())

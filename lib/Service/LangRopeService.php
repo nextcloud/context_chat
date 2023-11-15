@@ -18,7 +18,6 @@ use OCA\Cwyd\Type\Source;
 use OCP\App\IAppManager;
 use OCP\Http\Client\IClient;
 use OCP\Http\Client\IClientService;
-use OCP\Http\Client\IResponse;
 use OCP\IConfig;
 use OCP\IL10N;
 use Psr\Log\LoggerInterface;
@@ -54,7 +53,7 @@ class LangRopeService {
 	public function deleteSources(string $userId, array $sourceNames): void {
 		if (count($sourceNames) === 0) {
 			return;
-	  }
+		}
 
 		$params = [
 			'userId' => $userId,
@@ -108,7 +107,14 @@ class LangRopeService {
 		if ($exApp === null) {
 			return ['error' => $this->l10n->t('ExApp class not found, please install the AppAPI app from the Nextcloud AppStore')];
 		}
-		return $this->requestToExApp($userId, $exApp, '/query', 'GET', $params);
+
+		$response = $this->requestToExApp($userId, $exApp, '/query', 'GET', $params);
+
+		if (is_array($response)) {
+			return $response;
+		}
+
+		return ['error' => $this->l10n->t('Could not parse response from CWYD backend')];
 	}
 
 	private static function getExAppUrl(string $protocol, string $host, int $port): string {
@@ -119,12 +125,11 @@ class LangRopeService {
 	 * Request to ExApp with AppAPI auth headers
 	 *
 	 * @param string|null $userId
-	 * @param ExApp $exApp
+	 * @param \OCA\AppAPI\Db\ExApp $exApp
 	 * @param string $route
 	 * @param string $method
 	 * @param array $params
-	 *
-	 * @return array|IResponse|null
+	 * @return array|resource|string
 	 */
 	public function requestToExApp(
 		?string $userId,
@@ -133,7 +138,7 @@ class LangRopeService {
 		string $method = 'POST',
 		array $params = [],
 		?string $contentType = null,
-	): array | IResponse | null {
+	): mixed {
 		try {
 			$url = self::getExAppUrl(
 				$exApp->getProtocol(),

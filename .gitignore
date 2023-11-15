@@ -5,6 +5,7 @@ js/
 .vscode/
 .vscode-upload.json
 .*.sw*
+.php-cs-fixer.cache
 node_modules
 
 /vendor/
