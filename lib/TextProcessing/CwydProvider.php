@@ -6,18 +6,20 @@ namespace OCA\Cwyd\TextProcessing;
 use OCA\Cwyd\Service\LangRopeService;
 use OCP\IL10N;
 use OCP\TextProcessing\IProvider;
+use OCP\TextProcessing\IProviderWithUserId;
 
-class CwydTextProcessingProvider implements IProvider {
+class CwydProvider implements IProvider, IProviderWithUserId {
+
+	private ?string $userId = null;
 
 	public function __construct(
 		private LangRopeService $langRopeService,
 		private IL10N $l10n,
-		private ?string $userId,
 	) {
 	}
 
 	public function getName(): string {
-		return $this->l10n->t('Cwyd');
+		return $this->l10n->t('Chat with your documents');
 	}
 
 	public function process(string $prompt): string {
@@ -30,5 +32,9 @@ class CwydTextProcessingProvider implements IProvider {
 
 	public function getTaskType(): string {
 		return CwydTaskType::class;
+	}
+
+	public function setUserId(?string $userId): void {
+		$this->userId = $userId;
 	}
 }

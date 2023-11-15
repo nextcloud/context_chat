@@ -10,7 +10,8 @@
 namespace OCA\Cwyd\AppInfo;
 
 use OCA\Cwyd\Listener\FileListener;
-use OCA\Cwyd\TextProcessing\CwydTextProcessingProvider;
+use OCA\Cwyd\TextProcessing\CwydProvider;
+use OCA\Cwyd\TextProcessing\FreePromptProvider;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
 use OCP\AppFramework\Bootstrap\IBootstrap;
@@ -49,7 +50,8 @@ class Application extends App implements IBootstrap {
 		$context->registerEventListener(CacheEntryInsertedEvent::class, FileListener::class);
 		$context->registerEventListener(NodeRemovedFromCache::class, FileListener::class);
 		$context->registerEventListener(NodeWrittenEvent::class, FileListener::class);
-		$context->registerTextProcessingProvider(CwydTextProcessingProvider::class);
+		$context->registerTextProcessingProvider(CwydProvider::class);
+		$context->registerTextProcessingProvider(FreePromptProvider::class);
 	}
 
 	public function boot(IBootContext $context): void {
