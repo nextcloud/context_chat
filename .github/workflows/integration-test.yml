@@ -121,6 +121,10 @@ jobs:
           ./occ app:enable -vvv -f ${{ env.APP_NAME }}
           php -S localhost:8080 &
 
+      - name: Install app_api
+        run: |
+          ./occ app:enable -vvv app_api
+
       - name: Install
         run: |
           ./occ app:enable -vvv ${{ env.APP_NAME }}
