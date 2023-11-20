@@ -75,10 +75,10 @@ jobs:
         with:
           path: apps/${{ env.APP_NAME }}
 
-      - name: Checkout server
+      - name: Checkout backend
         uses: actions/checkout@v2
         with:
-          repository: kyteinski/cwyd_backend
+          repository: kyteinsky/cwyd_backend
           path: cwyd_backend/
 
       - name: Read package.json node and npm engines version
