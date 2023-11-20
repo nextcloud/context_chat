@@ -11,7 +11,7 @@ on:
       - stable*
 
 env:
-  APP_NAME: translate
+  APP_NAME: cwyd
 
 jobs:
   transcription:
