@@ -166,6 +166,7 @@ jobs:
       - name: Run prompt
         run: |
           ./occ files:scan --all
+          ./occ cwyd:scan admin
           ./occ cwyd:prompt admin "Which factors are taken into account for the Ethical AI Rating?"
 
       - name: Show log on failure
