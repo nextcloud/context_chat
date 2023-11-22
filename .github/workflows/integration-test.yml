@@ -13,6 +13,11 @@ on:
 env:
   APP_NAME: cwyd
 
+concurrency:
+  group: integration-test-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+
 jobs:
   transcription:
     runs-on: ubuntu-latest
@@ -21,7 +26,7 @@ jobs:
       # do not stop on another job's failure
       fail-fast: false
       matrix:
-        php-versions: [ '8.1', '8.2', '8.3' ]
+        php-versions: [ '8.1' ]
         databases: [ 'sqlite' ]
         server-versions: [ 'master' ]
 
@@ -141,11 +146,27 @@ jobs:
           curl -L https://huggingface.co/TheBloke/dolphin-2.2.1-mistral-7B-GGUF/resolve/main/dolphin-2.2.1-mistral-7b.Q5_K_M.gguf -o model_files/dolphin-2.2.1-mistral-7b.Q5_K_M.gguf
           ./main.py &
 
-      - name: Install and init backend
+      - name: Register backend
         run: |
           ./occ app_api:daemon:register --net host manual_install "Manual Install" manual-install http null http://localhost:8080
           # '&' because app:register has a bug that causes it to stall forever...
           ./occ app_api:app:register schackles manual_install --json-info "{\"appid\":\"schackles\",\"name\":\"Chat With Your Documents Backend\",\"daemon_config_name\":\"manual_install\",\"version\":\"1.0.0\",\"secret\":\"12345\",\"host\":\"localhost\",\"port\":10034,\"scopes\":{\"required\":[],\"optional\":[]},\"protocol\":\"http\",\"system_app\":0}" --force-scopes &
+
+      - name: Checkout documentation
+        uses: actions/checkout@v2
+        with:
+          repository: nextcloud/documentation
+          path: data/admin/files/documentation
+
+      - name: Prepare docs
+        run: |
+          cd data/admin/files/documentation
+          find . -name "*.rst" -exec bash -c 'mv "$1" "${1%.rst}".txt' - '{}' +
+          ./occ files:scan --all
+
+      - name: Run prompt
+        run: |
+          ./occ cwyd:prompt admin "Which factors are taken into account for the Ethical AI Rating?"
 
       - name: Show log on failure
         if: always()

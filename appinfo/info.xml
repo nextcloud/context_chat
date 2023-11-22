@@ -27,6 +27,7 @@
 	</background-jobs>
 	<commands>
 		<command>OCA\Cwyd\Command\ScanFiles</command>
+		<command>OCA\Cwyd\Command\Prompt</command>
 	</commands>
     <!--settings>
         <admin>OCA\Cwyd\Settings\Admin</admin>
