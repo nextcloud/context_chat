@@ -28,10 +28,10 @@ class CwydProvider implements IProvider, IProviderWithUserId {
 
 	public function process(string $prompt): string {
 		$response = $this->langRopeService->query($this->userId, $prompt);
-		if (isset($response['result']) && $response['result']) {
-			return $response['result'];
+		if (isset($response['error'])) {
+			throw new \RuntimeException('No result in Cwyd response. ' . $response['error']);
 		}
-		throw new \Exception('No result in Cwyd response. ' . ($response['error'] ?? ''));
+		return $response['message'] ?? '';
 	}
 
 	public function getTaskType(): string {
