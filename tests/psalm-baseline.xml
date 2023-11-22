@@ -11,6 +11,11 @@
       <code>\OC_Util</code>
     </UndefinedClass>
   </file>
+  <file src="lib/Command/Prompt.php">
+    <UndefinedClass>
+      <code>Command</code>
+    </UndefinedClass>
+  </file>
   <file src="lib/Command/ScanFiles.php">
     <UndefinedClass>
       <code>Command</code>
