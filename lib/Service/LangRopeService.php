@@ -218,7 +218,7 @@ class LangRopeService {
 			}
 
 			return $body;
-		} catch (\Exception $e) {
+		} catch (\Throwable $e) {
 			$this->logger->error(
 				sprintf('Error during request to ExApp %s: %s', $exApp->getAppid(), $e->getMessage()),
 				['exception' => $e]
