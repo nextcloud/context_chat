@@ -15,6 +15,7 @@ use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\Files\Config\ICachedMountInfo;
 use OCP\Files\Config\IUserMountCache;
 use OCP\Files\IMimeTypeLoader;
+use OCP\FilesMetadata\IFilesMetadataManager;
 use OCP\IDBConnection;
 use Psr\Log\LoggerInterface;
 
@@ -40,7 +41,8 @@ class StorageService {
 		private LoggerInterface $logger,
 		private SystemConfig    $systemConfig,
 		private IMimeTypeLoader $mimeTypes,
-		private IUserMountCache $userMountCache) {
+		private IUserMountCache $userMountCache,
+		private IFilesMetadataManager $metadataManager) {
 	}
 
 	/**
@@ -64,7 +66,7 @@ class StorageService {
 			$overrideRoot = $rootId;
 			if (in_array($row['mount_provider_class'], self::HOME_MOUNT_TYPES)) {
 				// Only crawl files, not cache or trashbin
-				$qb = new CacheQueryBuilder($this->db, $this->systemConfig, $this->logger);
+				$qb = $this->getCacheQueryBuilder();
 				try {
 					/** @var array|false $root */
 					$root = $qb->selectFileCache()
@@ -97,7 +99,7 @@ class StorageService {
 	 * @return \Generator<int,int,mixed,void>
 	 */
 	public function getFilesInMount(int $storageId, int $rootId, int $lastFileId = 0, int $maxResults = 100): \Generator {
-		$qb = new CacheQueryBuilder($this->db, $this->systemConfig, $this->logger);
+		$qb = $this->getCacheQueryBuilder();
 		try {
 			$result = $qb->selectFileCache()
 				->andWhere($qb->expr()->eq('filecache.fileid', $qb->createNamedParameter($rootId, IQueryBuilder::PARAM_INT)))
@@ -117,7 +119,7 @@ class StorageService {
 
 		$mimeTypes = array_map(fn ($mimeType) => $this->mimeTypes->getId($mimeType), self::MIME_TYPES);
 
-		$qb = new CacheQueryBuilder($this->db, $this->systemConfig, $this->logger);
+		$qb = $this->getCacheQueryBuilder();
 
 		try {
 			$path = $root['path'] === '' ? '' : $root['path'] . '/';
@@ -158,5 +160,9 @@ class StorageService {
 		return array_map(static function (ICachedMountInfo $mountInfo) {
 			return $mountInfo->getUser()->getUID();
 		}, $mountInfos);
+	}
+
+	private function getCacheQueryBuilder(): CacheQueryBuilder {
+		return new CacheQueryBuilder($this->db, $this->systemConfig, $this->logger, $this->metadataManager);
 	}
 }

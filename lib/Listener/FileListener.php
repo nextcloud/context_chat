@@ -108,17 +108,49 @@ class FileListener implements IEventListener {
 			 */
 			$userIds = array_keys($accessList['users']);
 
-			if ($node->getType() === FileInfo::TYPE_FOLDER) {
+			if ($node instanceof Folder) {
 				$mount = $node->getMountPoint();
 				if ($mount->getNumericStorageId() === null) {
 					return;
 				}
 				$files = $this->storageService->getFilesInMount($mount->getNumericStorageId(), $node->getId(), 0, 0);
 				foreach ($files as $fileId) {
-					$this->postInsert(current($this->rootFolder->getById($fileId)), false, true);
+					$node = current($this->rootFolder->getById($fileId));
+					if (!$node instanceof File) {
+						continue;
+					}
+					try {
+						$fileHandle = $node->fopen('r');
+					} catch (LockedException|NotPermittedException $e) {
+						$this->logger->error('Could not open file ' . $node->getPath() . ' for reading', ['exception' => $e]);
+						return;
+					}
+					foreach ($userIds as $userId) {
+						try {
+							$source = new Source($userId, 'file: ' . $node->getId(), $fileHandle, $node->getMtime(), $node->getMimeType());
+						} catch (InvalidPathException|NotFoundException $e) {
+							$this->logger->error('Could not find file ' . $node->getPath(), ['exception' => $e]);
+							break;
+						}
+						$this->langRopeService->deleteSources($userId, [$source]);
+					}
 				}
 			} else {
-				// TODO: remove index entry of $node for $userIds
+				try {
+					$fileHandle = $node->fopen('r');
+				} catch (LockedException|NotPermittedException $e) {
+					$this->logger->error('Could not open file ' . $node->getPath() . ' for reading', ['exception' => $e]);
+					return;
+				}
+				foreach ($userIds as $userId) {
+					try {
+						$source = new Source($userId, 'file: ' . $node->getId(), $fileHandle, $node->getMtime(), $node->getMimeType());
+					} catch (InvalidPathException|NotFoundException $e) {
+						$this->logger->error('Could not find file ' . $node->getPath(), ['exception' => $e]);
+						break;
+					}
+					$this->langRopeService->deleteSources($userId, [$source]);
+				}
 			}
 		}
 		if ($event instanceof BeforeNodeDeletedEvent) {
