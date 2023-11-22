@@ -161,7 +161,8 @@ jobs:
       - name: Prepare docs
         run: |
           cd data/admin/files/documentation
-          find . -name "*.rst" -exec bash -c 'mv "$1" "${1%.rst}".txt' - '{}' +
+          find ./ -depth -name "*.rst" -exec sh -c 'mv "$1" "${1%.rst}.txt"' _ {} \;
+          git status
 
       - name: Scan files
         run: |
