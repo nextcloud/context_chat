@@ -163,10 +163,13 @@ jobs:
           cd data/admin/files/documentation
           find . -name "*.rst" -exec bash -c 'mv "$1" "${1%.rst}".txt' - '{}' +
 
-      - name: Run prompt
+      - name: Scan files
         run: |
           ./occ files:scan --all
           ./occ cwyd:scan admin
+
+      - name: Run prompt
+        run: |
           ./occ cwyd:prompt admin "Which factors are taken into account for the Ethical AI Rating?"
 
       - name: Show log on failure
