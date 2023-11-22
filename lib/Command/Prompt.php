@@ -12,15 +12,12 @@
 
 namespace OCA\Cwyd\Command;
 
-use OCA\Cwyd\AppInfo\Application;
-use OCA\Cwyd\Service\ScanService;
 use OCA\Cwyd\TextProcessing\CwydTaskType;
-use OCP\TextProcessing\Task;
 use OCP\TextProcessing\IManager;
+use OCP\TextProcessing\Task;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class Prompt extends Command {
