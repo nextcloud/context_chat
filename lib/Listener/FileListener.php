@@ -108,7 +108,7 @@ class FileListener implements IEventListener {
 			 */
 			$userIds = array_keys($accessList['users']);
 
-			if ($node instanceof File) {
+			if ($node instanceof Folder) {
 				$mount = $node->getMountPoint();
 				if ($mount->getNumericStorageId() === null) {
 					return;
