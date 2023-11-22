@@ -116,6 +116,9 @@ class FileListener implements IEventListener {
 				$files = $this->storageService->getFilesInMount($mount->getNumericStorageId(), $node->getId(), 0, 0);
 				foreach ($files as $fileId) {
 					$node = current($this->rootFolder->getById($fileId));
+					if (!$node instanceof File) {
+						continue;
+					}
 					try {
 						$fileHandle = $node->fopen('r');
 					} catch (LockedException|NotPermittedException $e) {
