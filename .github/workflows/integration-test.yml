@@ -137,13 +137,15 @@ jobs:
           pip install --no-deps -r reqs.txt
           cp example.env .env
           echo "DISABLE_CUSTOM_DOWNLOAD_URI=1" >> .env
+          echo "NEXTCLOUD_URL=http://localhost:8080" >> .env
           curl -L https://huggingface.co/TheBloke/dolphin-2.2.1-mistral-7B-GGUF/resolve/main/dolphin-2.2.1-mistral-7b.Q5_K_M.gguf -o model_files/dolphin-2.2.1-mistral-7b.Q5_K_M.gguf
           ./main.py &
 
       - name: Install and init backend
         run: |
           ./occ app_api:daemon:register --net host manual_install "Manual Install" manual-install http null http://localhost:8080
-          ./occ app_api:app:register schackles manual_install --json-info "{\"appid\":\"schackles\",\"name\":\"Chat With Your Documents Backend\",\"daemon_config_name\":\"manual_install\",\"version\":\"1.0.0\",\"secret\":\"12345\",\"host\":\"localhost\",\"port\":10034,\"scopes\":{\"required\":[],\"optional\":[]},\"protocol\":\"http\",\"system_app\":0}" --force-scopes
+          # '&' because app:register has a bug that causes it to stall forever...
+          ./occ app_api:app:register schackles manual_install --json-info "{\"appid\":\"schackles\",\"name\":\"Chat With Your Documents Backend\",\"daemon_config_name\":\"manual_install\",\"version\":\"1.0.0\",\"secret\":\"12345\",\"host\":\"localhost\",\"port\":10034,\"scopes\":{\"required\":[],\"optional\":[]},\"protocol\":\"http\",\"system_app\":0}" --force-scopes &
 
       - name: Show log on failure
         if: always()
