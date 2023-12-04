@@ -39,7 +39,7 @@ class CwydTaskType implements ITaskType {
 	 * @since 27.1.0
 	 */
 	public function getName(): string {
-		return $this->l->t('Chat with your documents');
+		return $this->l->t('Context Chat');
 	}
 
 	/**

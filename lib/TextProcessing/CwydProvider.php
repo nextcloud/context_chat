@@ -23,7 +23,7 @@ class CwydProvider implements IProvider, IProviderWithUserId {
 	}
 
 	public function getName(): string {
-		return $this->l10n->t('Chat with your documents');
+		return $this->l10n->t('Nextcloud Assistant Context Chat provider');
 	}
 
 	public function process(string $prompt): string {

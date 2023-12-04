@@ -30,7 +30,7 @@ class Prompt extends Command {
 
 	protected function configure() {
 		$this->setName('cwyd:prompt')
-			->setDescription('Prompt Chat with your documents')
+			->setDescription('Prompt Nextcloud Assistant Context Chat')
 			->addArgument(
 				'user_id',
 				InputArgument::REQUIRED,

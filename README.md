@@ -1,3 +1,3 @@
-# Chat with your documents
+# Nextcloud Assistant Context Chat
 
 NYI
