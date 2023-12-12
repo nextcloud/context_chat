@@ -5,11 +5,11 @@
  */
 declare(strict_types=1);
 
-namespace OCA\Cwyd\Service;
+namespace OCA\ContextChat\Service;
 
-use OCA\Cwyd\BackgroundJobs\IndexerJob;
-use OCA\Cwyd\Db\QueueFile;
-use OCA\Cwyd\Db\QueueMapper;
+use OCA\ContextChat\BackgroundJobs\IndexerJob;
+use OCA\ContextChat\Db\QueueFile;
+use OCA\ContextChat\Db\QueueMapper;
 use OCP\BackgroundJob\IJobList;
 
 class QueueService {

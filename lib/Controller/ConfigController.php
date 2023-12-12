@@ -1,6 +1,6 @@
 <?php
 /**
- * Nextcloud - Cwyd
+ * Nextcloud - ContextChat
  *
  * This file is licensed under the Affero General Public License version 3 or
  * later. See the COPYING file.
@@ -9,9 +9,9 @@
  * @copyright Julien Veyssier 2022
  */
 
-namespace OCA\Cwyd\Controller;
+namespace OCA\ContextChat\Controller;
 
-use OCA\Cwyd\AppInfo\Application;
+use OCA\ContextChat\AppInfo\Application;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\DataResponse;

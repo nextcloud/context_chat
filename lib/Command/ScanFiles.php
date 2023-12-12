@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Nextcloud - Cwyd
+ * Nextcloud - ContextChat
  *
  * This file is licensed under the Affero General Public License version 3 or
  * later. See the COPYING file.
@@ -10,10 +10,10 @@
  * @copyright Julien Veyssier 2023
  */
 
-namespace OCA\Cwyd\Command;
+namespace OCA\ContextChat\Command;
 
-use OCA\Cwyd\AppInfo\Application;
-use OCA\Cwyd\Service\ScanService;
+use OCA\ContextChat\AppInfo\Application;
+use OCA\ContextChat\Service\ScanService;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -29,7 +29,7 @@ class ScanFiles extends Command {
 	}
 
 	protected function configure() {
-		$this->setName('cwyd:scan')
+		$this->setName('context_chat:scan')
 			->setDescription('Scan user files')
 			->addArgument(
 				'user_id',

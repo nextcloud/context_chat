@@ -23,7 +23,7 @@ on:
       - tests/**
 
 env:
-  APP_NAME: cwyd
+  APP_NAME: context_chat
 
 jobs:
   php:

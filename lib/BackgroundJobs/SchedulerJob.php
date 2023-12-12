@@ -5,9 +5,9 @@
  * This file is licensed under the Affero General Public License version 3 or later. See the COPYING file.
  */
 declare(strict_types=1);
-namespace OCA\Cwyd\BackgroundJobs;
+namespace OCA\ContextChat\BackgroundJobs;
 
-use OCA\Cwyd\Service\StorageService;
+use OCA\ContextChat\Service\StorageService;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\IJobList;
 use OCP\BackgroundJob\QueuedJob;

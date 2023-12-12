@@ -5,7 +5,7 @@
  * This file is licensed under the Affero General Public License version 3 or later. See the COPYING file.
  */
 declare(strict_types=1);
-namespace OCA\Cwyd\Migration;
+namespace OCA\ContextChat\Migration;
 
 use Closure;
 use OCP\DB\ISchemaWrapper;
@@ -34,8 +34,8 @@ class Version001000000Date20231102094721 extends SimpleMigrationStep {
 		/** @var ISchemaWrapper $schema */
 		$schema = $schemaClosure();
 
-		if (!$schema->hasTable('cwyd_queue')) {
-			$table = $schema->createTable('cwyd_queue');
+		if (!$schema->hasTable('context_chat_queue')) {
+			$table = $schema->createTable('context_chat_queue');
 			$table->addColumn('id', 'bigint', [
 				'autoincrement' => true,
 				'notnull' => true,
@@ -56,9 +56,9 @@ class Version001000000Date20231102094721 extends SimpleMigrationStep {
 			$table->addColumn('update', 'boolean', [
 				'notnull' => false,
 			]);
-			$table->setPrimaryKey(['id'], 'cwyd_q_id');
-			$table->addIndex(['file_id'], 'cwyd_q_file');
-			$table->addIndex(['storage_id', 'root_id'], 'cwyd_q_storage');
+			$table->setPrimaryKey(['id'], 'context_chat_q_id');
+			$table->addIndex(['file_id'], 'context_chat_q_file');
+			$table->addIndex(['storage_id', 'root_id'], 'context_chat_q_storage');
 		}
 
 		return $schema;

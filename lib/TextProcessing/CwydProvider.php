@@ -1,18 +1,18 @@
 <?php
 
 declare(strict_types=1);
-namespace OCA\Cwyd\TextProcessing;
+namespace OCA\ContextChat\TextProcessing;
 
-use OCA\Cwyd\Service\LangRopeService;
+use OCA\ContextChat\Service\LangRopeService;
 use OCP\IL10N;
 use OCP\TextProcessing\IProvider;
 use OCP\TextProcessing\IProviderWithUserId;
 
 /**
- * @template-implements IProviderWithUserId<CwydTaskType>
- * @template-implements IProvider<CwydTaskType>
+ * @template-implements IProviderWithUserId<ContextChatTaskType>
+ * @template-implements IProvider<ContextChatTaskType>
  */
-class CwydProvider implements IProvider, IProviderWithUserId {
+class ContextChatProvider implements IProvider, IProviderWithUserId {
 
 	private ?string $userId = null;
 
@@ -29,13 +29,13 @@ class CwydProvider implements IProvider, IProviderWithUserId {
 	public function process(string $prompt): string {
 		$response = $this->langRopeService->query($this->userId, $prompt);
 		if (isset($response['error'])) {
-			throw new \RuntimeException('No result in Cwyd response. ' . $response['error']);
+			throw new \RuntimeException('No result in ContextChat response. ' . $response['error']);
 		}
 		return $response['message'] ?? '';
 	}
 
 	public function getTaskType(): string {
-		return CwydTaskType::class;
+		return ContextChatTaskType::class;
 	}
 
 	public function setUserId(?string $userId): void {

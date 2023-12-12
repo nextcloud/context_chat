@@ -1,17 +1,17 @@
 <?php
 /**
- * Nextcloud - Cwyd
+ * Nextcloud - ContextChat
  *
  *
  * @author Julien Veyssier <julien-nc@posteo.net>
  * @copyright Julien Veyssier 2023
  */
 
-namespace OCA\Cwyd\AppInfo;
+namespace OCA\ContextChat\AppInfo;
 
-use OCA\Cwyd\Listener\FileListener;
-use OCA\Cwyd\TextProcessing\CwydProvider;
-use OCA\Cwyd\TextProcessing\FreePromptProvider;
+use OCA\ContextChat\Listener\FileListener;
+use OCA\ContextChat\TextProcessing\ContextChatProvider;
+use OCA\ContextChat\TextProcessing\FreePromptProvider;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
 use OCP\AppFramework\Bootstrap\IBootstrap;
@@ -26,7 +26,7 @@ use OCP\Share\Events\ShareDeletedEvent;
 
 class Application extends App implements IBootstrap {
 
-	public const APP_ID = 'cwyd';
+	public const APP_ID = 'context_chat';
 
 	public const CWYD_DEFAULT_REQUEST_TIMEOUT = 60 * 50;
 	// max size per file + max size of the batch of files to be embedded in a single request
@@ -50,7 +50,7 @@ class Application extends App implements IBootstrap {
 		$context->registerEventListener(CacheEntryInsertedEvent::class, FileListener::class);
 		$context->registerEventListener(NodeRemovedFromCache::class, FileListener::class);
 		$context->registerEventListener(NodeWrittenEvent::class, FileListener::class);
-		$context->registerTextProcessingProvider(CwydProvider::class);
+		$context->registerTextProcessingProvider(ContextChatProvider::class);
 		$context->registerTextProcessingProvider(FreePromptProvider::class);
 	}
 

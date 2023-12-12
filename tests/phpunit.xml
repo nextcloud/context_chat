@@ -9,7 +9,7 @@
       <clover outputFile="./clover.xml"/>
     </report>
   </coverage>
-  <testsuite name="Cwyd App Tests">
+  <testsuite name="ContextChat App Tests">
     <directory suffix="Test.php">.</directory>
   </testsuite>
   <!-- filters for code coverage -->

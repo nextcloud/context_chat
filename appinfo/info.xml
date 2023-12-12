@@ -4,35 +4,35 @@
     <name>Nextcloud Assistant Context Chat</name>
     <summary>Chat with your documents</summary>
     <description><![CDATA[
-    Plop
+    Ask questions to nextcloud Assistant about the content of your documents.
 ]]></description>
     <version>1.0.0</version>
     <licence>agpl</licence>
     <author>Julien Veyssier</author>
-    <namespace>Cwyd</namespace>
+    <namespace>ContextChat</namespace>
     <documentation>
-        <developer>https://github.com/nextcloud/cwyd</developer>
+        <developer>https://github.com/nextcloud/context_chat</developer>
     </documentation>
     <category>integration</category>
-    <website>https://github.com/nextcloud/cwyd</website>
-    <bugs>https://github.com/nextcloud/cwyd/issues</bugs>
-    <screenshot>https://github.com/nextcloud/cwyd/raw/main/img/screenshot1.jpg</screenshot>
-    <screenshot>https://github.com/nextcloud/cwyd/raw/main/img/screenshot2.jpg</screenshot>
-    <screenshot>https://github.com/nextcloud/cwyd/raw/main/img/screenshot3.jpg</screenshot>
+    <website>https://github.com/nextcloud/context_chat</website>
+    <bugs>https://github.com/nextcloud/context_chat/issues</bugs>
+    <screenshot>https://github.com/nextcloud/context_chat/raw/main/img/screenshot1.jpg</screenshot>
+    <screenshot>https://github.com/nextcloud/context_chat/raw/main/img/screenshot2.jpg</screenshot>
+    <screenshot>https://github.com/nextcloud/context_chat/raw/main/img/screenshot3.jpg</screenshot>
     <dependencies>
         <nextcloud min-version="28" max-version="28"/>
     </dependencies>
     <background-jobs>
-		<job>OCA\Cwyd\BackgroundJobs\SchedulerJob</job>
+		<job>OCA\ContextChat\BackgroundJobs\SchedulerJob</job>
 	</background-jobs>
 	<commands>
-		<command>OCA\Cwyd\Command\ScanFiles</command>
-		<command>OCA\Cwyd\Command\Prompt</command>
+		<command>OCA\ContextChat\Command\ScanFiles</command>
+		<command>OCA\ContextChat\Command\Prompt</command>
 	</commands>
     <!--settings>
-        <admin>OCA\Cwyd\Settings\Admin</admin>
-        <admin-section>OCA\Cwyd\Settings\AdminSection</admin-section>
-        <personal>OCA\Cwyd\Settings\Personal</personal>
-        <personal-section>OCA\Cwyd\Settings\PersonalSection</personal-section>
+        <admin>OCA\ContextChat\Settings\Admin</admin>
+        <admin-section>OCA\ContextChat\Settings\AdminSection</admin-section>
+        <personal>OCA\ContextChat\Settings\Personal</personal>
+        <personal-section>OCA\ContextChat\Settings\PersonalSection</personal-section>
     </settings-->
 </info>

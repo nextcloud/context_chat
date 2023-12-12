@@ -1,5 +1,5 @@
 {
-	"name": "nextcloud/cwyd",
+	"name": "nextcloud/context_chat",
 	"description": "CWYD Companion App",
 	"type": "project",
 	"license": "AGPL-3.0-or-later",
@@ -46,7 +46,7 @@
 	},
 	"autoload": {
 		"psr-4": {
-			"OCA\\Cwyd\\": "lib/"
+			"OCA\\ContextChat\\": "lib/"
 		}
 	},
 	"autoload-dev": {

@@ -1,6 +1,6 @@
 <?php
 /**
- * Nextcloud - Cwyd
+ * Nextcloud - ContextChat
  *
  * This file is licensed under the Affero General Public License version 3 or
  * later. See the COPYING file.
@@ -10,10 +10,10 @@
  * @copyright Julien Veyssier 2023
  */
 
-namespace OCA\Cwyd\Service;
+namespace OCA\ContextChat\Service;
 
-use OCA\Cwyd\AppInfo\Application;
-use OCA\Cwyd\Type\Source;
+use OCA\ContextChat\AppInfo\Application;
+use OCA\ContextChat\Type\Source;
 use OCP\Files\File;
 use OCP\Files\Folder;
 use OCP\Files\IRootFolder;

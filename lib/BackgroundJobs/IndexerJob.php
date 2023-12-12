@@ -5,13 +5,13 @@
  */
 declare(strict_types=1);
 
-namespace OCA\Cwyd\BackgroundJobs;
+namespace OCA\ContextChat\BackgroundJobs;
 
-use OCA\Cwyd\Db\QueueFile;
-use OCA\Cwyd\Service\LangRopeService;
-use OCA\Cwyd\Service\QueueService;
-use OCA\Cwyd\Service\StorageService;
-use OCA\Cwyd\Type\Source;
+use OCA\ContextChat\Db\QueueFile;
+use OCA\ContextChat\Service\LangRopeService;
+use OCA\ContextChat\Service\QueueService;
+use OCA\ContextChat\Service\StorageService;
+use OCA\ContextChat\Type\Source;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\IJobList;
 use OCP\BackgroundJob\TimedJob;

@@ -23,12 +23,12 @@ declare(strict_types=1);
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-namespace OCA\Cwyd\TextProcessing;
+namespace OCA\ContextChat\TextProcessing;
 
 use OCP\IL10N;
 use OCP\TextProcessing\ITaskType;
 
-class CwydTaskType implements ITaskType {
+class ContextChatTaskType implements ITaskType {
 	public function __construct(
 		private IL10N $l,
 	) {

@@ -5,7 +5,7 @@
  * This file is licensed under the Affero General Public License version 3 or later. See the COPYING file.
  */
 declare(strict_types=1);
-namespace OCA\Cwyd\Db;
+namespace OCA\ContextChat\Db;
 
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\AppFramework\Db\MultipleObjectsReturnedException;
@@ -24,7 +24,7 @@ class QueueMapper extends QBMapper {
 	protected $db;
 
 	public function __construct(IDBConnection $db) {
-		parent::__construct($db, 'cwyd_queue', QueueFile::class);
+		parent::__construct($db, 'context_chat_queue', QueueFile::class);
 	}
 
 	/**

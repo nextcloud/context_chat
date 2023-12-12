@@ -6,7 +6,7 @@
  */
 declare(strict_types=1);
 
-namespace OCA\Cwyd\Service;
+namespace OCA\ContextChat\Service;
 
 use OC\Files\Cache\CacheQueryBuilder;
 use OC\SystemConfig;

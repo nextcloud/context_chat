@@ -1,9 +1,9 @@
 <?php
 
 declare(strict_types=1);
-namespace OCA\Cwyd\TextProcessing;
+namespace OCA\ContextChat\TextProcessing;
 
-use OCA\Cwyd\Service\LangRopeService;
+use OCA\ContextChat\Service\LangRopeService;
 use OCP\IL10N;
 use OCP\TextProcessing\FreePromptTaskType;
 use OCP\TextProcessing\IProvider;
@@ -30,7 +30,7 @@ class FreePromptProvider implements IProvider, IProviderWithUserId {
 	public function process(string $prompt): string {
 		$response = $this->langRopeService->query($this->userId, $prompt);
 		if (isset($response['error'])) {
-			throw new \RuntimeException('No result in Cwyd response. ' . $response['error']);
+			throw new \RuntimeException('No result in ContextChat response. ' . $response['error']);
 		}
 		return $response['message'] ?? '';
 	}

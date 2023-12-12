@@ -1,7 +1,7 @@
 {
-	"name": "cwyd",
+	"name": "context_chat",
 	"version": "0.0.1",
-	"description": "Cwyd",
+	"description": "ContextChat",
 	"main": "index.js",
 	"directories": {
 		"test": "tests"
@@ -17,7 +17,7 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/julien-nc/cwyd"
+		"url": "https://github.com/nextcloud/context_chat"
 	},
 	"keywords": [
 		"ai"
@@ -25,9 +25,9 @@
 	"author": "Julien Veyssier",
 	"license": "AGPL-3.0",
 	"bugs": {
-		"url": "https://github.com/julien-nc/cwyd/issues"
+		"url": "https://github.com/nextcloud/context_chat/issues"
 	},
-	"homepage": "https://github.com/julien-nc/cwyd",
+	"homepage": "https://github.com/nextcloud/context_chat",
 	"browserslist": [
 		"extends @nextcloud/browserslist-config"
 	],

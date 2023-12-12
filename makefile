@@ -1,4 +1,4 @@
-app_name=cwyd
+app_name=context_chat
 app_version=$(version)
 project_dir=.
 build_dir=/tmp/build

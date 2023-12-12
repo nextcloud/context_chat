@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Nextcloud - Cwyd
+ * Nextcloud - ContextChat
  *
  * This file is licensed under the Affero General Public License version 3 or
  * later. See the COPYING file.
@@ -10,9 +10,9 @@
  * @copyright Julien Veyssier 2023
  */
 
-namespace OCA\Cwyd\Command;
+namespace OCA\ContextChat\Command;
 
-use OCA\Cwyd\TextProcessing\CwydTaskType;
+use OCA\ContextChat\TextProcessing\ContextChatTaskType;
 use OCP\TextProcessing\IManager;
 use OCP\TextProcessing\Task;
 use Symfony\Component\Console\Command\Command;
@@ -29,7 +29,7 @@ class Prompt extends Command {
 	}
 
 	protected function configure() {
-		$this->setName('cwyd:prompt')
+		$this->setName('context_chat:prompt')
 			->setDescription('Prompt Nextcloud Assistant Context Chat')
 			->addArgument(
 				'user_id',
@@ -46,7 +46,7 @@ class Prompt extends Command {
 	protected function execute(InputInterface $input, OutputInterface $output) {
 		$userId = $input->getArgument('user_id');
 		$prompt = $input->getArgument('prompt');
-		$task = new Task(CwydTaskType::class, $prompt, 'cwyd', $userId);
+		$task = new Task(ContextChatTaskType::class, $prompt, 'context_chat', $userId);
 
 		$this->textProcessingManager->runTask($task);
 		$output->writeln($task->getOutput());

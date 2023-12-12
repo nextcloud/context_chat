@@ -5,13 +5,13 @@
  * This file is licensed under the Affero General Public License version 3 or later. See the COPYING file.
  */
 declare(strict_types=1);
-namespace OCA\Cwyd\Listener;
+namespace OCA\ContextChat\Listener;
 
-use OCA\Cwyd\Db\QueueFile;
-use OCA\Cwyd\Service\LangRopeService;
-use OCA\Cwyd\Service\QueueService;
-use OCA\Cwyd\Service\StorageService;
-use OCA\Cwyd\Type\Source;
+use OCA\ContextChat\Db\QueueFile;
+use OCA\ContextChat\Service\LangRopeService;
+use OCA\ContextChat\Service\QueueService;
+use OCA\ContextChat\Service\StorageService;
+use OCA\ContextChat\Type\Source;
 use OCP\DB\Exception;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;

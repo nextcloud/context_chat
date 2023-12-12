@@ -5,14 +5,14 @@
  * This file is licensed under the Affero General Public License version 3 or later. See the COPYING file.
  */
 declare(strict_types=1);
-namespace OCA\Cwyd\Db;
+namespace OCA\ContextChat\Db;
 
 use OCP\AppFramework\Db\Entity;
 
 /**
  * Class QueueFile
  *
- * @package OCA\Cwyd\Db
+ * @package OCA\ContextChat\Db
  * @method int getFileId()
  * @method setFileId(int $fileId)
  * @method int getStorageId()

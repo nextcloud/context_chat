@@ -1,6 +1,6 @@
 <?php
 /**
- * Nextcloud - Cwyd
+ * Nextcloud - ContextChat
  *
  * This file is licensed under the Affero General Public License version 3 or
  * later. See the COPYING file.
@@ -9,7 +9,7 @@
  * @copyright Anupam Kumar 2023
  */
 
-namespace OCA\Cwyd\Type;
+namespace OCA\ContextChat\Type;
 
 class Source {
 	public function __construct(

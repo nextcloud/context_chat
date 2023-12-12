@@ -13,7 +13,7 @@ webpackConfig.stats = {
 	modules: false,
 }
 
-// const appId = 'cwyd'
+// const appId = 'context_chat'
 webpackConfig.entry = {
 }
 
