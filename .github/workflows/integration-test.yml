@@ -20,7 +20,7 @@ concurrency:
 
 jobs:
   transcription:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
     strategy:
       # do not stop on another job's failure
@@ -28,7 +28,7 @@ jobs:
       matrix:
         php-versions: [ '8.1' ]
         databases: [ 'sqlite' ]
-        server-versions: [ 'master' ]
+        server-versions: [ 'master', 'stable28' ]
 
     name: Integration test on ${{ matrix.server-versions }} php@${{ matrix.php-versions }}
 
