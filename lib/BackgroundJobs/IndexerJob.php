@@ -125,7 +125,7 @@ class IndexerJob extends TimedJob {
 			$userIds = $this->storageService->getUsersForFileId($queueFile->getFileId());
 			foreach ($userIds as $userId) {
 				try {
-					$source = new Source($userId, 'file: ' . $file->getId(), $fileHandle, $file->getMtime(), $file->getMimeType());
+					$source = new Source($userId, 'file: ' . $file->getId(), $file->getName(), $fileHandle, $file->getMtime(), $file->getMimeType());
 				} catch (InvalidPathException|NotFoundException $e) {
 					$this->logger->error('Could not find file ' . $file->getPath(), ['exception' => $e]);
 					continue 2;
