@@ -24,6 +24,7 @@
 		"nextcloud/coding-standard": "^1.1",
 		"nextcloud/ocp": "dev-master",
 		"roave/security-advisories": "dev-latest",
+		"phpunit/phpunit": "^9.6",
 		"psalm/phar": "^5.15",
 		"friendsofphp/php-cs-fixer": "3.38"
 	},
@@ -35,7 +36,8 @@
 		"psalm:update-baseline": "psalm.phar --threads=1 --update-baseline",
 		"psalm:update-baseline:force": "psalm.phar --threads=1 --update-baseline --set-baseline=tests/psalm-baseline.xml",
 		"psalm:clear": "psalm.phar --clear-cache && psalm.phar --clear-global-cache",
-		"psalm:fix": "psalm.phar --alter --issues=InvalidReturnType,InvalidNullableReturnType,MissingParamType,InvalidFalsableReturnType"
+		"psalm:fix": "psalm.phar --alter --issues=InvalidReturnType,InvalidNullableReturnType,MissingParamType,InvalidFalsableReturnType",
+		"test": "phpunit --configuration tests/phpunit.xml"
 	},
 	"config": {
 		"optimize-autoloader": true,
