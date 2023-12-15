@@ -10,6 +10,7 @@ namespace OCA\ContextChat\Service;
 
 use OC\Files\Cache\CacheQueryBuilder;
 use OC\SystemConfig;
+use OCA\ContextChat\AppInfo\Application;
 use OCP\DB\Exception;
 use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\Files\Config\ICachedMountInfo;
@@ -30,10 +31,6 @@ class StorageService {
 	public const HOME_MOUNT_TYPES = [
 		'OC\Files\Mount\LocalHomeMountProvider',
 		'OC\Files\Mount\ObjectHomeMountProvider',
-	];
-
-	public const MIME_TYPES = [
-		'text/plain'
 	];
 
 	public function __construct(
@@ -117,7 +114,7 @@ class StorageService {
 			return;
 		}
 
-		$mimeTypes = array_map(fn ($mimeType) => $this->mimeTypes->getId($mimeType), self::MIME_TYPES);
+		$mimeTypes = array_map(fn ($mimeType) => $this->mimeTypes->getId($mimeType), Application::MIMETYPES);
 
 		$qb = $this->getCacheQueryBuilder();
 
