@@ -54,7 +54,7 @@ class ScanService {
 
 				$node_size = $node->getSize();
 
-				if ($size + $node_size > Application::CWYD_MAX_SIZE || count($sources) >= Application::CWYD_MAX_FILES) {
+				if ($size + $node_size > Application::CC_MAX_SIZE || count($sources) >= Application::CC_MAX_FILES) {
 					$this->indexSources($userId, $sources);
 					$sources = [];
 					$size = 0;
