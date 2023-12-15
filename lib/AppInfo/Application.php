@@ -28,10 +28,10 @@ class Application extends App implements IBootstrap {
 
 	public const APP_ID = 'context_chat';
 
-	public const CWYD_DEFAULT_REQUEST_TIMEOUT = 60 * 120;
+	public const CC_DEFAULT_REQUEST_TIMEOUT = 60 * 120;
 	// max size per file + max size of the batch of files to be embedded in a single request
-	public const CWYD_MAX_SIZE = 20 * 1024 * 1024; // 20MB
-	public const CWYD_MAX_FILES = 100;
+	public const CC_MAX_SIZE = 20 * 1024 * 1024; // 20MB
+	public const CC_MAX_FILES = 100;
 	public const MIMETYPES = [
 		'text/plain',
 		'text/markdown',

@@ -150,7 +150,7 @@ class LangRopeService {
 				$exApp->getPort()
 			) . $route;
 
-			$timeout = $this->config->getAppValue(Application::APP_ID, 'request_timeout', Application::CWYD_DEFAULT_REQUEST_TIMEOUT) ?: Application::CWYD_DEFAULT_REQUEST_TIMEOUT;
+			$timeout = $this->config->getAppValue(Application::APP_ID, 'request_timeout', Application::CC_DEFAULT_REQUEST_TIMEOUT) ?: Application::CC_DEFAULT_REQUEST_TIMEOUT;
 
 			$options = [
 				'headers' => [
