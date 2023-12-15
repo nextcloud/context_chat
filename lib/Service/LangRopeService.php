@@ -20,6 +20,7 @@ use OCP\Http\Client\IClient;
 use OCP\Http\Client\IClientService;
 use OCP\IConfig;
 use OCP\IL10N;
+use OCP\IURLGenerator;
 use Psr\Log\LoggerInterface;
 
 class LangRopeService {
@@ -30,6 +31,7 @@ class LangRopeService {
 		private IL10N $l10n,
 		private IConfig $config,
 		private IAppManager $appManager,
+		private IURLGenerator $urlGenerator,
 		IClientService $clientService,
 	) {
 		$this->client = $clientService->newClient();
@@ -112,11 +114,11 @@ class LangRopeService {
 
 		$response = $this->requestToExApp($userId, $exApp, '/query', 'GET', $params);
 
-		if (is_array($response)) {
+		if (isset($response['error'])) {
 			return $response;
 		}
 
-		return ['error' => $this->l10n->t('Could not parse response from CWYD backend')];
+		return ['message' => $this->getWithPresentableSources($response['output'] ?? '', ...($response['sources'] ?? []))];
 	}
 
 	private static function getExAppUrl(string $protocol, string $host, int $port): string {
@@ -229,5 +231,21 @@ class LangRopeService {
 				'error' => $this->l10n->t('Error during request to ExApp') . $exApp->getAppid() . ': ' . $e->getMessage()
 			];
 		}
+	}
+
+	public function getWithPresentableSources(string $llmResponse, string ...$sourceRefs): string {
+		if (count($sourceRefs) === 0) {
+			return '';
+		}
+
+		$output = str_repeat(PHP_EOL, 3) . $this->l10n->t('Sources referenced to generate the above response:') . PHP_EOL;
+
+		foreach ($sourceRefs as $source) {
+			if (str_starts_with($source, 'file: ') && is_numeric($fileId = substr($source, 6))) {
+				$output .= $this->urlGenerator->linkToRouteAbsolute('files.View.showFile', ['fileid' => $fileId]) . PHP_EOL;
+			}
+		}
+
+		return $llmResponse . $output;
 	}
 }
