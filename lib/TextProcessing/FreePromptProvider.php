@@ -28,7 +28,7 @@ class FreePromptProvider implements IProvider, IProviderWithUserId {
 	}
 
 	public function process(string $prompt): string {
-		$response = $this->langRopeService->query($this->userId, $prompt);
+		$response = $this->langRopeService->query($this->userId, $prompt, false);
 		if (isset($response['error'])) {
 			throw new \RuntimeException('No result in ContextChat response. ' . $response['error']);
 		}
