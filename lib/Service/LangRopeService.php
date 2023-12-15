@@ -49,7 +49,7 @@ class LangRopeService {
 
 	/**
 	 * @param string $userId
-	 * @param Source[] $sourceNames
+	 * @param string[] $sourceNames
 	 * @return void
 	 */
 	public function deleteSources(string $userId, array $sourceNames): void {

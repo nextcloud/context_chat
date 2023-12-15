@@ -7,11 +7,11 @@
 declare(strict_types=1);
 namespace OCA\ContextChat\Listener;
 
+use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\Db\QueueFile;
 use OCA\ContextChat\Service\LangRopeService;
 use OCA\ContextChat\Service\QueueService;
 use OCA\ContextChat\Service\StorageService;
-use OCA\ContextChat\Type\Source;
 use OCP\DB\Exception;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -27,8 +27,6 @@ use OCP\Files\InvalidPathException;
 use OCP\Files\IRootFolder;
 use OCP\Files\Node;
 use OCP\Files\NotFoundException;
-use OCP\Files\NotPermittedException;
-use OCP\Lock\LockedException;
 use OCP\Share\Events\ShareCreatedEvent;
 use OCP\Share\Events\ShareDeletedEvent;
 use OCP\Share\IManager;
@@ -98,6 +96,7 @@ class FileListener implements IEventListener {
 				}
 			}
 		}
+
 		if ($event instanceof ShareDeletedEvent) {
 			$share = $event->getShare();
 			$node = $share->getNode();
@@ -114,53 +113,44 @@ class FileListener implements IEventListener {
 					return;
 				}
 				$files = $this->storageService->getFilesInMount($mount->getNumericStorageId(), $node->getId(), 0, 0);
+				$fileRefs = [];
+
 				foreach ($files as $fileId) {
 					$node = current($this->rootFolder->getById($fileId));
 					if (!$node instanceof File) {
 						continue;
 					}
-					try {
-						$fileHandle = $node->fopen('r');
-					} catch (LockedException|NotPermittedException $e) {
-						$this->logger->error('Could not open file ' . $node->getPath() . ' for reading', ['exception' => $e]);
-						return;
+
+					if (!$this->allowedMimeType($node)) {
+						continue;
 					}
-					foreach ($userIds as $userId) {
-						try {
-							$source = new Source($userId, 'file: ' . $node->getId(), $node->getName(), $fileHandle, $node->getMtime(), $node->getMimeType());
-						} catch (InvalidPathException|NotFoundException $e) {
-							$this->logger->error('Could not find file ' . $node->getPath(), ['exception' => $e]);
-							break;
-						}
-						$this->langRopeService->deleteSources($userId, [$source]);
-					}
+
+					$fileRefs[] = 'file: ' . $node->getId();
 				}
+
+				$this->langRopeService->deleteSources($userId, $fileRefs);
 			} else {
-				try {
-					$fileHandle = $node->fopen('r');
-				} catch (LockedException|NotPermittedException $e) {
-					$this->logger->error('Could not open file ' . $node->getPath() . ' for reading', ['exception' => $e]);
+				if (!$this->allowedMimeType($node)) {
 					return;
 				}
+
+				$fileRef = 'file: ' . $node->getId();
 				foreach ($userIds as $userId) {
-					try {
-						$source = new Source($userId, 'file: ' . $node->getId(), $node->getName(), $fileHandle, $node->getMtime(), $node->getMimeType());
-					} catch (InvalidPathException|NotFoundException $e) {
-						$this->logger->error('Could not find file ' . $node->getPath(), ['exception' => $e]);
-						break;
-					}
-					$this->langRopeService->deleteSources($userId, [$source]);
+					$this->langRopeService->deleteSources($userId, [$fileRef]);
 				}
 			}
 		}
+
 		if ($event instanceof BeforeNodeDeletedEvent) {
 			$this->postDelete($event->getNode(), false);
 			return;
 		}
+
 		if ($event instanceof NodeCreatedEvent) {
 			$this->postInsert($event->getNode(), false);
 			return;
 		}
+
 		if ($event instanceof CacheEntryInsertedEvent) {
 			$node = current($this->rootFolder->getById($event->getFileId()));
 			if ($node === false) {
@@ -172,6 +162,7 @@ class FileListener implements IEventListener {
 			$this->postInsert($node);
 			return;
 		}
+
 		if ($event instanceof NodeRemovedFromCache) {
 			$cacheEntry = $event->getStorage()->getCache()->get($event->getPath());
 			if ($cacheEntry === false) {
@@ -198,24 +189,18 @@ class FileListener implements IEventListener {
 					$this->postDelete($child);
 				}
 			} catch (NotFoundException $e) {
-				$this->logger->debug($e->getMessage(), ['exception' => $e]);
+				$this->logger->warning($e->getMessage(), ['exception' => $e]);
 			}
 			return;
 		}
-		try {
-			$fileHandle = $node->fopen('r');
-		} catch (LockedException|NotPermittedException $e) {
-			$this->logger->error('Could not open file ' . $node->getPath() . ' for reading', ['exception' => $e]);
+
+		if (!$this->allowedMimeType($node)) {
 			return;
 		}
+
 		foreach ($this->storageService->getUsersForFileId($node->getId()) as $userId) {
-			try {
-				$source = new Source($userId, 'file: ' . $node->getId(), $node->getName(), $fileHandle, $node->getMtime(), $node->getMimeType());
-			} catch (InvalidPathException|NotFoundException $e) {
-				$this->logger->error('Could not find file ' . $node->getPath(), ['exception' => $e]);
-				break;
-			}
-			$this->langRopeService->deleteSources($userId, [$source]);
+			$fileRef = 'file: ' . $node->getId();
+			$this->langRopeService->deleteSources($userId, [$fileRef]);
 		}
 	}
 
@@ -235,8 +220,12 @@ class FileListener implements IEventListener {
 					$this->postInsert($child);
 				}
 			} catch (NotFoundException $e) {
-				$this->logger->debug($e->getMessage(), ['exception' => $e]);
+				$this->logger->warning($e->getMessage(), ['exception' => $e]);
 			}
+			return;
+		}
+
+		if (!$this->allowedMimeType($node)) {
 			return;
 		}
 
@@ -259,7 +248,11 @@ class FileListener implements IEventListener {
 			$this->queue->insertIntoQueue($queueFile);
 		} catch (Exception $e) {
 			$this->logger->error('Failed to add file to queue', ['exception' => $e]);
-			return;
 		}
+	}
+
+	private function allowedMimeType(File $file) {
+		$mimeType = $file->getMimeType();
+		return in_array($mimeType, Application::MIMETYPES, true);
 	}
 }
