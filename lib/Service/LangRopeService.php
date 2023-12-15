@@ -97,10 +97,11 @@ class LangRopeService {
 		$this->requestToExApp($userId, $exApp, '/loadSources', 'PUT', $params, 'multipart/form-data');
 	}
 
-	public function query(string $userId, string $prompt): array {
+	public function query(string $userId, string $prompt, bool $useContext = true): array {
 		$params = [
 			'query' => $prompt,
 			'userId' => $userId,
+			'useContext' => $useContext,
 		];
 
 		$exApp = $this->getExApp();
