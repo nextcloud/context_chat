@@ -120,11 +120,6 @@ class FileListener implements IEventListener {
 					if (!$node instanceof File) {
 						continue;
 					}
-
-					if (!$this->allowedMimeType($node)) {
-						continue;
-					}
-
 					$fileRefs[] = 'file: ' . $node->getId();
 				}
 
