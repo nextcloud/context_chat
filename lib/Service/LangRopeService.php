@@ -235,7 +235,7 @@ class LangRopeService {
 
 	public function getWithPresentableSources(string $llmResponse, string ...$sourceRefs): string {
 		if (count($sourceRefs) === 0) {
-			return '';
+			return $llmResponse;
 		}
 
 		$output = str_repeat(PHP_EOL, 3) . $this->l10n->t('Sources referenced to generate the above response:') . PHP_EOL;
