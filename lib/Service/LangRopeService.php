@@ -43,7 +43,7 @@ class LangRopeService {
 			return null;
 		}
 
-		$exApp = \OCP\Server::get(\OCA\AppAPI\Service\AppAPIService::class)->getExApp('schackles');
+		$exApp = \OCP\Server::get(\OCA\AppAPI\Service\AppAPIService::class)->getExApp('context_chat_backend');
 		return $exApp;
 	}
 

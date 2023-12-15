@@ -1,6 +1,6 @@
 {
 	"name": "nextcloud/context_chat",
-	"description": "CWYD Companion App",
+	"description": "Context Chat Companion App",
 	"type": "project",
 	"license": "AGPL-3.0-or-later",
 	"authors": [

@@ -83,8 +83,8 @@ jobs:
       - name: Checkout backend
         uses: actions/checkout@v2
         with:
-          repository: kyteinsky/cwyd_backend
-          path: cwyd_backend/
+          repository: nextcloud/context_chat_backend
+          path: context_chat_backend/
 
       - name: Read package.json node and npm engines version
         uses: skjnldsv/read-package-engines-version-actions@v1.1
@@ -136,7 +136,7 @@ jobs:
 
       - name: Install and init backend
         run: |
-          cd cwyd_backend
+          cd context_chat_backend
           python3 -m venv .venv
           . .venv/bin/activate
           pip install --no-deps -r reqs.txt
@@ -150,7 +150,7 @@ jobs:
         run: |
           ./occ app_api:daemon:register --net host manual_install "Manual Install" manual-install http null http://localhost:8080
           # '&' because app:register has a bug that causes it to stall forever...
-          ./occ app_api:app:register schackles manual_install --json-info "{\"appid\":\"schackles\",\"name\":\"Nextcloud Assistant Context Chat Backend\",\"daemon_config_name\":\"manual_install\",\"version\":\"1.0.0\",\"secret\":\"12345\",\"host\":\"localhost\",\"port\":10034,\"scopes\":{\"required\":[],\"optional\":[]},\"protocol\":\"http\",\"system_app\":0}" --force-scopes &
+          ./occ app_api:app:register context_chat_backend manual_install --json-info "{\"appid\":\"context_chat_backend\",\"name\":\"Nextcloud Assistant Context Chat Backend\",\"daemon_config_name\":\"manual_install\",\"version\":\"1.0.0\",\"secret\":\"12345\",\"host\":\"localhost\",\"port\":10034,\"scopes\":{\"required\":[],\"optional\":[]},\"protocol\":\"http\",\"system_app\":0}" --force-scopes &
 
       - name: Checkout documentation
         uses: actions/checkout@v2
