@@ -9,3 +9,5 @@ js/
 node_modules
 
 /vendor/
+tests/clover.xml
+tests/.phpunit.result.cache
