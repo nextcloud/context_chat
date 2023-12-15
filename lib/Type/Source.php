@@ -15,6 +15,7 @@ class Source {
 	public function __construct(
 		public string $userId,
 		public string $reference,
+		public string $title,
 		public mixed $content,
 		public int | string $modified,
 		public string $type,

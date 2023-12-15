@@ -84,6 +84,7 @@ class LangRopeService {
 				'contents' => $source->content,
 				'headers' => [
 					'userId' => $source->userId,
+					'title' => $source->title,
 					'type' => $source->type,
 					'modified' => $source->modified,
 				],

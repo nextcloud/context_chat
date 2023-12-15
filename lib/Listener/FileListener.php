@@ -127,7 +127,7 @@ class FileListener implements IEventListener {
 					}
 					foreach ($userIds as $userId) {
 						try {
-							$source = new Source($userId, 'file: ' . $node->getId(), $fileHandle, $node->getMtime(), $node->getMimeType());
+							$source = new Source($userId, 'file: ' . $node->getId(), $node->getName(), $fileHandle, $node->getMtime(), $node->getMimeType());
 						} catch (InvalidPathException|NotFoundException $e) {
 							$this->logger->error('Could not find file ' . $node->getPath(), ['exception' => $e]);
 							break;
@@ -144,7 +144,7 @@ class FileListener implements IEventListener {
 				}
 				foreach ($userIds as $userId) {
 					try {
-						$source = new Source($userId, 'file: ' . $node->getId(), $fileHandle, $node->getMtime(), $node->getMimeType());
+						$source = new Source($userId, 'file: ' . $node->getId(), $node->getName(), $fileHandle, $node->getMtime(), $node->getMimeType());
 					} catch (InvalidPathException|NotFoundException $e) {
 						$this->logger->error('Could not find file ' . $node->getPath(), ['exception' => $e]);
 						break;
@@ -210,7 +210,7 @@ class FileListener implements IEventListener {
 		}
 		foreach ($this->storageService->getUsersForFileId($node->getId()) as $userId) {
 			try {
-				$source = new Source($userId, 'file: ' . $node->getId(), $fileHandle, $node->getMtime(), $node->getMimeType());
+				$source = new Source($userId, 'file: ' . $node->getId(), $node->getName(), $fileHandle, $node->getMtime(), $node->getMimeType());
 			} catch (InvalidPathException|NotFoundException $e) {
 				$this->logger->error('Could not find file ' . $node->getPath(), ['exception' => $e]);
 				break;
