@@ -22,6 +22,7 @@ use OCP\IConfig;
 use OCP\IL10N;
 use OCP\IURLGenerator;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 class LangRopeService {
 	private IClient $client;
@@ -37,14 +38,32 @@ class LangRopeService {
 		$this->client = $clientService->newClient();
 	}
 
-	private function getExApp() {
+	private function requestToExApp(
+		?string $userId,
+		string $route,
+		string $method = 'POST',
+		array $params = [],
+		?string $contentType = null,
+	) {
 		if (!class_exists('\OCA\AppAPI\Db\ExApp')) {
 			$this->logger->error('ExApp class not found, please install the AppAPI app from the Nextcloud AppStore');
-			return null;
+			throw new RuntimeException($this->l10n->t('ExApp class not found, please install the AppAPI app from the Nextcloud AppStore'));
 		}
 
-		$exApp = \OCP\Server::get(\OCA\AppAPI\Service\AppAPIService::class)->getExApp('context_chat_backend');
-		return $exApp;
+		$appApiService = \OCP\Server::get(\OCA\AppAPI\Service\AppAPIService::class);
+		$exApp = $appApiService->getExApp('context_chat_backend');
+		if ($exApp === null) {
+			$this->logger->error('ExApp not found, please install the Context Chat Backend App from the Nextcloud AppStore');
+			throw new RuntimeException($this->l10n->t('ExApp not found, please install the Context Chat Backend App from the Nextcloud AppStore'));
+		}
+
+		$response = $this->request($userId, $exApp, $route, $method, $params, $contentType);
+		if (isset($response['error'])) {
+			$this->logger->error('Error during request to ExApp (context_chat_backend): ' . $response['error']);
+			throw new RuntimeException($this->l10n->t('Error during request to ExApp (context_chat_backend): ') . $response['error']);
+		}
+
+		return $response;
 	}
 
 	/**
@@ -62,11 +81,7 @@ class LangRopeService {
 			'sourceNames' => $sourceNames,
 		];
 
-		$exApp = $this->getExApp();
-		if ($exApp === null) {
-			return;
-		}
-		$this->requestToExApp($userId, $exApp, '/deleteSources', 'POST', $params);
+		$this->requestToExApp($userId, '/deleteSources', 'POST', $params);
 	}
 
 	/**
@@ -93,11 +108,7 @@ class LangRopeService {
 			];
 		}, $sources);
 
-		$exApp = $this->getExApp();
-		if ($exApp === null) {
-			return;
-		}
-		$this->requestToExApp($userId, $exApp, '/loadSources', 'PUT', $params, 'multipart/form-data');
+		$this->requestToExApp($userId, '/loadSources', 'PUT', $params, 'multipart/form-data');
 	}
 
 	public function query(string $userId, string $prompt, bool $useContext = true): array {
@@ -107,17 +118,7 @@ class LangRopeService {
 			'useContext' => $useContext,
 		];
 
-		$exApp = $this->getExApp();
-		if ($exApp === null) {
-			return ['error' => $this->l10n->t('ExApp class not found, please install the AppAPI app from the Nextcloud AppStore')];
-		}
-
-		$response = $this->requestToExApp($userId, $exApp, '/query', 'GET', $params);
-
-		if (isset($response['error'])) {
-			return $response;
-		}
-
+		$response = $this->requestToExApp($userId, '/query', 'GET', $params);
 		return ['message' => $this->getWithPresentableSources($response['output'] ?? '', ...($response['sources'] ?? []))];
 	}
 
@@ -135,7 +136,7 @@ class LangRopeService {
 	 * @param array $params
 	 * @return array|resource|string
 	 */
-	public function requestToExApp(
+	public function request(
 		?string $userId,
 		\OCA\AppAPI\Db\ExApp $exApp,
 		string $route,
@@ -204,32 +205,15 @@ class LangRopeService {
 			}
 
 			$resContentType = $response->getHeader('Content-Type');
-			$statusCode = $response->getStatusCode();
 			$body = $response->getBody();
 
 			if (strpos($resContentType, 'application/json') !== false) {
 				$body = json_decode($body, true);
 			}
 
-			if ($statusCode >= 400 || isset($body['error'])) {
-				$this->logger->error(
-					sprintf('Error during request to ExApp %s: %s', $exApp->getAppid(), $body['error']),
-					['response' => $response]
-				);
-				return [
-					'error' => $this->l10n->t('Error during request to ExApp') . $exApp->getAppid() . ': ' . $body['error']
-				];
-			}
-
 			return $body;
 		} catch (\Throwable $e) {
-			$this->logger->error(
-				sprintf('Error during request to ExApp %s: %s', $exApp->getAppid(), $e->getMessage()),
-				['exception' => $e]
-			);
-			return [
-				'error' => $this->l10n->t('Error during request to ExApp') . $exApp->getAppid() . ': ' . $e->getMessage()
-			];
+			return [ 'error' => $e->getMessage() ];
 		}
 	}
 
