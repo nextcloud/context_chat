@@ -60,7 +60,7 @@ class LangRopeService {
 		$response = $this->request($userId, $exApp, $route, $method, $params, $contentType);
 		if (isset($response['error'])) {
 			$this->logger->error('Error during request to ExApp (context_chat_backend): ' . $response['error']);
-			throw new RuntimeException($this->l10n->t('Error during request to ExApp (context_chat_backend)') . $response['error']);
+			throw new RuntimeException($this->l10n->t('Error during request to ExApp (context_chat_backend): ') . $response['error']);
 		}
 
 		return $response;
@@ -205,32 +205,15 @@ class LangRopeService {
 			}
 
 			$resContentType = $response->getHeader('Content-Type');
-			$statusCode = $response->getStatusCode();
 			$body = $response->getBody();
 
 			if (strpos($resContentType, 'application/json') !== false) {
 				$body = json_decode($body, true);
 			}
 
-			if ($statusCode >= 400 || isset($body['error'])) {
-				$this->logger->error(
-					sprintf('Error during request to ExApp %s: %s', $exApp->getAppid(), $body['error']),
-					['response' => $response]
-				);
-				return [
-					'error' => $this->l10n->t('Error during request to ExApp') . $exApp->getAppid() . ': ' . $body['error']
-				];
-			}
-
 			return $body;
 		} catch (\Throwable $e) {
-			$this->logger->error(
-				sprintf('Error during request to ExApp %s: %s', $exApp->getAppid(), $e->getMessage()),
-				['exception' => $e]
-			);
-			return [
-				'error' => $this->l10n->t('Error during request to ExApp') . $exApp->getAppid() . ': ' . $e->getMessage()
-			];
+			return [ 'error' => $e->getMessage() ];
 		}
 	}
 
