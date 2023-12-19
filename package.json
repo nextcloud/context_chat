@@ -1,6 +1,6 @@
 {
 	"name": "context_chat",
-	"version": "0.0.1",
+	"version": "1.0.0",
 	"description": "ContextChat",
 	"main": "index.js",
 	"directories": {
