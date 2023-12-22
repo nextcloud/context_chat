@@ -70,7 +70,7 @@ class ScanService {
 				$source = new Source(
 					$userId,
 					'file: ' . $node->getId(),
-					$node->getName(),
+					$node->getPath(),
 					$fileHandle,
 					$node->getMTime(),
 					$node->getMimeType(),
