@@ -130,7 +130,7 @@ class IndexerJob extends TimedJob {
 					$this->logger->error('Could not find file ' . $file->getPath(), ['exception' => $e]);
 					continue 2;
 				}
-				$this->langRopeService->indexSources($userId, [$source]);
+				$this->langRopeService->indexSources([$source]);
 			}
 			try {
 				$this->queue->removeFromQueue($queueFile);

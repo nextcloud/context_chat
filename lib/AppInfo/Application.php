@@ -9,9 +9,11 @@
 
 namespace OCA\ContextChat\AppInfo;
 
+use OCA\ContextChat\Listener\AppDisableListener;
 use OCA\ContextChat\Listener\FileListener;
 use OCA\ContextChat\TextProcessing\ContextChatProvider;
 use OCA\ContextChat\TextProcessing\FreePromptProvider;
+use OCP\App\Events\AppDisableEvent;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
 use OCP\AppFramework\Bootstrap\IBootstrap;
@@ -66,6 +68,7 @@ class Application extends App implements IBootstrap {
 		$context->registerEventListener(CacheEntryInsertedEvent::class, FileListener::class);
 		$context->registerEventListener(NodeRemovedFromCache::class, FileListener::class);
 		$context->registerEventListener(NodeWrittenEvent::class, FileListener::class);
+		$context->registerEventListener(AppDisableEvent::class, AppDisableListener::class);
 		$context->registerTextProcessingProvider(ContextChatProvider::class);
 		$context->registerTextProcessingProvider(FreePromptProvider::class);
 	}
