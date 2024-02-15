@@ -195,6 +195,7 @@ class LangRopeService {
 
 		foreach ($sourceRefs as $source) {
 			if (str_starts_with($source, 'file: ') && is_numeric($fileId = substr($source, 6))) {
+				// use `overwritehost` setting in config.php to overwrite the host
 				$output .= $this->urlGenerator->linkToRouteAbsolute('files.View.showFile', ['fileid' => $fileId]) . PHP_EOL;
 			} elseif (str_contains($source, '__')) {
 				// source id ($appId__$providerId: $itemId)
