@@ -52,6 +52,11 @@ class LangRopeService {
 			throw new RuntimeException($this->l10n->t('AppAPI is not enabled, please enable it or install the AppAPI app from the Nextcloud AppStore'));
 		}
 
+		if (version_compare($this->appManager->getAppVersion('app_api', false), Application::MIN_APP_API_VERSION, '<')) {
+			$this->logger->error('AppAPI app version is too old, please update it to at least ' . Application::MIN_APP_API_VERSION);
+			throw new RuntimeException($this->l10n->t('AppAPI app version is too old, please update it to at least %s', Application::MIN_APP_API_VERSION));
+		}
+
 		try {
 			$appApiFunctions = \OCP\Server::get(\OCA\AppAPI\PublicFunctions::class);
 		} catch (ContainerExceptionInterface | NotFoundExceptionInterface $e) {
