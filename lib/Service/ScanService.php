@@ -55,7 +55,7 @@ class ScanService {
 				$node_size = $node->getSize();
 
 				if ($size + $node_size > Application::CC_MAX_SIZE || count($sources) >= Application::CC_MAX_FILES) {
-					$this->indexSources($userId, $sources);
+					$this->indexSources($sources);
 					$sources = [];
 					$size = 0;
 				}
@@ -70,7 +70,7 @@ class ScanService {
 				$source = new Source(
 					$userId,
 					'file: ' . $node->getId(),
-					$node->getName(),
+					$node->getPath(),
 					$fileHandle,
 					$node->getMTime(),
 					$node->getMimeType(),
@@ -84,7 +84,7 @@ class ScanService {
 		}
 
 		if (count($sources) > 0) {
-			$this->indexSources($userId, $sources);
+			$this->indexSources($sources);
 		}
 
 		foreach ($directory->getDirectoryListing() as $node) {
@@ -96,7 +96,7 @@ class ScanService {
 		return [];
 	}
 
-	public function indexSources(string $userId, array $sources): void {
-		$this->langRopeService->indexSources($userId, $sources);
+	public function indexSources(array $sources): void {
+		$this->langRopeService->indexSources($sources);
 	}
 }

@@ -21,10 +21,4 @@
       <code>Command</code>
     </UndefinedClass>
   </file>
-  <file src="lib/Service/LangRopeService.php">
-    <UndefinedClass>
-      <code>\OCA\AppAPI\Db\ExApp</code>
-      <code>\OCA\AppAPI\Service\AppAPIService</code>
-    </UndefinedClass>
-  </file>
 </files>

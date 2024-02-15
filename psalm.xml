@@ -12,7 +12,11 @@
 	SPDX-License-Identifier: CC0-1.0
 	-->
 	<stubs>
-		<file name="tests/stub.phpstub" preloadClasses="true"/>
+		<file name="stubs/oc-hooks.php" preloadClasses="true"/>
+		<file name="stubs/oc-systemconfig.php" preloadClasses="true"/>
+		<file name="stubs/doctrine-dbal.php" preloadClasses="true"/>
+		<file name="stubs/cache-query-builder.php" preloadClasses="true"/>
+		<file name="stubs/appapi-public-functions.php" preloadClasses="true"/>
 	</stubs>
 	<projectFiles>
 		<directory name="lib" />

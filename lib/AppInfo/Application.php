@@ -9,9 +9,11 @@
 
 namespace OCA\ContextChat\AppInfo;
 
+use OCA\ContextChat\Listener\AppDisableListener;
 use OCA\ContextChat\Listener\FileListener;
 use OCA\ContextChat\TextProcessing\ContextChatProvider;
 use OCA\ContextChat\TextProcessing\FreePromptProvider;
+use OCP\App\Events\AppDisableEvent;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
 use OCP\AppFramework\Bootstrap\IBootstrap;
@@ -27,6 +29,7 @@ use OCP\Share\Events\ShareDeletedEvent;
 class Application extends App implements IBootstrap {
 
 	public const APP_ID = 'context_chat';
+	public const MIN_APP_API_VERSION = '2.0.3';
 
 	public const CC_DEFAULT_REQUEST_TIMEOUT = 60 * 120;
 	// max size per file + max size of the batch of files to be embedded in a single request
@@ -66,6 +69,7 @@ class Application extends App implements IBootstrap {
 		$context->registerEventListener(CacheEntryInsertedEvent::class, FileListener::class);
 		$context->registerEventListener(NodeRemovedFromCache::class, FileListener::class);
 		$context->registerEventListener(NodeWrittenEvent::class, FileListener::class);
+		$context->registerEventListener(AppDisableEvent::class, AppDisableListener::class);
 		$context->registerTextProcessingProvider(ContextChatProvider::class);
 		$context->registerTextProcessingProvider(FreePromptProvider::class);
 	}
