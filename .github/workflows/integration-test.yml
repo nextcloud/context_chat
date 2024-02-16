@@ -114,23 +114,24 @@ jobs:
           make all
           composer install --no-dev
 
-      - name: Set up Nextcloud and install app
+      - name: Set up Nextcloud
         if: ${{ matrix.databases != 'pgsql'}}
         run: |
           sleep 25
           mkdir data
           ./occ maintenance:install --verbose --database=${{ matrix.databases }} --database-name=nextcloud --database-host=127.0.0.1 --database-port=$MYSQL_PORT --database-user=root --database-pass=rootpassword --admin-user admin --admin-pass password
-          ./occ app:enable -vvv -f ${{ env.APP_NAME }}
           php -S localhost:8080 &
 
-      - name: Set up Nextcloud and install app
+      - name: Set up Nextcloud
         if: ${{ matrix.databases == 'pgsql'}}
         run: |
           sleep 25
           mkdir data
           ./occ maintenance:install --verbose --database=${{ matrix.databases }} --database-name=nextcloud --database-host=127.0.0.1 --database-port=$PGSQL_PORT --database-user=root --database-pass=rootpassword --admin-user admin --admin-pass password
-          ./occ app:enable -vvv -f ${{ env.APP_NAME }}
           php -S localhost:8080 &
+
+      - name: Enable app and app_api
+        run: ./occ app:enable -vvv -f ${{ env.APP_NAME }} app_api
 
       - name: Checkout documentation
         uses: actions/checkout@v4
@@ -144,14 +145,12 @@ jobs:
           find ./ -depth -name "*.rst" -exec sh -c 'mv "$1" "${1%.rst}.txt"' _ {} \;
           git status
 
-      - name: Install app and app_api
-        run: |
-          ./occ app:enable -vvv ${{ env.APP_NAME }} app_api
-
-      - name: Install and init backend
+      - name: Setup python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+
+      - name: Install and init backend
         run: |
           cd context_chat_backend
           pip install --no-deps -r reqs.txt
@@ -169,7 +168,7 @@ jobs:
       - name: Scan files
         run: |
           ./occ files:scan --all
-          ./occ context_chat:scan admin
+          ./occ context_chat:scan -m text/plain admin
 
       - name: Run prompt
         run: |
