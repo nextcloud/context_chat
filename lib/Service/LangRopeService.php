@@ -119,16 +119,16 @@ class LangRopeService {
 
 	/**
 	 * @param string $userId
-	 * @param string $keyword Keyword to search for in the source names
+	 * @param string $providerKey
 	 * @return void
 	 */
-	public function deleteMatchingSources(string $userId, string $keyword): void {
+	public function deleteSourcesByProvider(string $userId, string $providerKey): void {
 		$params = [
 			'userId' => $userId,
-			'keyword' => $keyword,
+			'providerKey' => $providerKey,
 		];
 
-		$this->requestToExApp('/deleteMatchingSources', 'POST', $params);
+		$this->requestToExApp('/deleteSourcesByProvider', 'POST', $params);
 	}
 
 	/**
@@ -161,13 +161,14 @@ class LangRopeService {
 		$params = array_map(function (Source $source) {
 			return [
 				'name' => 'sources',
-				'filename' => $source->reference, // 'file: 555'
+				'filename' => $source->reference, // eg. 'file: 555'
 				'contents' => $source->content,
 				'headers' => [
 					'userId' => $source->userId,
 					'title' => $source->title,
 					'type' => $source->type,
 					'modified' => $source->modified,
+					'provider' => $source->provider, // eg. 'file'
 				],
 			];
 		}, $sources);

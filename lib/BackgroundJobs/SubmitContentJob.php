@@ -58,7 +58,8 @@ class SubmitContentJob extends QueuedJob {
 
 		foreach ($bucketed as $userId => $entities) {
 			$sources = array_map(function (QueueContentItem $item) use ($userId) {
-				$sourceId = ProviderConfigService::getConfigKey($item->getAppId(), $item->getProviderId()) . ': ' . $item->getItemId();
+				$providerKey = ProviderConfigService::getConfigKey($item->getAppId(), $item->getProviderId());
+				$sourceId = $providerKey . ': ' . $item->getItemId();
 				return new Source(
 					$userId,
 					$sourceId,
@@ -66,6 +67,7 @@ class SubmitContentJob extends QueuedJob {
 					$item->getContent(),
 					$item->getLastModified()->getTimeStamp(),
 					$item->getDocumentType(),
+					$providerKey,
 				);
 			}, $entities);
 

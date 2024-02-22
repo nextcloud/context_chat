@@ -58,7 +58,7 @@ class AppDisableListener implements IEventListener {
 			}
 
 			$this->configService->removeProvider($appId, $providerId);
-			$this->service->deleteMatchingSources($this->userId, $key);
+			$this->service->deleteSourcesByProvider($this->userId, $key);
 		}
 	}
 }
