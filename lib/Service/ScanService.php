@@ -74,6 +74,7 @@ class ScanService {
 					$fileHandle,
 					$node->getMTime(),
 					$node->getMimeType(),
+					'file'
 				);
 				$sources[] = $source;
 				$size += $node_size;

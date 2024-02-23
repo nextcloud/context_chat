@@ -112,7 +112,7 @@ class ContentManager {
 	 */
 	public function removeAllContentForUsers(string $appId, string $providerId, array $users): void {
 		foreach ($users as $userId) {
-			$this->service->deleteMatchingSources($userId, $this->configService->getConfigKey($appId, $providerId));
+			$this->service->deleteSourcesByProvider($userId, $this->configService->getConfigKey($appId, $providerId));
 		}
 	}
 }
