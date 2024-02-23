@@ -142,23 +142,23 @@ jobs:
       - name: Prepare docs
         run: |
           cd data/admin/files/documentation
-          find ./ -depth -name "*.rst" -exec sh -c 'mv "$1" "${1%.rst}.txt"' _ {} \;
+          find ./admin_manual/ -depth -name "*.rst" -exec sh -c 'mv "$1" "${1%.rst}.txt"' _ {} \;
           git status
 
       - name: Setup python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: context_chat_backend/reqs.txt
 
       - name: Install and init backend
         run: |
           cd context_chat_backend
           pip install --no-deps -r reqs.txt
           cp example.env .env
-          echo "DISABLE_CUSTOM_DOWNLOAD_URI=1" >> .env
           echo "NEXTCLOUD_URL=http://localhost:8080" >> .env
-          curl -L https://huggingface.co/TheBloke/dolphin-2.2.1-mistral-7B-GGUF/resolve/main/dolphin-2.2.1-mistral-7b.Q5_K_M.gguf -o model_files/dolphin-2.2.1-mistral-7b.Q5_K_M.gguf
-          ./main.py &
+          ./main.py &> backend_logs &
 
       - name: Register backend
         run: |
@@ -167,14 +167,16 @@ jobs:
 
       - name: Scan files
         run: |
-          ./occ files:scan --all
+          ./occ files:scan admin
           ./occ context_chat:scan -m text/plain admin
 
       - name: Run prompt
         run: |
           ./occ context_chat:prompt admin "Which factors are taken into account for the Ethical AI Rating?"
 
-      - name: Show log on failure
+      - name: Show logs
         if: always()
         run: |
           tail data/nextcloud.log
+          echo '--------------------------------------------------'
+          [ -f context_chat_backend/backend_logs ] && cat context_chat_backend/backend_logs || echo "No backend logs"
