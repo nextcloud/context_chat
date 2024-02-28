@@ -23,10 +23,14 @@ class ContextChatProvider implements IProvider, IProviderWithUserId {
 	}
 
 	public function getName(): string {
-		return $this->l10n->t('Nextcloud Assistant Context Chat provider');
+		return $this->l10n->t('Nextcloud Assistant Context Chat Provider');
 	}
 
 	public function process(string $prompt): string {
+		if ($this->userId === null) {
+			throw new \RuntimeException('User ID is required to process the prompt.');
+		}
+
 		$response = $this->langRopeService->query($this->userId, $prompt);
 		if (isset($response['error'])) {
 			throw new \RuntimeException('No result in ContextChat response. ' . $response['error']);
