@@ -12,9 +12,9 @@
 
 namespace OCA\ContextChat\Command;
 
-use OCA\ContextChat\Service\ScopeType;
 use OCA\ContextChat\TextProcessing\ContextChatTaskType;
 use OCA\ContextChat\TextProcessing\ScopedContextChatTaskType;
+use OCA\ContextChat\Type\ScopeType;
 use OCP\TextProcessing\FreePromptTaskType;
 use OCP\TextProcessing\IManager;
 use OCP\TextProcessing\Task;
@@ -55,13 +55,13 @@ class Prompt extends Command {
 				'context-sources',
 				null,
 				InputOption::VALUE_REQUIRED,
-				'Context sources to use',
+				'Context sources to use (as a comma-separated list without brackets)',
 			)
 			->addOption(
 				'context-providers',
 				null,
 				InputOption::VALUE_REQUIRED,
-				'Context provider to use',
+				'Context providers to use (as a comma-separated list without brackets)',
 			);
 	}
 
@@ -83,15 +83,19 @@ class Prompt extends Command {
 		if ($noContext) {
 			$task = new Task(FreePromptTaskType::class, $prompt, 'context_chat', $userId);
 		} elseif (!empty($contextSources)) {
+			$contextSources = preg_replace('/\s*,+\s*/', ',', $contextSources);
+			$contextSourcesArray = array_filter(explode(',', $contextSources), fn ($source) => !empty($source));
 			$task = new Task(ScopedContextChatTaskType::class, json_encode([
 				'scopeType' => ScopeType::SOURCE,
-				'scopeList' => explode(',', $contextSources),
+				'scopeList' => $contextSourcesArray,
 				'prompt' => $prompt,
 			]), 'context_chat', $userId);
 		} elseif (!empty($contextProviders)) {
+			$contextProviders = preg_replace('/\s*,+\s*/', ',', $contextProviders);
+			$contextProvidersArray = array_filter(explode(',', $contextProviders), fn ($source) => !empty($source));
 			$task = new Task(ScopedContextChatTaskType::class, json_encode([
 				'scopeType' => ScopeType::PROVIDER,
-				'scopeList' => explode(',', $contextProviders),
+				'scopeList' => $contextProvidersArray,
 				'prompt' => $prompt,
 			]), 'context_chat', $userId);
 		} else {

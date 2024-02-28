@@ -27,11 +27,6 @@ use Psr\Container\NotFoundExceptionInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
-enum ScopeType: string {
-	case PROVIDER = 'provider';
-	case SOURCE = 'source';
-}
-
 class LangRopeService {
 	public function __construct(
 		private LoggerInterface $logger,
@@ -195,11 +190,11 @@ class LangRopeService {
 	/**
 	 * @param string $userId
 	 * @param string $prompt
-	 * @param ScopeType $scopeType
+	 * @param string $scopeType
 	 * @param array<string> $scopeList
 	 * @return array
 	 */
-	public function scopedQuery(string $userId, string $prompt, ScopeType $scopeType, array $scopeList): array {
+	public function scopedQuery(string $userId, string $prompt, string $scopeType, array $scopeList): array {
 		$params = [
 			'query' => $prompt,
 			'userId' => $userId,

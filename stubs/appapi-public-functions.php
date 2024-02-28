@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace OCA\AppAPI {
 	class PublicFunctions {
 		public function __construct(
-			private readonly \OCA\AppAPI\Service\ExAppService $exAppService,
-			private readonly \OCA\AppAPI\Service\AppAPIService $service,
+			private \OCA\AppAPI\Service\ExAppService $exAppService,
+			private \OCA\AppAPI\Service\AppAPIService $service,
 		) {
 		}
 
