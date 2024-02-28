@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace OCA\ContextChat\TextProcessing;
 
 use OCA\ContextChat\Service\LangRopeService;
-use OCA\ContextChat\Service\ScopeType;
+use OCA\ContextChat\Type\ScopeType;
 use OCP\IL10N;
 use OCP\TextProcessing\IProvider;
 use OCP\TextProcessing\IProviderWithUserId;
@@ -63,15 +63,16 @@ class ScopedContextChatProvider implements IProvider, IProviderWithUserId {
 			throw new \RuntimeException('Invalid JSON string, expected { "scopeType": string, "scopeList": list[string], "prompt": string }');
 		}
 
-		$scopeTypeEnum = ScopeType::tryFrom($parsedData['scopeType']);
-		if ($scopeTypeEnum === null) {
-			throw new \RuntimeException('Invalid scope type: ' . $parsedData['scopeType']);
+		try {
+			ScopeType::validate($parsedData['scopeType']);
+		} catch (\InvalidArgumentException $e) {
+			throw new \RuntimeException($e->getMessage(), intval($e->getCode()), $e);
 		}
 
 		$response = $this->langRopeService->scopedQuery(
 			$this->userId,
 			$parsedData['prompt'],
-			$scopeTypeEnum,
+			$parsedData['scopeType'],
 			$parsedData['scopeList'],
 		);
 
