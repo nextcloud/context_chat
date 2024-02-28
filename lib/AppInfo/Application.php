@@ -13,6 +13,7 @@ use OCA\ContextChat\Listener\AppDisableListener;
 use OCA\ContextChat\Listener\FileListener;
 use OCA\ContextChat\TextProcessing\ContextChatProvider;
 use OCA\ContextChat\TextProcessing\FreePromptProvider;
+use OCA\ContextChat\TextProcessing\ScopedContextChatProvider;
 use OCP\App\Events\AppDisableEvent;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
@@ -72,6 +73,7 @@ class Application extends App implements IBootstrap {
 		$context->registerEventListener(AppDisableEvent::class, AppDisableListener::class);
 		$context->registerTextProcessingProvider(ContextChatProvider::class);
 		$context->registerTextProcessingProvider(FreePromptProvider::class);
+		$context->registerTextProcessingProvider(ScopedContextChatProvider::class);
 	}
 
 	public function boot(IBootContext $context): void {

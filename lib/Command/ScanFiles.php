@@ -36,7 +36,7 @@ class ScanFiles extends Command {
 				InputArgument::REQUIRED,
 				'The user ID to scan the storage of'
 			)
-			->addOption('mimetype', 'm', InputOption::VALUE_OPTIONAL, 'The mime type filter');
+			->addOption('mimetype', 'm', InputOption::VALUE_REQUIRED, 'The mime type filter');
 	}
 
 	protected function execute(InputInterface $input, OutputInterface $output) {
