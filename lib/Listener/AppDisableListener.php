@@ -28,17 +28,11 @@ class AppDisableListener implements IEventListener {
 		private ProviderConfigService $configService,
 		private LangRopeService $service,
 		private LoggerInterface $logger,
-		private ?string $userId,
 	) {
 	}
 
 	public function handle(Event $event): void {
 		if (!($event instanceof AppDisableEvent)) {
-			return;
-		}
-
-		if ($this->userId === null) {
-			$this->logger->warning('No user id provided for app disable');
 			return;
 		}
 
@@ -58,7 +52,7 @@ class AppDisableListener implements IEventListener {
 			}
 
 			$this->configService->removeProvider($appId, $providerId);
-			$this->service->deleteSourcesByProvider($this->userId, $key);
+			$this->service->deleteSourcesByProviderForAllUsers($providerId);
 		}
 	}
 }

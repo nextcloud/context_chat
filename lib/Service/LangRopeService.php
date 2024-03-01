@@ -132,6 +132,18 @@ class LangRopeService {
 	}
 
 	/**
+	 * @param string $providerKey
+	 * @return void
+	 */
+	public function deleteSourcesByProviderForAllUsers(string $providerKey): void {
+		$params = [
+			'providerKey' => $providerKey,
+		];
+
+		$this->requestToExApp('/deleteSourcesByProviderForAllUsers', 'POST', $params);
+	}
+
+	/**
 	 * @param string $userId
 	 * @param string[] $sourceNames
 	 * @return void
