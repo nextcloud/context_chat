@@ -11,9 +11,9 @@ namespace OCA\ContextChat\AppInfo;
 
 use OCA\ContextChat\Listener\AppDisableListener;
 use OCA\ContextChat\Listener\FileListener;
+use OCA\ContextChat\Service\ProviderConfigService;
 use OCA\ContextChat\TextProcessing\ContextChatProvider;
 use OCA\ContextChat\TextProcessing\FreePromptProvider;
-use OCA\ContextChat\TextProcessing\ScopedContextChatProvider;
 use OCP\App\Events\AppDisableEvent;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
@@ -24,6 +24,7 @@ use OCP\Files\Events\Node\BeforeNodeDeletedEvent;
 use OCP\Files\Events\Node\NodeCreatedEvent;
 use OCP\Files\Events\Node\NodeWrittenEvent;
 use OCP\Files\Events\NodeRemovedFromCache;
+use OCP\IConfig;
 use OCP\Share\Events\ShareCreatedEvent;
 use OCP\Share\Events\ShareDeletedEvent;
 
@@ -58,8 +59,13 @@ class Application extends App implements IBootstrap {
 		'text/org',
 	];
 
+	private IConfig $config;
+
 	public function __construct(array $urlParams = []) {
 		parent::__construct(self::APP_ID, $urlParams);
+
+		$container = $this->getContainer();
+		$this->config = $container->get(IConfig::class);
 	}
 
 	public function register(IRegistrationContext $context): void {
@@ -73,7 +79,10 @@ class Application extends App implements IBootstrap {
 		$context->registerEventListener(AppDisableEvent::class, AppDisableListener::class);
 		$context->registerTextProcessingProvider(ContextChatProvider::class);
 		$context->registerTextProcessingProvider(FreePromptProvider::class);
-		$context->registerTextProcessingProvider(ScopedContextChatProvider::class);
+
+		$providerConfigService = new ProviderConfigService($this->config);
+		/** @psalm-suppress ArgumentTypeCoercion, UndefinedClass  */
+		$providerConfigService->updateProvider('files', 'default', '', true);
 	}
 
 	public function boot(IBootContext $context): void {

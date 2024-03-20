@@ -48,13 +48,14 @@ class ProviderConfigService {
 	 */
 	public function getProviders(): array {
 		$providers = [];
+		$providersString = $this->config->getAppValue(Application::APP_ID, 'providers', '');
 
-		$providersString = $this->config->getAppValue(Application::APP_ID, 'providers');
 		if ($providersString !== '') {
 			$providers = json_decode($providersString, true);
 
 			if ($providers === null || !$this->validateProvidersArray($providers)) {
 				$providers = [];
+				$this->config->setAppValue(Application::APP_ID, 'providers', '');
 			}
 		}
 
@@ -74,7 +75,7 @@ class ProviderConfigService {
 		bool $isInitiated = false,
 	): void {
 		$providers = $this->getProviders();
-		$providers[$this->getConfigKey($appId, $providerId)] = [
+		$providers[self::getConfigKey($appId, $providerId)] = [
 			'isInitiated' => $isInitiated,
 			'classString' => $providerClass,
 		];
@@ -88,11 +89,11 @@ class ProviderConfigService {
 	public function removeProvider(string $appId, ?string $providerId = null): void {
 		$providers = $this->getProviders();
 
-		if ($providerId !== null && isset($providers[$this->getConfigKey($appId, $providerId)])) {
-			unset($providers[$this->getConfigKey($appId, $providerId)]);
+		if ($providerId !== null && isset($providers[self::getConfigKey($appId, $providerId)])) {
+			unset($providers[self::getConfigKey($appId, $providerId)]);
 		} elseif ($providerId === null) {
 			foreach ($providers as $k => $v) {
-				if (str_starts_with($k, $appId)) {
+				if (str_starts_with($k, self::getConfigKey($appId, ''))) {
 					unset($providers[$k]);
 				}
 			}
@@ -108,6 +109,6 @@ class ProviderConfigService {
 	 */
 	public function hasProvider(string $appId, string $providerId): bool {
 		$providers = $this->getProviders();
-		return isset($providers[$this->getConfigKey($appId, $providerId)]);
+		return isset($providers[self::getConfigKey($appId, $providerId)]);
 	}
 }

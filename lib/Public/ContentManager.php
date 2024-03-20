@@ -16,7 +16,7 @@ use OCA\ContextChat\BackgroundJobs\SubmitContentJob;
 use OCA\ContextChat\Db\QueueContentItem;
 use OCA\ContextChat\Db\QueueContentItemMapper;
 use OCA\ContextChat\Service\LangRopeService;
-use OCA\ContextChat\Service\ProviderConfigService;
+use OCA\ContextChat\Service\ProviderService;
 use OCP\BackgroundJob\IJobList;
 use OCP\Server;
 use Psr\Container\ContainerExceptionInterface;
@@ -26,7 +26,7 @@ use Psr\Log\LoggerInterface;
 class ContentManager {
 	public function __construct(
 		private IJobList $jobList,
-		private ProviderConfigService $configService,
+		private ProviderService $providerService,
 		private LangRopeService $service,
 		private QueueContentItemMapper $mapper,
 		private LoggerInterface $logger,
@@ -47,11 +47,11 @@ class ContentManager {
 			return;
 		}
 
-		if ($this->configService->hasProvider($providerObj->getAppId(), $providerObj->getId())) {
+		if ($this->providerService->hasProvider($providerObj->getAppId(), $providerObj->getId())) {
 			return;
 		}
 
-		$this->configService->updateProvider($providerObj->getAppId(), $providerObj->getId(), $providerClass);
+		$this->providerService->updateProvider($providerObj->getAppId(), $providerObj->getId(), $providerClass);
 
 		if (!$this->jobList->has(InitialContentImportJob::class, $providerClass)) {
 			$this->jobList->add(InitialContentImportJob::class, $providerClass);
@@ -98,7 +98,9 @@ class ContentManager {
 	 */
 	public function removeContentForUsers(string $appId, string $providerId, string $itemId, array $users): void {
 		foreach ($users as $userId) {
-			$this->service->deleteSources($userId, [$this->configService->getConfigKey($appId, $providerId) . ": $itemId"]);
+			$this->service->deleteSources($userId, [
+				ProviderService::getSourceId($itemId, ProviderService::getConfigKey($appId, $providerId))
+			]);
 		}
 	}
 
@@ -112,7 +114,7 @@ class ContentManager {
 	 */
 	public function removeAllContentForUsers(string $appId, string $providerId, array $users): void {
 		foreach ($users as $userId) {
-			$this->service->deleteSourcesByProvider($userId, $this->configService->getConfigKey($appId, $providerId));
+			$this->service->deleteSourcesByProvider($userId, ProviderService::getConfigKey($appId, $providerId));
 		}
 	}
 }

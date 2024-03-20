@@ -14,7 +14,7 @@ declare(strict_types=1);
 namespace OCA\ContextChat\BackgroundJobs;
 
 use OCA\ContextChat\Public\IContentProvider;
-use OCA\ContextChat\Service\ProviderConfigService;
+use OCA\ContextChat\Service\ProviderService;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\QueuedJob;
@@ -27,7 +27,7 @@ use Psr\Log\LoggerInterface;
 class InitialContentImportJob extends QueuedJob {
 	public function __construct(
 		private IAppManager $appManager,
-		private ProviderConfigService $configService,
+		private ProviderService $providerService,
 		private LoggerInterface $logger,
 		private IUserManager $userMan,
 		ITimeFactory $timeFactory,
@@ -57,8 +57,8 @@ class InitialContentImportJob extends QueuedJob {
 			return;
 		}
 
-		$registeredProviders = $this->configService->getProviders();
-		$identifier = ProviderConfigService::getConfigKey($providerObj->getAppId(), $providerObj->getId());
+		$registeredProviders = $this->providerService->getProviders();
+		$identifier = ProviderService::getConfigKey($providerObj->getAppId(), $providerObj->getId());
 		if (!isset($registeredProviders[$identifier])
 			|| $registeredProviders[$identifier]['isInitiated']
 		) {
@@ -66,6 +66,6 @@ class InitialContentImportJob extends QueuedJob {
 		}
 
 		$providerObj->triggerInitialImport();
-		$this->configService->updateProvider($providerObj->getAppId(), $providerObj->getId(), $argument, true);
+		$this->providerService->updateProvider($providerObj->getAppId(), $providerObj->getId(), $argument, true);
 	}
 }

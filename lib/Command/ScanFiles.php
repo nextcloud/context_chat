@@ -44,6 +44,11 @@ class ScanFiles extends Command {
 			? explode(',', $input->getOption('mimetype'))
 			: Application::MIMETYPES;
 
+		if ($mimeTypeFilter === false) {
+			$output->writeln('Invalid mime type filter');
+			return 1;
+		}
+
 		$userId = $input->getArgument('user_id');
 		$scan = $this->scanService->scanUserFiles($userId, $mimeTypeFilter);
 		foreach ($scan as $s) {

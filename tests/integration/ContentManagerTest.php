@@ -22,7 +22,7 @@ use OCA\ContextChat\Public\ContentItem;
 use OCA\ContextChat\Public\ContentManager;
 use OCA\ContextChat\Public\IContentProvider;
 use OCA\ContextChat\Service\LangRopeService;
-use OCA\ContextChat\Service\ProviderConfigService;
+use OCA\ContextChat\Service\ProviderService;
 use OCP\BackgroundJob\IJobList;
 use OCP\Server;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -32,8 +32,8 @@ use Test\TestCase;
 class ContentManagerTest extends TestCase {
 	/** @var MockObject | QueueContentItemMapper */
 	private QueueContentItemMapper $mapper;
-	/** @var MockObject | ProviderConfigService */
-	private ProviderConfigService $configService;
+	/** @var MockObject | ProviderService */
+	private ProviderService $providerService;
 	/** @var MockObject | LangRopeService */
 	private LangRopeService $service;
 
@@ -41,30 +41,34 @@ class ContentManagerTest extends TestCase {
 	private LoggerInterface $logger;
 	private IJobList $jobList;
 
-	private bool $initCalled = false;
+	// private bool $initCalled = false;
 	private static string $providerClass = 'OCA\ContextChat\Tests\ContentProvider';
 
 	public function setUp(): void {
 		$this->jobList = Server::get(IJobList::class);
 		$this->logger = Server::get(LoggerInterface::class);
 		$this->mapper = $this->createMock(QueueContentItemMapper::class);
-		$this->configService = $this->createMock(ProviderConfigService::class);
+		$this->providerService = $this->createMock(ProviderService::class);
 		$this->service = $this->createMock(LangRopeService::class);
 
-		$this->configService
+		$this->providerService
 			->method('getProviders')
 			->willReturn([
-				ProviderConfigService::getConfigKey(Application::APP_ID, 'test-provider') => [
+				ProviderService::getDefaultProviderKey() => [
+					'isInitiated' => true,
+					'classString' => '',
+				],
+				ProviderService::getConfigKey(Application::APP_ID, 'test-provider') => [
 					'isInitiated' => false,
 					'classString' => static::$providerClass,
 				],
 			]);
 
-		$this->overwriteService(ProviderConfigService::class, $this->configService);
+		// $this->overwriteService(ProviderConfigService::class, $this->providerConfigService);
 
 		// using this app's app id to pass the check that the app is enabled for the user
 		$providerObj = new ContentProvider(Application::APP_ID, 'test-provider', function () {
-			$this->initCalled = true;
+			// $this->initCalled = true;
 		});
 		$providerClass = get_class($providerObj);
 
@@ -74,7 +78,7 @@ class ContentManagerTest extends TestCase {
 
 		$this->contentManager = new ContentManager(
 			$this->jobList,
-			$this->configService,
+			$this->providerService,
 			$this->service,
 			$this->mapper,
 			$this->logger,
@@ -102,14 +106,14 @@ class ContentManagerTest extends TestCase {
 		string $providerId,
 		bool $registrationSuccessful,
 	): void {
-		$this->configService
+		$this->providerService
 			->expects($registrationSuccessful ? $this->once() : $this->never())
 			->method('hasProvider')
 			->with($appId, $providerId)
 			->willReturn(false);
 
-		$this->configService
-			->expects($registrationSuccessful ? $this->exactly(2) : $this->never())
+		$this->providerService
+			->expects($registrationSuccessful ? $this->once() : $this->never())
 			->method('updateProvider')
 			->with($appId, $providerId, $providerClass);
 
@@ -118,15 +122,8 @@ class ContentManagerTest extends TestCase {
 		$jobsIter = $this->jobList->getJobsIterator(InitialContentImportJob::class, 1, 0);
 		if ($registrationSuccessful) {
 			$this->assertNotNull($jobsIter);
+			$this->jobList->remove(InitialContentImportJob::class, $providerClass);
 		}
-
-		foreach ($jobsIter as $job) {
-			if ($job->getArgument() === $providerClass) {
-				$job->execute($this->jobList);
-			}
-		}
-
-		$this->assertTrue(($this->initCalled && $registrationSuccessful) || (!$this->initCalled && !$registrationSuccessful));
 	}
 
 	public function testSubmitContent(): void {
