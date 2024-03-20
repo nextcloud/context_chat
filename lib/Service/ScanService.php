@@ -48,10 +48,6 @@ class ScanService {
 		$size = 0;
 		foreach ($directory->getDirectoryListing() as $node) {
 			if ($node instanceof File) {
-				if (!in_array($node->getMimeType(), $mimeTypeFilter)) {
-					continue;
-				}
-
 				$node_size = $node->getSize();
 
 				if ($size + $node_size > Application::CC_MAX_SIZE || count($sources) >= Application::CC_MAX_FILES) {
@@ -60,22 +56,11 @@ class ScanService {
 					$size = 0;
 				}
 
-				try {
-					$fileHandle = $node->fopen('r');
-				} catch (\Exception $e) {
-					$this->logger->error('Could not open file ' . $node->getPath() . ' for reading: ' . $e->getMessage());
+				$source = $this->getSourceFromFile($userId, $mimeTypeFilter, $node);
+				if ($source === null) {
 					continue;
 				}
 
-				$source = new Source(
-					$userId,
-					'file: ' . $node->getId(),
-					$node->getPath(),
-					$fileHandle,
-					$node->getMTime(),
-					$node->getMimeType(),
-					'file'
-				);
 				$sources[] = $source;
 				$size += $node_size;
 
@@ -95,6 +80,30 @@ class ScanService {
 		}
 
 		return [];
+	}
+
+	public function getSourceFromFile(string $userId, array $mimeTypeFilter, File $node): Source | null {
+		if (!in_array($node->getMimeType(), $mimeTypeFilter)) {
+			return null;
+		}
+
+		try {
+			$fileHandle = $node->fopen('r');
+		} catch (\Exception $e) {
+			$this->logger->error('Could not open file ' . $node->getPath() . ' for reading: ' . $e->getMessage());
+			return null;
+		}
+
+		$providerKey = ProviderService::getDefaultProviderKey();
+		return new Source(
+			$userId,
+			$providerKey . ': ' . $node->getId(),
+			$node->getPath(),
+			$fileHandle,
+			$node->getMTime(),
+			$node->getMimeType(),
+			$providerKey,
+		);
 	}
 
 	public function indexSources(array $sources): void {

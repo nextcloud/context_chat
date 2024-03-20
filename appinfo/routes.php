@@ -13,5 +13,8 @@ return [
 	'routes' => [
 		['name' => 'config#setConfig', 'url' => '/config', 'verb' => 'PUT'],
 		['name' => 'config#setAdminConfig', 'url' => '/admin-config', 'verb' => 'PUT'],
+
+		['name' => 'provider#getProviders', 'url' => '/providers', 'verb' => 'GET'],
+		['name' => 'provider#getDefaultProviderKey', 'url' => '/default-provider-key', 'verb' => 'GET'],
 	],
 ];

@@ -9,6 +9,7 @@ namespace OCA\ContextChat\BackgroundJobs;
 
 use OCA\ContextChat\Db\QueueFile;
 use OCA\ContextChat\Service\LangRopeService;
+use OCA\ContextChat\Service\ProviderService;
 use OCA\ContextChat\Service\QueueService;
 use OCA\ContextChat\Service\StorageService;
 use OCA\ContextChat\Type\Source;
@@ -125,7 +126,15 @@ class IndexerJob extends TimedJob {
 			$userIds = $this->storageService->getUsersForFileId($queueFile->getFileId());
 			foreach ($userIds as $userId) {
 				try {
-					$source = new Source($userId, 'file: ' . $file->getId(), $file->getPath(), $fileHandle, $file->getMtime(), $file->getMimeType(), 'file');
+					$source = new Source(
+						$userId,
+						ProviderService::getSourceId($file->getId()),
+						$file->getPath(),
+						$fileHandle,
+						$file->getMtime(),
+						$file->getMimeType(),
+						ProviderService::getDefaultProviderKey(),
+					);
 				} catch (InvalidPathException|NotFoundException $e) {
 					$this->logger->error('Could not find file ' . $file->getPath(), ['exception' => $e]);
 					continue 2;

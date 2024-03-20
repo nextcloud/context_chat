@@ -35,11 +35,18 @@ class LangRopeService {
 		private IAppManager $appManager,
 		private IURLGenerator $urlGenerator,
 		private IUserManager $userMan,
-		private ProviderConfigService $configService,
 		private ?string $userId,
 	) {
 	}
 
+	/**
+	 * @param string $route
+	 * @param string $method
+	 * @param array $params
+	 * @param string|null $contentType
+	 * @return array
+	 * @throws RuntimeException
+	 */
 	private function requestToExApp(
 		string $route,
 		string $method = 'POST',
@@ -121,6 +128,7 @@ class LangRopeService {
 	 * @param string $userId
 	 * @param string $providerKey
 	 * @return void
+	 * @throws RuntimeException
 	 */
 	public function deleteSourcesByProvider(string $userId, string $providerKey): void {
 		$params = [
@@ -134,6 +142,7 @@ class LangRopeService {
 	/**
 	 * @param string $providerKey
 	 * @return void
+	 * @throws RuntimeException
 	 */
 	public function deleteSourcesByProviderForAllUsers(string $providerKey): void {
 		$params = [
@@ -147,6 +156,7 @@ class LangRopeService {
 	 * @param string $userId
 	 * @param string[] $sourceNames
 	 * @return void
+	 * @throws RuntimeException
 	 */
 	public function deleteSources(string $userId, array $sourceNames): void {
 		if (count($sourceNames) === 0) {
@@ -164,6 +174,7 @@ class LangRopeService {
 	/**
 	 * @param Source[] $sources
 	 * @return void
+	 * @throws RuntimeException
 	 */
 	public function indexSources(array $sources): void {
 		if (count($sources) === 0) {
@@ -173,14 +184,14 @@ class LangRopeService {
 		$params = array_map(function (Source $source) {
 			return [
 				'name' => 'sources',
-				'filename' => $source->reference, // eg. 'file: 555'
+				'filename' => $source->reference, // eg. 'files__default: 555'
 				'contents' => $source->content,
 				'headers' => [
 					'userId' => $source->userId,
 					'title' => $source->title,
 					'type' => $source->type,
 					'modified' => $source->modified,
-					'provider' => $source->provider, // eg. 'file'
+					'provider' => $source->provider, // eg. 'files__default'
 				],
 			];
 		}, $sources);
@@ -188,33 +199,28 @@ class LangRopeService {
 		$this->requestToExApp('/loadSources', 'PUT', $params, 'multipart/form-data');
 	}
 
-	public function query(string $userId, string $prompt, bool $useContext = true): array {
+	/**
+	 * @param string $userId
+	 * @param string $prompt
+	 * @param bool $useContext
+	 * @param ?string $scopeType
+	 * @param ?array<string> $scopeList
+	 * @return array
+	 * @throws RuntimeException
+	 */
+	public function query(string $userId, string $prompt, bool $useContext = true, ?string $scopeType = null, ?array $scopeList = null): array {
 		$params = [
 			'query' => $prompt,
 			'userId' => $userId,
 			'useContext' => $useContext,
 		];
+		if ($scopeType !== null && $scopeList !== null) {
+			$params['useContext'] = true;
+			$params['scopeType'] = $scopeType;
+			$params['scopeList'] = $scopeList;
+		}
 
-		$response = $this->requestToExApp('/query', 'GET', $params);
-		return ['message' => $this->getWithPresentableSources($response['output'] ?? '', ...($response['sources'] ?? []))];
-	}
-
-	/**
-	 * @param string $userId
-	 * @param string $prompt
-	 * @param string $scopeType
-	 * @param array<string> $scopeList
-	 * @return array
-	 */
-	public function scopedQuery(string $userId, string $prompt, string $scopeType, array $scopeList): array {
-		$params = [
-			'query' => $prompt,
-			'userId' => $userId,
-			'scopeType' => $scopeType,
-			'scopeList' => $scopeList,
-		];
-
-		$response = $this->requestToExApp('/scopedQuery', 'POST', $params);
+		$response = $this->requestToExApp('/query', 'POST', $params);
 		return ['message' => $this->getWithPresentableSources($response['output'] ?? '', ...($response['sources'] ?? []))];
 	}
 
@@ -225,8 +231,9 @@ class LangRopeService {
 
 		$output = str_repeat(PHP_EOL, 3) . $this->l10n->t('Sources referenced to generate the above response:') . PHP_EOL;
 
+		$emptyFilesSourceId = ProviderService::getSourceId('');
 		foreach ($sourceRefs as $source) {
-			if (str_starts_with($source, 'file: ') && is_numeric($fileId = substr($source, 6))) {
+			if (str_starts_with($source, $emptyFilesSourceId) && is_numeric($fileId = substr($source, strlen($emptyFilesSourceId)))) {
 				// use `overwritehost` setting in config.php to overwrite the host
 				$output .= $this->urlGenerator->linkToRouteAbsolute('files.View.showFile', ['fileid' => $fileId]) . PHP_EOL;
 			} elseif (str_contains($source, '__')) {

@@ -40,11 +40,11 @@ class ProviderConfigServiceTest extends TestCase {
 
 	public static function dataBank(): array {
 		$validData = [
-			'app1__provider1' => [
+			ProviderConfigService::getConfigKey('app1', 'provider1') => [
 				'isInitiated' => true,
 				'classString' => 'class1',
 			],
-			'app1__provider2' => [
+			ProviderConfigService::getConfigKey('app1', 'provider2') => [
 				'isInitiated' => false,
 				'classString' => 'class2',
 			],
@@ -105,9 +105,9 @@ class ProviderConfigServiceTest extends TestCase {
 			->willReturn($returnVal);
 
 		$this->config
-			->expects($this->once())
+			->expects($returnVal === 'invalid' ? $this->exactly(2) : $this->once())
 			->method('setAppValue')
-			->with(Application::APP_ID, 'providers', $setProvidersValue);
+			->with(Application::APP_ID, 'providers', $this->logicalOr($this->equalTo(''), $this->equalTo($setProvidersValue)));
 
 		$this->configService->updateProvider($appId, $providerId, $providerClass, $isInitiated);
 	}
@@ -134,9 +134,12 @@ class ProviderConfigServiceTest extends TestCase {
 		}
 
 		$this->config
-			->expects($this->once())
+			->expects($returnVal === 'invalid' ? $this->exactly(2) : $this->once())
 			->method('setAppValue')
-			->with(Application::APP_ID, 'providers', json_encode($providers));
+			->with(Application::APP_ID, 'providers', $this->logicalOr(
+				$this->equalTo(''),
+				$this->equalTo(json_encode($providers))
+			));
 
 		$this->configService->removeProvider($appId, $providerId);
 	}

@@ -13,7 +13,6 @@
 namespace OCA\ContextChat\Command;
 
 use OCA\ContextChat\TextProcessing\ContextChatTaskType;
-use OCA\ContextChat\TextProcessing\ScopedContextChatTaskType;
 use OCA\ContextChat\Type\ScopeType;
 use OCP\TextProcessing\FreePromptTaskType;
 use OCP\TextProcessing\IManager;
@@ -80,26 +79,30 @@ class Prompt extends Command {
 			throw new \InvalidArgumentException('Cannot use --context-sources with --context-provider');
 		}
 
-		if ($noContext) {
-			$task = new Task(FreePromptTaskType::class, $prompt, 'context_chat', $userId);
-		} elseif (!empty($contextSources)) {
-			$contextSources = preg_replace('/\s*,+\s*/', ',', $contextSources);
-			$contextSourcesArray = array_filter(explode(',', $contextSources), fn ($source) => !empty($source));
-			$task = new Task(ScopedContextChatTaskType::class, json_encode([
-				'scopeType' => ScopeType::SOURCE,
-				'scopeList' => $contextSourcesArray,
-				'prompt' => $prompt,
-			]), 'context_chat', $userId);
-		} elseif (!empty($contextProviders)) {
-			$contextProviders = preg_replace('/\s*,+\s*/', ',', $contextProviders);
-			$contextProvidersArray = array_filter(explode(',', $contextProviders), fn ($source) => !empty($source));
-			$task = new Task(ScopedContextChatTaskType::class, json_encode([
-				'scopeType' => ScopeType::PROVIDER,
-				'scopeList' => $contextProvidersArray,
-				'prompt' => $prompt,
-			]), 'context_chat', $userId);
-		} else {
-			$task = new Task(ContextChatTaskType::class, $prompt, 'context_chat', $userId);
+		try {
+			if ($noContext) {
+				$task = new Task(FreePromptTaskType::class, $prompt, 'context_chat', $userId);
+			} elseif (!empty($contextSources)) {
+				$contextSources = preg_replace('/\s*,+\s*/', ',', $contextSources);
+				$contextSourcesArray = array_filter(explode(',', $contextSources), fn ($source) => !empty($source));
+				$task = new Task(ContextChatTaskType::class, json_encode([
+					'scopeType' => ScopeType::SOURCE,
+					'scopeList' => $contextSourcesArray,
+					'prompt' => $prompt,
+				], JSON_THROW_ON_ERROR), 'context_chat', $userId);
+			} elseif (!empty($contextProviders)) {
+				$contextProviders = preg_replace('/\s*,+\s*/', ',', $contextProviders);
+				$contextProvidersArray = array_filter(explode(',', $contextProviders), fn ($source) => !empty($source));
+				$task = new Task(ContextChatTaskType::class, json_encode([
+					'scopeType' => ScopeType::PROVIDER,
+					'scopeList' => $contextProvidersArray,
+					'prompt' => $prompt,
+				], JSON_THROW_ON_ERROR), 'context_chat', $userId);
+			} else {
+				$task = new Task(ContextChatTaskType::class, json_encode([ 'prompt' => $prompt ], JSON_THROW_ON_ERROR), 'context_chat', $userId);
+			}
+		} catch (\JsonException $e) {
+			throw new \InvalidArgumentException('Invalid input, cannot encode JSON', intval($e->getCode()), $e);
 		}
 
 		$this->textProcessingManager->runTask($task);
