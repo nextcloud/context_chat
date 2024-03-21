@@ -6,6 +6,27 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## 2.0.0 – 2024-03-21
+
+### Changed
+- refactor and fix scoped context chat
+- install app_api from git & use setup_python action
+- use full path of file instead of file name
+
+### Fixed
+- fix: app disable listener now deletes sources for all users
+- replace usage of enum with a class and update gh workflows
+- fix integration test workflow
+- update app_api app installation commands
+
+### Added
+- add support for scoped context in query
+- fix: metadata search for provider
+- add no-context option to prompt command
+- AppAPI min version check
+- introduce a content provider interface
+
+
 ## 1.0.0 – 2023-09-21
 ### Added
 * the app
