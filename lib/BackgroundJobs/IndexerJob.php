@@ -117,15 +117,19 @@ class IndexerJob extends TimedJob {
 			if (!$file instanceof File) {
 				continue;
 			}
-			try {
-				$fileHandle = $file->fopen('r');
-			} catch (LockedException|NotPermittedException $e) {
-				$this->logger->error('Could not open file ' . $file->getPath() . ' for reading', ['exception' => $e]);
-				continue;
-			}
 			$userIds = $this->storageService->getUsersForFileId($queueFile->getFileId());
 			foreach ($userIds as $userId) {
 				try {
+					try {
+						$fileHandle = $file->fopen('r');
+					} catch (LockedException|NotPermittedException $e) {
+						$this->logger->error('Could not open file ' . $file->getPath() . ' for reading', ['exception' => $e]);
+						continue 2;
+					}
+					if (!is_resource($fileHandle)) {
+						$this->logger->warning('File handle for' . $file->getPath() . ' is not readable');
+						continue;
+					}
 					$source = new Source(
 						$userId,
 						ProviderService::getSourceId($file->getId()),
