@@ -231,7 +231,7 @@ class LangRopeService {
 
 		$output = str_repeat(PHP_EOL, 3) . $this->l10n->t('Sources referenced to generate the above response:') . PHP_EOL;
 
-		$emptyFilesSourceId = ProviderService::getSourceId('');
+		$emptyFilesSourceId = ProviderConfigService::getSourceId('');
 		foreach ($sourceRefs as $source) {
 			if (str_starts_with($source, $emptyFilesSourceId) && is_numeric($fileId = substr($source, strlen($emptyFilesSourceId)))) {
 				// use `overwritehost` setting in config.php to overwrite the host

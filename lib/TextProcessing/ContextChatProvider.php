@@ -5,7 +5,7 @@ namespace OCA\ContextChat\TextProcessing;
 
 use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\Service\LangRopeService;
-use OCA\ContextChat\Service\ProviderService;
+use OCA\ContextChat\Service\ProviderConfigService;
 use OCA\ContextChat\Service\ScanService;
 use OCA\ContextChat\Type\ScopeType;
 use OCP\Files\File;
@@ -127,12 +127,12 @@ class ContextChatProvider implements IProvider, IProviderWithUserId {
 		$indexedFiles = [];
 
 		foreach ($scopeList as $scope) {
-			if (!str_contains($scope, ProviderService::getSourceId(''))) {
+			if (!str_contains($scope, ProviderConfigService::getSourceId(''))) {
 				$this->logger->warning('Invalid source format, expected "sourceId: itemId"');
 				continue;
 			}
 
-			$nodeId = substr($scope, strlen(ProviderService::getSourceId('')));
+			$nodeId = substr($scope, strlen(ProviderConfigService::getSourceId('')));
 
 			try {
 				$userFolder = $this->rootFolder->getUserFolder($this->userId);

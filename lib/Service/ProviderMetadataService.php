@@ -17,31 +17,23 @@ use OCP\IURLGenerator;
 use OCP\IUserManager;
 use Psr\Log\LoggerInterface;
 
-class ProviderService extends ProviderConfigService {
+class ProviderMetadataService {
 	public function __construct(
 		private LoggerInterface $logger,
 		private IL10N $l10n,
 		private IAppManager $appManager,
 		private IUserManager $userManager,
-		private ProviderConfigService $providerService,
+		private ProviderConfigService $providerConfig,
 		private IURLGenerator $urlGenerator,
 		private ?string $userId,
 	) {
-	}
-
-	public static function getSourceId(int | string $nodeId, ?string $providerId = null): string {
-		return ($providerId ?? self::getDefaultProviderKey()) . ': ' . $nodeId;
-	}
-
-	public static function getDefaultProviderKey(): string {
-		return ProviderConfigService::getConfigKey('files', 'default');
 	}
 
 	/**
 	 * @return list<array{ id: string, label: string, icon: string }>
 	 */
 	public function getEnrichedProviders(): array {
-		$providers = $this->providerService->getProviders();
+		$providers = $this->providerConfig->getProviders();
 		$sanitizedProviders = [];
 
 		foreach ($providers as $providerKey => $metadata) {

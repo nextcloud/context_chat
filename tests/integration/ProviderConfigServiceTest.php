@@ -23,11 +23,11 @@ class ProviderConfigServiceTest extends TestCase {
 	/** @var MockObject | IConfig */
 	private IConfig $config;
 
-	private ProviderConfigService $configService;
+	private ProviderConfigService $providerConfig;
 
 	public function setUp(): void {
 		$this->config = $this->createMock(IConfig::class);
-		$this->configService = new ProviderConfigService($this->config);
+		$this->providerConfig = new ProviderConfigService($this->config);
 	}
 
 	public function testGetConfigKey(): void {
@@ -70,7 +70,7 @@ class ProviderConfigServiceTest extends TestCase {
 			->with(Application::APP_ID, 'providers')
 			->willReturn($returnVal);
 
-		$this->assertEquals($providers, $this->configService->getProviders());
+		$this->assertEquals($providers, $this->providerConfig->getProviders());
 	}
 
 	/**
@@ -109,7 +109,7 @@ class ProviderConfigServiceTest extends TestCase {
 			->method('setAppValue')
 			->with(Application::APP_ID, 'providers', $this->logicalOr($this->equalTo(''), $this->equalTo($setProvidersValue)));
 
-		$this->configService->updateProvider($appId, $providerId, $providerClass, $isInitiated);
+		$this->providerConfig->updateProvider($appId, $providerId, $providerClass, $isInitiated);
 	}
 
 	/**
@@ -141,7 +141,7 @@ class ProviderConfigServiceTest extends TestCase {
 				$this->equalTo(json_encode($providers))
 			));
 
-		$this->configService->removeProvider($appId, $providerId);
+		$this->providerConfig->removeProvider($appId, $providerId);
 	}
 
 	/**
@@ -165,6 +165,6 @@ class ProviderConfigServiceTest extends TestCase {
 			default => true,
 		};
 
-		$this->assertEquals($expected, $this->configService->hasProvider($appId, $providerId));
+		$this->assertEquals($expected, $this->providerConfig->hasProvider($appId, $providerId));
 	}
 }
