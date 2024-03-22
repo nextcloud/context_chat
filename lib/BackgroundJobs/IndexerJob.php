@@ -124,7 +124,7 @@ class IndexerJob extends TimedJob {
 						$fileHandle = $file->fopen('r');
 					} catch (LockedException|NotPermittedException $e) {
 						$this->logger->error('Could not open file ' . $file->getPath() . ' for reading', ['exception' => $e]);
-						continue 2;
+						continue;
 					}
 					if (!is_resource($fileHandle)) {
 						$this->logger->warning('File handle for' . $file->getPath() . ' is not readable');
