@@ -22,7 +22,7 @@ use OCA\ContextChat\Public\ContentItem;
 use OCA\ContextChat\Public\ContentManager;
 use OCA\ContextChat\Public\IContentProvider;
 use OCA\ContextChat\Service\LangRopeService;
-use OCA\ContextChat\Service\ProviderService;
+use OCA\ContextChat\Service\ProviderConfigService;
 use OCP\BackgroundJob\IJobList;
 use OCP\Server;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -32,8 +32,8 @@ use Test\TestCase;
 class ContentManagerTest extends TestCase {
 	/** @var MockObject | QueueContentItemMapper */
 	private QueueContentItemMapper $mapper;
-	/** @var MockObject | ProviderService */
-	private ProviderService $providerService;
+	/** @var MockObject | ProviderConfigService */
+	private ProviderConfigService $providerConfig;
 	/** @var MockObject | LangRopeService */
 	private LangRopeService $service;
 
@@ -48,23 +48,23 @@ class ContentManagerTest extends TestCase {
 		$this->jobList = Server::get(IJobList::class);
 		$this->logger = Server::get(LoggerInterface::class);
 		$this->mapper = $this->createMock(QueueContentItemMapper::class);
-		$this->providerService = $this->createMock(ProviderService::class);
+		$this->providerConfig = $this->createMock(ProviderConfigService::class);
 		$this->service = $this->createMock(LangRopeService::class);
 
-		$this->providerService
+		$this->providerConfig
 			->method('getProviders')
 			->willReturn([
-				ProviderService::getDefaultProviderKey() => [
+				ProviderConfigService::getDefaultProviderKey() => [
 					'isInitiated' => true,
 					'classString' => '',
 				],
-				ProviderService::getConfigKey(Application::APP_ID, 'test-provider') => [
+				ProviderConfigService::getConfigKey(Application::APP_ID, 'test-provider') => [
 					'isInitiated' => false,
 					'classString' => static::$providerClass,
 				],
 			]);
 
-		// $this->overwriteService(ProviderConfigService::class, $this->providerConfigService);
+		// $this->overwriteService(ProviderConfigService::class, $this->providerConfig);
 
 		// using this app's app id to pass the check that the app is enabled for the user
 		$providerObj = new ContentProvider(Application::APP_ID, 'test-provider', function () {
@@ -78,7 +78,7 @@ class ContentManagerTest extends TestCase {
 
 		$this->contentManager = new ContentManager(
 			$this->jobList,
-			$this->providerService,
+			$this->providerConfig,
 			$this->service,
 			$this->mapper,
 			$this->logger,
@@ -106,13 +106,13 @@ class ContentManagerTest extends TestCase {
 		string $providerId,
 		bool $registrationSuccessful,
 	): void {
-		$this->providerService
+		$this->providerConfig
 			->expects($registrationSuccessful ? $this->once() : $this->never())
 			->method('hasProvider')
 			->with($appId, $providerId)
 			->willReturn(false);
 
-		$this->providerService
+		$this->providerConfig
 			->expects($registrationSuccessful ? $this->once() : $this->never())
 			->method('updateProvider')
 			->with($appId, $providerId, $providerClass);

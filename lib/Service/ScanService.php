@@ -94,10 +94,11 @@ class ScanService {
 			return null;
 		}
 
-		$providerKey = ProviderService::getDefaultProviderKey();
+		$providerKey = ProviderConfigService::getDefaultProviderKey();
+		$sourceId = ProviderConfigService::getSourceId($node->getId());
 		return new Source(
 			$userId,
-			$providerKey . ': ' . $node->getId(),
+			$sourceId,
 			$node->getPath(),
 			$fileHandle,
 			$node->getMTime(),

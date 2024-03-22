@@ -16,7 +16,7 @@ namespace OCA\ContextChat\BackgroundJobs;
 use OCA\ContextChat\Db\QueueContentItem;
 use OCA\ContextChat\Db\QueueContentItemMapper;
 use OCA\ContextChat\Service\LangRopeService;
-use OCA\ContextChat\Service\ProviderService;
+use OCA\ContextChat\Service\ProviderConfigService;
 use OCA\ContextChat\Type\Source;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\IJobList;
@@ -58,8 +58,8 @@ class SubmitContentJob extends QueuedJob {
 
 		foreach ($bucketed as $userId => $entities) {
 			$sources = array_map(function (QueueContentItem $item) use ($userId) {
-				$providerKey = ProviderService::getConfigKey($item->getAppId(), $item->getProviderId());
-				$sourceId = ProviderService::getSourceId($item->getItemId(), $providerKey);
+				$providerKey = ProviderConfigService::getConfigKey($item->getAppId(), $item->getProviderId());
+				$sourceId = ProviderConfigService::getSourceId($item->getItemId(), $providerKey);
 				return new Source(
 					$userId,
 					$sourceId,

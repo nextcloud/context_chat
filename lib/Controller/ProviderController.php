@@ -22,7 +22,8 @@
 
 namespace OCA\ContextChat\Controller;
 
-use OCA\ContextChat\Service\ProviderService;
+use OCA\ContextChat\Service\ProviderConfigService;
+use OCA\ContextChat\Service\ProviderMetadataService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\DataResponse;
@@ -33,7 +34,7 @@ class ProviderController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private ProviderService $providerService,
+		private ProviderMetadataService $providerService,
 	) {
 		parent::__construct($appName, $request);
 	}
@@ -43,7 +44,7 @@ class ProviderController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function getDefaultProviderKey(): DataResponse {
-		$providerKey = $this->providerService->getDefaultProviderKey();
+		$providerKey = ProviderConfigService::getDefaultProviderKey();
 		return new DataResponse($providerKey);
 	}
 

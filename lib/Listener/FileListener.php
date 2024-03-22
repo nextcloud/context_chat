@@ -10,7 +10,7 @@ namespace OCA\ContextChat\Listener;
 use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\Db\QueueFile;
 use OCA\ContextChat\Service\LangRopeService;
-use OCA\ContextChat\Service\ProviderService;
+use OCA\ContextChat\Service\ProviderConfigService;
 use OCA\ContextChat\Service\QueueService;
 use OCA\ContextChat\Service\StorageService;
 use OCP\DB\Exception;
@@ -121,7 +121,7 @@ class FileListener implements IEventListener {
 					if (!$node instanceof File) {
 						continue;
 					}
-					$fileRefs[] = ProviderService::getSourceId($node->getId());
+					$fileRefs[] = ProviderConfigService::getSourceId($node->getId());
 				}
 
 				$this->langRopeService->deleteSources($userId, $fileRefs);
@@ -130,7 +130,7 @@ class FileListener implements IEventListener {
 					return;
 				}
 
-				$fileRef = ProviderService::getSourceId($node->getId());
+				$fileRef = ProviderConfigService::getSourceId($node->getId());
 				foreach ($userIds as $userId) {
 					$this->langRopeService->deleteSources($userId, [$fileRef]);
 				}
@@ -195,7 +195,7 @@ class FileListener implements IEventListener {
 		}
 
 		foreach ($this->storageService->getUsersForFileId($node->getId()) as $userId) {
-			$fileRef = ProviderService::getSourceId($node->getId());
+			$fileRef = ProviderConfigService::getSourceId($node->getId());
 			$this->langRopeService->deleteSources($userId, [$fileRef]);
 		}
 	}

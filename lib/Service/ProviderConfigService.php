@@ -23,6 +23,14 @@ class ProviderConfigService {
 	) {
 	}
 
+	public static function getSourceId(int | string $nodeId, ?string $providerId = null): string {
+		return ($providerId ?? self::getDefaultProviderKey()) . ': ' . $nodeId;
+	}
+
+	public static function getDefaultProviderKey(): string {
+		return ProviderConfigService::getConfigKey('files', 'default');
+	}
+
 	public static function getConfigKey(string $appId, string $providerId): string {
 		return $appId . '__' . $providerId;
 	}
