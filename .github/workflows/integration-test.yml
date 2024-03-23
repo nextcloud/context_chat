@@ -20,7 +20,7 @@ concurrency:
 
 jobs:
   transcription:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
 
     strategy:
       # do not stop on another job's failure
@@ -150,12 +150,12 @@ jobs:
         with:
           python-version: '3.11'
           cache: 'pip'
-          cache-dependency-path: context_chat_backend/reqs.txt
+          cache-dependency-path: context_chat_backend/requirements.cpu.txt
 
       - name: Install and init backend
         run: |
           cd context_chat_backend
-          pip install --no-deps -r requirements.txt
+          pip install --no-deps -r requirements.cpu.txt
           pip install --upgrade pip setuptools wheel
           CMAKE_ARGS="-DLLAMA_OPENBLAS=on" pip install llama-cpp-python
           cp example.env .env
@@ -166,7 +166,7 @@ jobs:
       - name: Register backend
         run: |
           ./occ app_api:daemon:register --net host manual_install "Manual Install" manual-install http localhost http://localhost:8080
-          ./occ app_api:app:register context_chat_backend manual_install --json-info "{\"appid\":\"context_chat_backend\",\"name\":\"Context Chat Backend\",\"daemon_config_name\":\"manual_install\",\"version\":\"1.2.0\",\"secret\":\"12345\",\"port\":10034,\"scopes\":[],\"system_app\":0}" --force-scopes --wait-finish
+          ./occ app_api:app:register context_chat_backend manual_install --json-info "{\"appid\":\"context_chat_backend\",\"name\":\"Context Chat Backend\",\"daemon_config_name\":\"manual_install\",\"version\":\"2.0.1\",\"secret\":\"12345\",\"port\":10034,\"scopes\":[],\"system_app\":0}" --force-scopes --wait-finish
 
       - name: Scan files
         run: |

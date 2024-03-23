@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## 2.0.1 – 2024-03-23
+
+### Fixed
+- update integration-test.yml
+- separate ProviderConfigService
+- IndexerJob: Avoid sending the same resource multiple times
+
+
 ## 2.0.0 – 2024-03-21
 
 ### Changed
