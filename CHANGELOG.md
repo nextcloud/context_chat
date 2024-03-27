@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [2.0.2] – 2024-03-27
+
+### Fixed
+- Fix file listener
+
 ## 2.0.1 – 2024-03-23
 
 ### Fixed
