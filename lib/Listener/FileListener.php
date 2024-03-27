@@ -124,7 +124,9 @@ class FileListener implements IEventListener {
 					$fileRefs[] = ProviderConfigService::getSourceId($node->getId());
 				}
 
-				$this->langRopeService->deleteSources($userId, $fileRefs);
+				foreach ($userIds as $userId) {
+					$this->langRopeService->deleteSources($userId, $fileRefs);
+				}
 			} else {
 				if (!$this->allowedMimeType($node)) {
 					return;
