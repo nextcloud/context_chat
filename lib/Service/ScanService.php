@@ -32,6 +32,12 @@ class ScanService {
 	) {
 	}
 
+	/**
+	 * @param string $userId
+	 * @param array $mimeTypeFilter
+	 * @param string|null $directory
+	 * @return \Generator<Source>
+	 */
 	public function scanUserFiles(string $userId, array $mimeTypeFilter, ?string $directory = null): \Generator {
 		if ($directory === null) {
 			$userFolder = $this->root->getUserFolder($userId);
@@ -43,6 +49,12 @@ class ScanService {
 		return [];
 	}
 
+	/**
+	 * @param string $userId
+	 * @param array $mimeTypeFilter
+	 * @param Folder $directory
+	 * @return \Generator<Source>
+	 */
 	public function scanDirectory(string $userId, array $mimeTypeFilter, Folder $directory): \Generator {
 		$sources = [];
 		$size = 0;
@@ -64,7 +76,7 @@ class ScanService {
 				$sources[] = $source;
 				$size += $node_size;
 
-				yield $node->getPath();
+				yield $source;
 				continue;
 			}
 		}
