@@ -6,10 +6,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [2.1.0] – 2024-04-15
+
+### Fixed
+- send source id instead of file path
+
+
 ## [2.0.2] – 2024-03-27
 
 ### Fixed
 - Fix file listener
+
 
 ## 2.0.1 – 2024-03-23
 
