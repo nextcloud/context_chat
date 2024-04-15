@@ -52,7 +52,7 @@ class ScanFiles extends Command {
 		$userId = $input->getArgument('user_id');
 		$scan = $this->scanService->scanUserFiles($userId, $mimeTypeFilter);
 		foreach ($scan as $s) {
-			$output->writeln('[' . $userId . '] Scanned ' . $s);
+			$output->writeln('[' . $userId . '] Scanned ' . $s->title);
 		}
 
 		return 0;

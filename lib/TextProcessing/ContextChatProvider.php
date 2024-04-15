@@ -8,6 +8,7 @@ use OCA\ContextChat\Service\LangRopeService;
 use OCA\ContextChat\Service\ProviderConfigService;
 use OCA\ContextChat\Service\ScanService;
 use OCA\ContextChat\Type\ScopeType;
+use OCA\ContextChat\Type\Source;
 use OCP\Files\File;
 use OCP\Files\Folder;
 use OCP\Files\IRootFolder;
@@ -120,11 +121,10 @@ class ContextChatProvider implements IProvider, IProviderWithUserId {
 
 	/**
 	 * @param array scopeList
-	 * @return array<string> List of indexed files
+	 * @return array<string> List of scopes that were successfully indexed
 	 */
 	private function indexFiles(string ...$scopeList): array {
 		$nodes = [];
-		$indexedFiles = [];
 
 		foreach ($scopeList as $scope) {
 			if (!str_contains($scope, ProviderConfigService::getSourceId(''))) {
@@ -159,27 +159,28 @@ class ContextChatProvider implements IProvider, IProviderWithUserId {
 			];
 		}
 
-		// remove subfolders
+		// remove subfolders/files if parent folder is already indexed
 		$filteredNodes = $nodes;
 		foreach ($nodes as $node) {
 			if ($node['node'] instanceof Folder) {
 				$filteredNodes = array_filter($filteredNodes, function ($n) use ($node) {
 					return !str_starts_with($n['path'], $node['path'] . DIRECTORY_SEPARATOR);
 				});
-				$filteredNodes[] = $node;
 			}
 		}
 
+		$indexedSources = [];
 		foreach ($filteredNodes as $node) {
 			try {
 				if ($node['node'] instanceof File) {
 					$source = $this->scanService->getSourceFromFile($this->userId, Application::MIMETYPES, $node['node']);
 					$this->scanService->indexSources([$source]);
-					$indexedFiles[] = $node['scope'];
+					$indexedSources[] = $node['scope'];
 				} elseif ($node['node'] instanceof Folder) {
-					$indexedFiles = array_merge(
-						$indexedFiles,
-						iterator_to_array($this->scanService->scanDirectory($this->userId, Application::MIMETYPES, $node['node'])),
+					$fileSources = iterator_to_array($this->scanService->scanDirectory($this->userId, Application::MIMETYPES, $node['node']));
+					$indexedSources = array_merge(
+						$indexedSources,
+						array_map(fn (Source $source) => $source->reference, $fileSources),
 					);
 				}
 			} catch (RuntimeException $e) {
@@ -187,7 +188,7 @@ class ContextChatProvider implements IProvider, IProviderWithUserId {
 			}
 		}
 
-		return $indexedFiles;
+		return $indexedSources;
 	}
 
 	public function getTaskType(): string {

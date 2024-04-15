@@ -20,7 +20,7 @@ concurrency:
 
 jobs:
   transcription:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     strategy:
       # do not stop on another job's failure
@@ -150,16 +150,14 @@ jobs:
         with:
           python-version: '3.11'
           cache: 'pip'
-          cache-dependency-path: context_chat_backend/requirements.cpu.txt
+          cache-dependency-path: context_chat_backend/requirements.txt
 
       - name: Install and init backend
         run: |
           cd context_chat_backend
-          pip install --no-deps -r requirements.cpu.txt
           pip install --upgrade pip setuptools wheel
-          CMAKE_ARGS="-DLLAMA_OPENBLAS=on" pip install llama-cpp-python
+          pip install --no-deps -r requirements.txt
           cp example.env .env
-          cp config.cpu.yaml config.yaml
           echo "NEXTCLOUD_URL=http://localhost:8080" >> .env
           ./main.py &> backend_logs &
 
