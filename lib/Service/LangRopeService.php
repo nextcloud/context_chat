@@ -75,7 +75,10 @@ class LangRopeService {
 			Application::APP_ID,
 			'request_timeout',
 			strval(Application::CC_DEFAULT_REQUEST_TIMEOUT),
-		) ?: Application::CC_DEFAULT_REQUEST_TIMEOUT;
+		);
+		if (str_contains($route, 'delete')) {
+			$timeout = '3'; // 3 seconds
+		}
 
 		$options = [
 			'timeout' => $timeout,
