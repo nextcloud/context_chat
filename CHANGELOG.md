@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [2.1.1] – 2024-04-23
+
+### Fixed
+- 3 sec timeout for deletion requests
+- update integration-test gh workflow
+
+
 ## [2.1.0] – 2024-04-15
 
 ### Fixed
