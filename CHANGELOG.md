@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [2.1.2] – 2024-05-02
+
+### Fixed
+- no exceptions for delete paths
+
+
 ## [2.1.1] – 2024-04-23
 
 ### Fixed
