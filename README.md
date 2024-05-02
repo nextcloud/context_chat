@@ -10,5 +10,5 @@
 
 > [!NOTE]
 > Refer to the [Context Chat Backend's readme](https://github.com/nextcloud/context_chat_backend/?tab=readme-ov-file) and the [AppAPI's documentation](https://cloud-py-api.github.io/app_api/) for help with setup of AppAPI's deploy daemon.  
-> The HTTP request timeout is 50 minutes for all requests except deletion requests, which have 3 seconds timeout. The 50 minutes timeout can be changed with the `request_timeout` app config.  
+> The HTTP request timeout is 50 minutes for all requests except deletion requests, which have 3 seconds timeout. The 50 minutes timeout can be changed with the `request_timeout` app config. The same also needs to be done for docker socket proxy (if you're using that). See [Slow responding ExApps](https://github.com/cloud-py-api/docker-socket-proxy?tab=readme-ov-file#slow-responding-exapps)  
 > Please open an issue if you need help :)
