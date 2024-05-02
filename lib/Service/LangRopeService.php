@@ -131,7 +131,6 @@ class LangRopeService {
 	 * @param string $userId
 	 * @param string $providerKey
 	 * @return void
-	 * @throws RuntimeException
 	 */
 	public function deleteSourcesByProvider(string $userId, string $providerKey): void {
 		$params = [
@@ -139,27 +138,33 @@ class LangRopeService {
 			'providerKey' => $providerKey,
 		];
 
-		$this->requestToExApp('/deleteSourcesByProvider', 'POST', $params);
+		try {
+			$this->requestToExApp('/deleteSourcesByProvider', 'POST', $params);
+		} catch (RuntimeException $e) {
+			$this->logger->error('Could not delete sources by provider', ['exception' => $e]);
+		}
 	}
 
 	/**
 	 * @param string $providerKey
 	 * @return void
-	 * @throws RuntimeException
 	 */
 	public function deleteSourcesByProviderForAllUsers(string $providerKey): void {
 		$params = [
 			'providerKey' => $providerKey,
 		];
 
-		$this->requestToExApp('/deleteSourcesByProviderForAllUsers', 'POST', $params);
+		try {
+			$this->requestToExApp('/deleteSourcesByProviderForAllUsers', 'POST', $params);
+		} catch (RuntimeException $e) {
+			$this->logger->error('Could not delete sources by provider for all users', ['exception' => $e]);
+		}
 	}
 
 	/**
 	 * @param string $userId
 	 * @param string[] $sourceNames
 	 * @return void
-	 * @throws RuntimeException
 	 */
 	public function deleteSources(string $userId, array $sourceNames): void {
 		if (count($sourceNames) === 0) {
@@ -171,7 +176,11 @@ class LangRopeService {
 			'sourceNames' => $sourceNames,
 		];
 
-		$this->requestToExApp('/deleteSources', 'POST', $params);
+		try {
+			$this->requestToExApp('/deleteSources', 'POST', $params);
+		} catch (RuntimeException $e) {
+			$this->logger->error('Could not delete sources', ['exception' => $e]);
+		}
 	}
 
 	/**
