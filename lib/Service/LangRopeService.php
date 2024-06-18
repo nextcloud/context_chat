@@ -55,20 +55,47 @@ class LangRopeService {
 	): array {
 		$user = $this->userId === null ? null : $this->userMan->get($this->userId);
 		if (!$this->appManager->isEnabledForUser('app_api', $user)) {
-			$this->logger->error('AppAPI is not enabled, please enable it or install the AppAPI app from the Nextcloud AppStore');
-			throw new RuntimeException($this->l10n->t('AppAPI is not enabled, please enable it or install the AppAPI app from the Nextcloud AppStore'));
+			throw new RuntimeException('AppAPI is not enabled, please enable it or install the AppAPI app from the Nextcloud AppStore');
 		}
 
 		if (version_compare($this->appManager->getAppVersion('app_api', false), Application::MIN_APP_API_VERSION, '<')) {
-			$this->logger->error('AppAPI app version is too old, please update it to at least ' . Application::MIN_APP_API_VERSION);
-			throw new RuntimeException($this->l10n->t('AppAPI app version is too old, please update it to at least %s', Application::MIN_APP_API_VERSION));
+			throw new RuntimeException('AppAPI app version is too old, please update it to at least ' . Application::MIN_APP_API_VERSION);
 		}
 
 		try {
 			$appApiFunctions = \OCP\Server::get(\OCA\AppAPI\PublicFunctions::class);
 		} catch (ContainerExceptionInterface | NotFoundExceptionInterface $e) {
-			$this->logger->error('Could not get AppAPI public functions', ['exception' => $e]);
-			throw new RuntimeException($this->l10n->t('Could not get AppAPI public functions'));
+			throw new RuntimeException('Could not get AppAPI public functions');
+		}
+
+		// backend init check
+		$backendInit = $this->config->getAppValue(Application::APP_ID, 'backend_init', 'false');
+		if ($backendInit !== 'true') {
+			$enabledResponse = $appApiFunctions->exAppRequest('context_chat_backend', '/enabled', $this->userId, 'GET');
+
+			if (is_array($enabledResponse) && isset($enabledResponse['error'])) {
+				throw new RuntimeException('Error during request to ExApp (context_chat_backend): ' . $enabledResponse['error']);
+			}
+
+			$enabledResponse = $enabledResponse->getBody();
+
+			if (!is_string($enabledResponse)) {
+				$this->logger->error('Error during request to ExApp (context_chat_backend): response body is not a string', ['response' => $enabledResponse]);
+				throw new RuntimeException('Error during request to ExApp (context_chat_backend): response body is not a string');
+			}
+
+			$enabledResponse = json_decode($enabledResponse, true);
+			if ($enabledResponse === null) {
+				$this->logger->error('Error during request to ExApp (context_chat_backend): response body is not a valid JSON', ['response' => $enabledResponse]);
+				throw new RuntimeException('Error during request to ExApp (context_chat_backend): response body is not a valid JSON');
+			}
+
+			if (isset($enabledResponse['enabled']) && $enabledResponse['enabled'] === true) {
+				$this->config->setAppValue(Application::APP_ID, 'backend_init', 'true');
+			} else {
+				$this->config->setAppValue(Application::APP_ID, 'backend_init', 'false');
+				throw new RuntimeException('Context Chat backend is not ready yet. Please wait a while before trying again.');
+			}
 		}
 
 		$timeout = $this->config->getAppValue(
@@ -109,8 +136,7 @@ class LangRopeService {
 			$options,
 		);
 		if (is_array($response) && isset($response['error'])) {
-			$this->logger->error('Error during request to ExApp (context_chat_backend): ' . $response['error']);
-			throw new RuntimeException($this->l10n->t('Error during request to ExApp (context_chat_backend): ') . $response['error']);
+			throw new RuntimeException('Error during request to ExApp (context_chat_backend): ' . $response['error']);
 		}
 
 		$resContentType = $response->getHeader('Content-Type');
@@ -118,7 +144,7 @@ class LangRopeService {
 			$body = $response->getBody();
 			if (!is_string($body)) {
 				$this->logger->error('Error during request to ExApp (context_chat_backend): response body is not a string, but content type is application/json', ['response' => $response]);
-				throw new RuntimeException($this->l10n->t('Error during request to ExApp (context_chat_backend): response body is not a string, but content type is application/json'));
+				throw new RuntimeException('Error during request to ExApp (context_chat_backend): response body is not a string, but content type is application/json');
 			}
 
 			return json_decode($body, true);

@@ -31,7 +31,7 @@ Refer to the [Context Chat Backend's readme](https://github.com/nextcloud/contex
     <screenshot>https://github.com/nextcloud/context_chat/raw/main/img/screenshot2.jpg</screenshot>
     <screenshot>https://github.com/nextcloud/context_chat/raw/main/img/screenshot3.jpg</screenshot>
     <dependencies>
-        <nextcloud min-version="28" max-version="29"/>
+        <nextcloud min-version="28" max-version="30"/>
     </dependencies>
     <background-jobs>
 		<job>OCA\ContextChat\BackgroundJobs\SchedulerJob</job>
