@@ -67,14 +67,11 @@ class ProviderMetadataService {
 				$icon = '';
 			}
 
-			if (!isset($appInfo['name'])) {
-				$this->logger->info("App $appId does not have a name, skipping");
-				continue;
-			}
+			$appName = $appInfo['name'] ?? ucfirst($appId);
 
 			$sanitizedProviders[] = [
 				'id' => $providerKey,
-				'label' => ucfirst($providerId) . ' - ' . $appInfo['name'],
+				'label' => $appName . ' - ' . ucfirst($providerId),
 				'icon' => $icon,
 			];
 		}
