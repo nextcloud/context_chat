@@ -35,6 +35,7 @@ class LangRopeService {
 		private IAppManager $appManager,
 		private IURLGenerator $urlGenerator,
 		private IUserManager $userMan,
+		private ProviderConfigService $providerService,
 		private ?string $userId,
 	) {
 	}
@@ -277,7 +278,7 @@ class LangRopeService {
 			} elseif (str_contains($source, '__')) {
 				// source id ($appId__$providerId: $itemId)
 				/** @var string[] */
-				$sourceValues = explode('__', $source, 2);
+				$sourceValues = explode(': ', $source, 2);
 
 				if (empty($sourceValues)) {
 					$this->logger->warning('Invalid source id', ['source' => $source]);
@@ -286,9 +287,22 @@ class LangRopeService {
 
 				[$identifier, $itemId] = $sourceValues;
 
+				$provider = $this->providerService->getProvider($identifier);
+				if ($provider === null) {
+					$this->logger->warning("No provider found for source id $identifier");
+					continue;
+				}
+
+				if (!isset($provider['classString'])) {
+					$this->logger->warning("Provider does not have a class string", ['provider' => $provider]);
+					continue;
+				}
+
+				$classString = $provider['classString'];
+
 				try {
 					/** @var IContentProvider */
-					$providerObj = Server::get($identifier);
+					$providerObj = Server::get($classString);
 				} catch (ContainerExceptionInterface | NotFoundExceptionInterface $e) {
 					$this->logger->warning('Could not run initial import for content provider', ['exception' => $e]);
 					continue;
