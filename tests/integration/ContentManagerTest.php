@@ -21,7 +21,7 @@ use OCA\ContextChat\Db\QueueContentItemMapper;
 use OCA\ContextChat\Public\ContentItem;
 use OCA\ContextChat\Public\ContentManager;
 use OCA\ContextChat\Public\IContentProvider;
-use OCA\ContextChat\Service\LangRopeService;
+use OCA\ContextChat\Service\DeleteService;
 use OCA\ContextChat\Service\ProviderConfigService;
 use OCP\BackgroundJob\IJobList;
 use OCP\Server;
@@ -34,8 +34,8 @@ class ContentManagerTest extends TestCase {
 	private QueueContentItemMapper $mapper;
 	/** @var MockObject | ProviderConfigService */
 	private ProviderConfigService $providerConfig;
-	/** @var MockObject | LangRopeService */
-	private LangRopeService $service;
+	/** @var MockObject | DeleteService */
+	private DeleteService $deleteService;
 
 	private ContentManager $contentManager;
 	private LoggerInterface $logger;
@@ -49,7 +49,7 @@ class ContentManagerTest extends TestCase {
 		$this->logger = Server::get(LoggerInterface::class);
 		$this->mapper = $this->createMock(QueueContentItemMapper::class);
 		$this->providerConfig = $this->createMock(ProviderConfigService::class);
-		$this->service = $this->createMock(LangRopeService::class);
+		$this->deleteService = $this->createMock(DeleteService::class);
 
 		$this->providerConfig
 			->method('getProviders')
@@ -79,8 +79,8 @@ class ContentManagerTest extends TestCase {
 		$this->contentManager = new ContentManager(
 			$this->jobList,
 			$this->providerConfig,
-			$this->service,
 			$this->mapper,
+			$this->deleteService,
 			$this->logger,
 		);
 	}
