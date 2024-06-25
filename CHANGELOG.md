@@ -6,6 +6,20 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [2.2.0] – 2024-05-02
+
+### Fixed
+- get content provider with class string @kyteinsky
+
+### Added
+- use background jobs for delete requests @kyteinsky
+- Add config flag to disable auto-indexing (#44) @marcelklehr
+- show app name first in providers list @kyteinsky
+- add backend init check to all requests @kyteinsky
+- Add docs on how to implement a provider @marcelklehr
+- add dsp timeout link to readme @kyteinsky
+
+
 ## [2.1.2] – 2024-05-02
 
 ### Fixed
