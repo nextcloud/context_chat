@@ -15,7 +15,7 @@ use OCA\ContextChat\BackgroundJobs\InitialContentImportJob;
 use OCA\ContextChat\BackgroundJobs\SubmitContentJob;
 use OCA\ContextChat\Db\QueueContentItem;
 use OCA\ContextChat\Db\QueueContentItemMapper;
-use OCA\ContextChat\Service\LangRopeService;
+use OCA\ContextChat\Service\DeleteService;
 use OCA\ContextChat\Service\ProviderConfigService;
 use OCP\BackgroundJob\IJobList;
 use OCP\Server;
@@ -27,8 +27,8 @@ class ContentManager {
 	public function __construct(
 		private IJobList $jobList,
 		private ProviderConfigService $providerConfig,
-		private LangRopeService $service,
 		private QueueContentItemMapper $mapper,
+		private DeleteService $deleteService,
 		private LoggerInterface $logger,
 	) {
 	}
@@ -98,7 +98,7 @@ class ContentManager {
 	 */
 	public function removeContentForUsers(string $appId, string $providerId, string $itemId, array $users): void {
 		foreach ($users as $userId) {
-			$this->service->deleteSources($userId, [
+			$this->deleteService->deleteSources($userId, [
 				ProviderConfigService::getSourceId($itemId, ProviderConfigService::getConfigKey($appId, $providerId))
 			]);
 		}
@@ -114,7 +114,7 @@ class ContentManager {
 	 */
 	public function removeAllContentForUsers(string $appId, string $providerId, array $users): void {
 		foreach ($users as $userId) {
-			$this->service->deleteSourcesByProvider($userId, ProviderConfigService::getConfigKey($appId, $providerId));
+			$this->deleteService->deleteSourcesByProvider($userId, ProviderConfigService::getConfigKey($appId, $providerId));
 		}
 	}
 }

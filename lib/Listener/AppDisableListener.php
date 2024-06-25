@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace OCA\ContextChat\Listener;
 
-use OCA\ContextChat\Service\LangRopeService;
+use OCA\ContextChat\Service\DeleteService;
 use OCA\ContextChat\Service\ProviderConfigService;
 use OCP\App\Events\AppDisableEvent;
 use OCP\EventDispatcher\Event;
@@ -26,7 +26,7 @@ use Psr\Log\LoggerInterface;
 class AppDisableListener implements IEventListener {
 	public function __construct(
 		private ProviderConfigService $providerConfig,
-		private LangRopeService $service,
+		private DeleteService $deleteService,
 		private LoggerInterface $logger,
 	) {
 	}
@@ -52,7 +52,7 @@ class AppDisableListener implements IEventListener {
 			}
 
 			$this->providerConfig->removeProvider($appId, $providerId);
-			$this->service->deleteSourcesByProviderForAllUsers($providerId);
+			$this->deleteService->deleteSourcesByProviderForAllUsers($providerId);
 		}
 	}
 }

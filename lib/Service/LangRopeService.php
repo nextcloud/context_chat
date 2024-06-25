@@ -36,6 +36,7 @@ class LangRopeService {
 		private IURLGenerator $urlGenerator,
 		private IUserManager $userMan,
 		private ProviderConfigService $providerService,
+		private DeleteService $deleteService,
 		private ?string $userId,
 	) {
 	}
@@ -104,10 +105,6 @@ class LangRopeService {
 			'request_timeout',
 			strval(Application::CC_DEFAULT_REQUEST_TIMEOUT),
 		);
-		if (str_contains($route, 'delete')) {
-			$timeout = '3'; // 3 seconds
-		}
-
 		$options = [
 			'timeout' => $timeout,
 		];
@@ -155,6 +152,17 @@ class LangRopeService {
 	}
 
 	/**
+	 * @param string $providerKey
+	 * @return void
+	 */
+	public function deleteSourcesByProviderForAllUsers(string $providerKey): void {
+		$params = [
+			'providerKey' => $providerKey,
+		];
+		$this->requestToExApp('/deleteSourcesByProviderForAllUsers', 'POST', $params);
+	}
+
+	/**
 	 * @param string $userId
 	 * @param string $providerKey
 	 * @return void
@@ -164,28 +172,7 @@ class LangRopeService {
 			'userId' => $userId,
 			'providerKey' => $providerKey,
 		];
-
-		try {
-			$this->requestToExApp('/deleteSourcesByProvider', 'POST', $params);
-		} catch (RuntimeException $e) {
-			$this->logger->error('Could not delete sources by provider', ['exception' => $e]);
-		}
-	}
-
-	/**
-	 * @param string $providerKey
-	 * @return void
-	 */
-	public function deleteSourcesByProviderForAllUsers(string $providerKey): void {
-		$params = [
-			'providerKey' => $providerKey,
-		];
-
-		try {
-			$this->requestToExApp('/deleteSourcesByProviderForAllUsers', 'POST', $params);
-		} catch (RuntimeException $e) {
-			$this->logger->error('Could not delete sources by provider for all users', ['exception' => $e]);
-		}
+		$this->requestToExApp('/deleteSourcesByProvider', 'POST', $params);
 	}
 
 	/**
@@ -194,20 +181,11 @@ class LangRopeService {
 	 * @return void
 	 */
 	public function deleteSources(string $userId, array $sourceNames): void {
-		if (count($sourceNames) === 0) {
-			return;
-		}
-
 		$params = [
 			'userId' => $userId,
 			'sourceNames' => $sourceNames,
 		];
-
-		try {
-			$this->requestToExApp('/deleteSources', 'POST', $params);
-		} catch (RuntimeException $e) {
-			$this->logger->error('Could not delete sources', ['exception' => $e]);
-		}
+		$this->requestToExApp('/deleteSources', 'POST', $params);
 	}
 
 	/**

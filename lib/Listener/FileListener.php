@@ -9,7 +9,7 @@ namespace OCA\ContextChat\Listener;
 
 use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\Db\QueueFile;
-use OCA\ContextChat\Service\LangRopeService;
+use OCA\ContextChat\Service\DeleteService;
 use OCA\ContextChat\Service\ProviderConfigService;
 use OCA\ContextChat\Service\QueueService;
 use OCA\ContextChat\Service\StorageService;
@@ -44,7 +44,7 @@ class FileListener implements IEventListener {
 		private StorageService $storageService,
 		private IManager $shareManager,
 		private IRootFolder $rootFolder,
-		private LangRopeService $langRopeService) {
+		private DeleteService $deleteService) {
 	}
 
 	public function handle(Event $event): void {
@@ -125,7 +125,7 @@ class FileListener implements IEventListener {
 				}
 
 				foreach ($userIds as $userId) {
-					$this->langRopeService->deleteSources($userId, $fileRefs);
+					$this->deleteService->deleteSources($userId, $fileRefs);
 				}
 			} else {
 				if (!$this->allowedMimeType($node)) {
@@ -134,7 +134,7 @@ class FileListener implements IEventListener {
 
 				$fileRef = ProviderConfigService::getSourceId($node->getId());
 				foreach ($userIds as $userId) {
-					$this->langRopeService->deleteSources($userId, [$fileRef]);
+					$this->deleteService->deleteSources($userId, [$fileRef]);
 				}
 			}
 		}
@@ -198,7 +198,7 @@ class FileListener implements IEventListener {
 
 		foreach ($this->storageService->getUsersForFileId($node->getId()) as $userId) {
 			$fileRef = ProviderConfigService::getSourceId($node->getId());
-			$this->langRopeService->deleteSources($userId, [$fileRef]);
+			$this->deleteService->deleteSources($userId, [$fileRef]);
 		}
 	}
 
