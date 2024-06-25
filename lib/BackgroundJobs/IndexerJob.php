@@ -13,6 +13,7 @@ use OCA\ContextChat\Service\ProviderConfigService;
 use OCA\ContextChat\Service\QueueService;
 use OCA\ContextChat\Service\StorageService;
 use OCA\ContextChat\Type\Source;
+use OCP\AppFramework\Services\IAppConfig;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\IJobList;
 use OCP\BackgroundJob\TimedJob;
@@ -38,6 +39,7 @@ class IndexerJob extends TimedJob {
 		private LangRopeService $langRopeService,
 		private StorageService  $storageService,
 		private IRootFolder     $rootFolder,
+		private IAppConfig     	$appConfig,
 	) {
 		parent::__construct($time);
 		$this->setInterval(60 * 5);
@@ -57,6 +59,9 @@ class IndexerJob extends TimedJob {
 		 */
 		$storageId = $argument['storageId'];
 		$rootId = $argument['rootId'];
+		if ($this->appConfig->getAppValue('auto_indexing', 'true') === 'false') {
+			return;
+		}
 		$this->logger->debug('Index files of storage ' . $storageId);
 		try {
 			$this->logger->debug('fetching ' . $this->getBatchSize() . ' files from queue');
