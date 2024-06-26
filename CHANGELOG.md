@@ -6,7 +6,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
-## [2.2.0] – 2024-05-02
+## [2.2.1] – 2024-06-26
+
+### Changed
+- update node and npm versions for CI
+
+## [2.2.0] – 2024-06-25
 
 ### Fixed
 - get content provider with class string @kyteinsky
