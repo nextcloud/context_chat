@@ -67,7 +67,7 @@ class ContentManager {
 	 * @return void
 	 * @since 2.2.2
 	 */
-	private function collectAllContentProviders(): void {
+	public function collectAllContentProviders(): void {
 		$providerCollectionEvent = new ContentProviderRegisterEvent($this);
 		$this->eventDispatcher->dispatchTyped($providerCollectionEvent);
 	}

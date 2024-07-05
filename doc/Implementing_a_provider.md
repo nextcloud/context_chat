@@ -57,7 +57,7 @@ The ContentManager has the following methods:
  * `removeAllContentForUsers(string $appId, string $providerId, array $users)` Remove all content items from the knowledge base of context chat for specified users
 
 To register your content provider, your app needs to listen to the `OCA\ContextChat\Event\ContentProviderRegisterEvent` event and call the `registerContentProvider` method in the event for every provider you want to register.
-Any interaction with the content manager using the above listed methods should automatically register the provider.
+Any interaction with the content manager using the above listed methods or listing the providers in the Assistant should automatically register the provider.
 
 You may call the `registerContentProvider` method explicitly if you want to trigger an initial import of content items.
 
