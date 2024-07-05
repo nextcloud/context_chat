@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace OCA\ContextChat\Type;
 
 class ScopeType {
+	public const NONE = 'none';
 	public const PROVIDER = 'provider';
 	public const SOURCE = 'source';
 

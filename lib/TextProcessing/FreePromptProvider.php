@@ -32,7 +32,7 @@ class FreePromptProvider implements IProvider, IProviderWithUserId {
 			throw new \RuntimeException('User ID is required to process the prompt.');
 		}
 
-		$response = $this->langRopeService->query($this->userId, $prompt, false);
+		$response = $this->langRopeService->textProcessingQuery($this->userId, $prompt, false);
 		if (isset($response['error'])) {
 			throw new \RuntimeException('No result in ContextChat response. ' . $response['error']);
 		}

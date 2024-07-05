@@ -12,7 +12,9 @@ namespace OCA\ContextChat\AppInfo;
 use OCA\ContextChat\Listener\AppDisableListener;
 use OCA\ContextChat\Listener\FileListener;
 use OCA\ContextChat\Service\ProviderConfigService;
-use OCA\ContextChat\TextProcessing\ContextChatProvider;
+use OCA\ContextChat\TaskProcessing\ContextChatProvider as ContextChatTaskProcessingProvider;
+use OCA\ContextChat\TaskProcessing\TextToTextProvider;
+use OCA\ContextChat\TextProcessing\ContextChatProvider as ContextChatTextProcessingProvider;
 use OCA\ContextChat\TextProcessing\FreePromptProvider;
 use OCP\App\Events\AppDisableEvent;
 use OCP\AppFramework\App;
@@ -77,8 +79,10 @@ class Application extends App implements IBootstrap {
 		$context->registerEventListener(NodeRemovedFromCache::class, FileListener::class);
 		$context->registerEventListener(NodeWrittenEvent::class, FileListener::class);
 		$context->registerEventListener(AppDisableEvent::class, AppDisableListener::class);
-		$context->registerTextProcessingProvider(ContextChatProvider::class);
+		$context->registerTextProcessingProvider(ContextChatTextProcessingProvider::class);
 		$context->registerTextProcessingProvider(FreePromptProvider::class);
+		$context->registerTaskProcessingProvider(ContextChatTaskProcessingProvider::class);
+		$context->registerTaskProcessingProvider(TextToTextProvider::class);
 
 		$providerConfigService = new ProviderConfigService($this->config);
 		/** @psalm-suppress ArgumentTypeCoercion, UndefinedClass  */

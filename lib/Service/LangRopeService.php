@@ -237,8 +237,21 @@ class LangRopeService {
 			$params['scopeList'] = $scopeList;
 		}
 
-		$response = $this->requestToExApp('/query', 'POST', $params);
-		return ['message' => $this->getWithPresentableSources($response['output'] ?? '', ...($response['sources'] ?? []))];
+		return $this->requestToExApp('/query', 'POST', $params);
+	}
+
+	/**
+	 * @param string $userId
+	 * @param string $prompt
+	 * @param bool $useContext
+	 * @param ?string $scopeType
+	 * @param ?array<string> $scopeList
+	 * @return array
+	 * @throws RuntimeException
+	 */
+	public function textProcessingQuery(string $userId, string $prompt, bool $useContext = true, ?string $scopeType = null, ?array $scopeList = null): array {
+		[$output, $sources] = $this->query($userId, $prompt, $useContext, $scopeType, $scopeList);
+		return ['message' => $this->getWithPresentableSources($output ?? '', ...($sources ?? []))];
 	}
 
 	public function getWithPresentableSources(string $llmResponse, string ...$sourceRefs): string {
