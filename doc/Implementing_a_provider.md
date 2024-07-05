@@ -56,11 +56,32 @@ The ContentManager has the following methods:
  * `removeContentForUsers(string $appId, string $providerId, string $itemId, array $users)` Remove a content item from the knowledge base of context chat for specified users
  * `removeAllContentForUsers(string $appId, string $providerId, array $users)` Remove all content items from the knowledge base of context chat for specified users
 
+### The event implementation
 To register your content provider, your app needs to listen to the `OCA\ContextChat\Event\ContentProviderRegisterEvent` event and call the `registerContentProvider` method in the event for every provider you want to register.
-Any interaction with the content manager using the above listed methods or listing the providers in the Assistant should automatically register the provider.
+
+#### Application.php (partially for reference)
+```php
+use OCA\ContextChat\Event\ContentProviderRegisterEvent;
+use OCA\xxx\ContextChat\ContentProvider;
+...
+$context->registerEventListener(ContentProviderRegisterEvent::class, ContentProvider::class);
+```
+
+#### ContentProvider (partially for reference)
+```php
+class ContentProvider implements IContentProvider {
+...
+public function handle(Event $event): void {
+	if (!$event instanceof ContentProviderRegisterEvent) {
+		return;
+	}
+	$event->registerContentProvider(***appId***, ***providerId***', ContentProvider::class);
+}
+```
 
 You may call the `registerContentProvider` method explicitly if you want to trigger an initial import of content items.
 
+### The content item
 To submit content, wrap it in a `\OCA\ContextChat\Public\ContentItem` object:
 
 ```php
