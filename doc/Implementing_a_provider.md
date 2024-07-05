@@ -79,6 +79,8 @@ public function handle(Event $event): void {
 }
 ```
 
+Any interaction with the content manager using the Content Manager's methods or listing the providers in the Assistant should automatically register the provider.
+
 You may call the `registerContentProvider` method explicitly if you want to trigger an initial import of content items.
 
 ### The content item
