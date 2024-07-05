@@ -18,15 +18,19 @@ use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\BackgroundJobs\InitialContentImportJob;
 use OCA\ContextChat\BackgroundJobs\SubmitContentJob;
 use OCA\ContextChat\Db\QueueContentItemMapper;
+use OCA\ContextChat\Event\ContentProviderRegisterEvent;
 use OCA\ContextChat\Public\ContentItem;
 use OCA\ContextChat\Public\ContentManager;
 use OCA\ContextChat\Public\IContentProvider;
 use OCA\ContextChat\Service\DeleteService;
 use OCA\ContextChat\Service\ProviderConfigService;
 use OCP\BackgroundJob\IJobList;
+use OCP\EventDispatcher\IEventDispatcher;
+use OCP\IServerContainer;
 use OCP\Server;
 use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\EventDispatcher\EventDispatcher as SymfonyDispatcher;
 use Test\TestCase;
 
 class ContentManagerTest extends TestCase {
@@ -40,6 +44,9 @@ class ContentManagerTest extends TestCase {
 	private ContentManager $contentManager;
 	private LoggerInterface $logger;
 	private IJobList $jobList;
+	private IEventDispatcher $eventDispatcher;
+	private SymfonyDispatcher $dispatcher;
+	private IServerContainer $serverContainer;
 
 	// private bool $initCalled = false;
 	private static string $providerClass = 'OCA\ContextChat\Tests\ContentProvider';
@@ -47,9 +54,19 @@ class ContentManagerTest extends TestCase {
 	public function setUp(): void {
 		$this->jobList = Server::get(IJobList::class);
 		$this->logger = Server::get(LoggerInterface::class);
+
 		$this->mapper = $this->createMock(QueueContentItemMapper::class);
 		$this->providerConfig = $this->createMock(ProviderConfigService::class);
 		$this->deleteService = $this->createMock(DeleteService::class);
+
+		// new dispatcher for each test
+		$this->dispatcher = new SymfonyDispatcher();
+		$this->serverContainer = Server::get(IServerContainer::class);
+		$this->eventDispatcher = new \OC\EventDispatcher\EventDispatcher(
+			$this->dispatcher,
+			$this->serverContainer,
+			$this->logger,
+		);
 
 		$this->providerConfig
 			->method('getProviders')
@@ -82,6 +99,7 @@ class ContentManagerTest extends TestCase {
 			$this->mapper,
 			$this->deleteService,
 			$this->logger,
+			$this->eventDispatcher,
 		);
 	}
 
@@ -107,7 +125,7 @@ class ContentManagerTest extends TestCase {
 		bool $registrationSuccessful,
 	): void {
 		$this->providerConfig
-			->expects($registrationSuccessful ? $this->once() : $this->never())
+			->expects($this->once())
 			->method('hasProvider')
 			->with($appId, $providerId)
 			->willReturn(false);
@@ -117,7 +135,19 @@ class ContentManagerTest extends TestCase {
 			->method('updateProvider')
 			->with($appId, $providerId, $providerClass);
 
-		$this->contentManager->registerContentProvider($providerClass);
+		// register the listener for the event
+		$this->eventDispatcher->addListener(
+			ContentProviderRegisterEvent::class,
+			function (ContentProviderRegisterEvent $event) use ($appId, $providerId, $providerClass) {
+				if (!($event instanceof ContentProviderRegisterEvent)) {
+					return;
+				}
+				$event->registerContentProvider($appId, $providerId, $providerClass);
+			},
+		);
+
+		// sample action that should trigger the registration
+		$this->contentManager->removeAllContentForUsers($appId, $providerId, ['user1', 'user2']);
 
 		$jobsIter = $this->jobList->getJobsIterator(InitialContentImportJob::class, 1, 0);
 		if ($registrationSuccessful) {

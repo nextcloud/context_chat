@@ -15,9 +15,11 @@ use OCA\ContextChat\BackgroundJobs\InitialContentImportJob;
 use OCA\ContextChat\BackgroundJobs\SubmitContentJob;
 use OCA\ContextChat\Db\QueueContentItem;
 use OCA\ContextChat\Db\QueueContentItemMapper;
+use OCA\ContextChat\Event\ContentProviderRegisterEvent;
 use OCA\ContextChat\Service\DeleteService;
 use OCA\ContextChat\Service\ProviderConfigService;
 use OCP\BackgroundJob\IJobList;
+use OCP\EventDispatcher\IEventDispatcher;
 use OCP\Server;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
@@ -30,32 +32,44 @@ class ContentManager {
 		private QueueContentItemMapper $mapper,
 		private DeleteService $deleteService,
 		private LoggerInterface $logger,
+		private IEventDispatcher $eventDispatcher,
 	) {
 	}
 
 	/**
+	 * @param string $appId
+	 * @param string $providerId
 	 * @param class-string<IContentProvider> $providerClass
 	 * @return void
-	 * @since 1.1.0
+	 * @since 2.2.2
 	 */
-	public function registerContentProvider(string $providerClass): void {
+	public function registerContentProvider(string $appId, string $providerId, string $providerClass): void {
+		if ($this->providerConfig->hasProvider($appId, $providerId)) {
+			return;
+		}
+
 		try {
-			/** @var IContentProvider */
-			$providerObj = Server::get($providerClass);
+			Server::get($providerClass);
 		} catch (ContainerExceptionInterface | NotFoundExceptionInterface $e) {
-			$this->logger->warning('Could not register content provider', ['exception' => $e]);
+			$this->logger->warning('Could not find content provider by class name', ['classString' => $providerClass, 'exception' => $e]);
 			return;
 		}
 
-		if ($this->providerConfig->hasProvider($providerObj->getAppId(), $providerObj->getId())) {
-			return;
-		}
-
-		$this->providerConfig->updateProvider($providerObj->getAppId(), $providerObj->getId(), $providerClass);
+		$this->providerConfig->updateProvider($appId, $providerId, $providerClass);
 
 		if (!$this->jobList->has(InitialContentImportJob::class, $providerClass)) {
 			$this->jobList->add(InitialContentImportJob::class, $providerClass);
 		}
+	}
+
+	/**
+	 * Emits an event to collect all content providers
+	 * @return void
+	 * @since 2.2.2
+	 */
+	public function collectAllContentProviders(): void {
+		$providerCollectionEvent = new ContentProviderRegisterEvent($this);
+		$this->eventDispatcher->dispatchTyped($providerCollectionEvent);
 	}
 
 	/**
@@ -67,6 +81,8 @@ class ContentManager {
 	 * @since 1.1.0
 	 */
 	public function submitContent(string $appId, array $items): void {
+		$this->collectAllContentProviders();
+
 		foreach ($items as $item) {
 			$dbItem = new QueueContentItem();
 			$dbItem->setItemId($item->itemId);
@@ -97,6 +113,8 @@ class ContentManager {
 	 * @since 1.1.0
 	 */
 	public function removeContentForUsers(string $appId, string $providerId, string $itemId, array $users): void {
+		$this->collectAllContentProviders();
+
 		foreach ($users as $userId) {
 			$this->deleteService->deleteSources($userId, [
 				ProviderConfigService::getSourceId($itemId, ProviderConfigService::getConfigKey($appId, $providerId))
@@ -111,8 +129,11 @@ class ContentManager {
 	 * @param string $providerId
 	 * @param array $users
 	 * @return void
+	 * @since 1.1.0
 	 */
 	public function removeAllContentForUsers(string $appId, string $providerId, array $users): void {
+		$this->collectAllContentProviders();
+
 		foreach ($users as $userId) {
 			$this->deleteService->deleteSourcesByProvider($userId, ProviderConfigService::getConfigKey($appId, $providerId));
 		}

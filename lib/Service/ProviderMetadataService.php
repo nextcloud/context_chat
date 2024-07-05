@@ -11,6 +11,7 @@
 
 namespace OCA\ContextChat\Service;
 
+use OCA\ContextChat\Public\ContentManager;
 use OCP\App\IAppManager;
 use OCP\IL10N;
 use OCP\IURLGenerator;
@@ -25,6 +26,7 @@ class ProviderMetadataService {
 		private IUserManager $userManager,
 		private ProviderConfigService $providerConfig,
 		private IURLGenerator $urlGenerator,
+		private ContentManager $contentManager,
 		private ?string $userId,
 	) {
 	}
@@ -33,6 +35,7 @@ class ProviderMetadataService {
 	 * @return list<array{ id: string, label: string, icon: string }>
 	 */
 	public function getEnrichedProviders(): array {
+		$this->contentManager->collectAllContentProviders();
 		$providers = $this->providerConfig->getProviders();
 		$sanitizedProviders = [];
 
