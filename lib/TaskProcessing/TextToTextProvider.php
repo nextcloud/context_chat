@@ -15,7 +15,6 @@ class TextToTextProvider implements ISynchronousProvider {
 	public function __construct(
 		private LangRopeService $langRopeService,
 		private IL10N $l10n,
-		private ?string $userId,
 	) {
 	}
 
@@ -44,7 +43,7 @@ class TextToTextProvider implements ISynchronousProvider {
 	}
 
 	public function process(?string $userId, array $input, callable $reportProgress): array {
-		if ($this->userId === null) {
+		if ($userId === null) {
 			throw new \RuntimeException('User ID is required to process the prompt.');
 		}
 
@@ -52,7 +51,7 @@ class TextToTextProvider implements ISynchronousProvider {
 			throw new \RuntimeException('Invalid prompt');
 		}
 
-		$response = $this->langRopeService->query($this->userId, $input['input'], false);
+		$response = $this->langRopeService->query($userId, $input['input'], false);
 		if (isset($response['error'])) {
 			throw new \RuntimeException('No result in ContextChat response. ' . $response['error']);
 		}

@@ -25,7 +25,6 @@ class ContextChatProvider implements ISynchronousProvider {
 	public function __construct(
 		private LangRopeService $langRopeService,
 		private IL10N $l10n,
-		private ?string $userId,
 		private IRootFolder $rootFolder,
 		private LoggerInterface $logger,
 		private ScanService $scanService,
@@ -62,7 +61,7 @@ class ContextChatProvider implements ISynchronousProvider {
 	 * @param callable $reportProgress
 	 */
 	public function process(?string $userId, array $input, callable $reportProgress): array {
-		if ($this->userId === null) {
+		if ($userId === null) {
 			throw new \RuntimeException('User ID is required to process the prompt.');
 		}
 
@@ -86,7 +85,7 @@ class ContextChatProvider implements ISynchronousProvider {
 
 		// unscoped query
 		if ($input['scopeType'] === ScopeType::NONE) {
-			$response = $this->langRopeService->query($this->userId, $input['prompt']);
+			$response = $this->langRopeService->query($userId, $input['prompt']);
 			if (isset($response['error'])) {
 				throw new \RuntimeException('No result in ContextChat response. ' . $response['error']);
 			}
@@ -101,7 +100,7 @@ class ContextChatProvider implements ISynchronousProvider {
 
 		// index sources before the query, not needed for providers
 		if ($input['scopeType'] === ScopeType::SOURCE) {
-			$processedScopes = $this->indexFiles(...$input['scopeList']);
+			$processedScopes = $this->indexFiles($userId, ...$input['scopeList']);
 			$this->logger->debug('All valid files indexed, querying ContextChat', ['scopeType' => $input['scopeType'], 'scopeList' => $processedScopes]);
 		} else if ($input['scopeType'] === ScopeType::PROVIDER) {
 			$processedScopes = $scopeList;
@@ -109,7 +108,7 @@ class ContextChatProvider implements ISynchronousProvider {
 		}
 
 		$response = $this->langRopeService->query(
-			$this->userId,
+			$userId,
 			$input['prompt'],
 			true,
 			$input['scopeType'],
@@ -127,7 +126,7 @@ class ContextChatProvider implements ISynchronousProvider {
 	 * @param array scopeList
 	 * @return array<string> List of scopes that were successfully indexed
 	 */
-	private function indexFiles(string ...$scopeList): array {
+	private function indexFiles(string $userId, string ...$scopeList): array {
 		$nodes = [];
 
 		foreach ($scopeList as $scope) {
@@ -139,9 +138,9 @@ class ContextChatProvider implements ISynchronousProvider {
 			$nodeId = substr($scope, strlen(ProviderConfigService::getSourceId('')));
 
 			try {
-				$userFolder = $this->rootFolder->getUserFolder($this->userId);
+				$userFolder = $this->rootFolder->getUserFolder($userId);
 			} catch (NotPermittedException $e) {
-				$this->logger->warning('Could not get user folder for user ' . $this->userId . ': ' . $e->getMessage());
+				$this->logger->warning('Could not get user folder for user ' . $userId . ': ' . $e->getMessage());
 				continue;
 			}
 			$node = $userFolder->getById(intval($nodeId));
@@ -177,11 +176,11 @@ class ContextChatProvider implements ISynchronousProvider {
 		foreach ($filteredNodes as $node) {
 			try {
 				if ($node['node'] instanceof File) {
-					$source = $this->scanService->getSourceFromFile($this->userId, Application::MIMETYPES, $node['node']);
+					$source = $this->scanService->getSourceFromFile($userId, Application::MIMETYPES, $node['node']);
 					$this->scanService->indexSources([$source]);
 					$indexedSources[] = $node['scope'];
 				} elseif ($node['node'] instanceof Folder) {
-					$fileSources = iterator_to_array($this->scanService->scanDirectory($this->userId, Application::MIMETYPES, $node['node']));
+					$fileSources = iterator_to_array($this->scanService->scanDirectory($userId, Application::MIMETYPES, $node['node']));
 					$indexedSources = array_merge(
 						$indexedSources,
 						array_map(fn (Source $source) => $source->reference, $fileSources),
