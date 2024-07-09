@@ -28,8 +28,8 @@ namespace OCA\ContextChat\TaskProcessing;
 use OCA\ContextChat\AppInfo\Application;
 use OCP\IL10N;
 use OCP\TaskProcessing\EShapeType;
+use OCP\TaskProcessing\ITaskType;
 use OCP\TaskProcessing\ShapeDescriptor;
-use OCP\TextProcessing\ITaskType;
 
 class ContextChatTaskType implements ITaskType {
 	public const ID = Application::APP_ID . ':context_chat';
