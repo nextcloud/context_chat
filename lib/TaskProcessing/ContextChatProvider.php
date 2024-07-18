@@ -8,7 +8,6 @@ use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\Service\LangRopeService;
 use OCA\ContextChat\Service\ProviderConfigService;
 use OCA\ContextChat\Service\ScanService;
-use OCA\ContextChat\TaskProcessing\ContextChatTaskType;
 use OCA\ContextChat\Type\ScopeType;
 use OCA\ContextChat\Type\Source;
 use OCP\Files\File;
@@ -56,9 +55,7 @@ class ContextChatProvider implements ISynchronousProvider {
 	}
 
 	/**
-	 * @param string|null $userId
-	 * @param array{prompt: string, scopeType: string, scopeList: list<string>, scopeListMeta: string} $input
-	 * @param callable $reportProgress
+	 * @inheritDoc
 	 */
 	public function process(?string $userId, array $input, callable $reportProgress): array {
 		if ($userId === null) {
@@ -102,7 +99,7 @@ class ContextChatProvider implements ISynchronousProvider {
 		if ($input['scopeType'] === ScopeType::SOURCE) {
 			$processedScopes = $this->indexFiles($userId, ...$input['scopeList']);
 			$this->logger->debug('All valid files indexed, querying ContextChat', ['scopeType' => $input['scopeType'], 'scopeList' => $processedScopes]);
-		} else if ($input['scopeType'] === ScopeType::PROVIDER) {
+		} elseif ($input['scopeType'] === ScopeType::PROVIDER) {
 			$processedScopes = $scopeList;
 			$this->logger->debug('No need to index sources, querying ContextChat', ['scopeType' => $input['scopeType'], 'scopeList' => $processedScopes]);
 		}
