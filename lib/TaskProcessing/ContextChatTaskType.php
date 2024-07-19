@@ -71,7 +71,7 @@ class ContextChatTaskType implements ITaskType {
 		return [
 			'prompt' => new ShapeDescriptor(
 				$this->l->t('Prompt'),
-				$this->l->t('The prompt to work on'),
+				$this->l->t('Ask a question about your documents, emails, and files'),
 				EShapeType::Text,
 			),
 			'scopeType' => new ShapeDescriptor(
