@@ -1,7 +1,8 @@
 <?php
 
 declare(strict_types=1);
-namespace OCA\ContextChat\TextProcessing;
+
+namespace OCA\ContextChat\TaskProcessing;
 
 use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\Service\LangRopeService;
@@ -14,101 +15,100 @@ use OCP\Files\Folder;
 use OCP\Files\IRootFolder;
 use OCP\Files\NotPermittedException;
 use OCP\IL10N;
-use OCP\TextProcessing\IProvider;
-use OCP\TextProcessing\IProviderWithUserId;
+use OCP\TaskProcessing\ISynchronousProvider;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
-/**
- * @template-implements IProviderWithUserId<ContextChatTaskType>
- * @template-implements IProvider<ContextChatTaskType>
- */
-class ContextChatProvider implements IProvider, IProviderWithUserId {
-
-	private ?string $userId = null;
+class ContextChatProvider implements ISynchronousProvider {
 
 	public function __construct(
+		private LangRopeService $langRopeService,
 		private IL10N $l10n,
 		private IRootFolder $rootFolder,
 		private LoggerInterface $logger,
-		private LangRopeService $langRopeService,
 		private ScanService $scanService,
 	) {
+	}
+
+	public function getId(): string {
+		return Application::APP_ID . '-context_chat';
 	}
 
 	public function getName(): string {
 		return $this->l10n->t('Nextcloud Assistant Context Chat Provider');
 	}
 
+	public function getTaskTypeId(): string {
+		return ContextChatTaskType::ID;
+	}
+
+	public function getExpectedRuntime(): int {
+		return 120;
+	}
+
+	public function getOptionalInputShape(): array {
+		return [];
+	}
+
+	public function getOptionalOutputShape(): array {
+		return [];
+	}
+
 	/**
-	 * Accepted scopeList formats:
-	 * - "files__default: $fileId"
-	 * - "$appId__$providerId"
-	 *
-	 * @param string $prompt JSON string with the following structure:
-	 * {
-	 *   "scopeType": string, (optional key)
-	 *   "scopeList": list[string], (optional key)
-	 *   "prompt": string
-	 * }
-	 *
-	 * @return string
+	 * @inheritDoc
 	 */
-	public function process(string $prompt): string {
-		if ($this->userId === null) {
+	public function process(?string $userId, array $input, callable $reportProgress): array {
+		if ($userId === null) {
 			throw new \RuntimeException('User ID is required to process the prompt.');
 		}
 
-		try {
-			$parsedData = json_decode($prompt, true, flags: JSON_THROW_ON_ERROR | JSON_INVALID_UTF8_IGNORE);
-		} catch (\JsonException $e) {
-			throw new \RuntimeException(
-				'Invalid JSON string, expected { "prompt": string } or { "scopeType": string, "scopeList": list[string], "prompt": string }',
-				intval($e->getCode()), $e,
-			);
+		if (!isset($input['prompt']) || !is_string($input['prompt'])) {
+			throw new \RuntimeException('Invalid input, expected "prompt" key with string value');
 		}
 
-		if (!isset($parsedData['prompt']) || !is_string($parsedData['prompt'])) {
-			throw new \RuntimeException('Invalid JSON string, expected "prompt" key with string value');
-		}
-
-		if (!isset($parsedData['scopeType']) || !isset($parsedData['scopeList'])) {
-			$response = $this->langRopeService->query($this->userId, $prompt);
-			if (isset($response['error'])) {
-				throw new \RuntimeException('No result in ContextChat response. ' . $response['error']);
-			}
-			return $response['message'] ?? '';
-		}
-
-		if (!is_string($parsedData['scopeType']) || !is_array($parsedData['scopeList'])) {
-			throw new \RuntimeException('Invalid JSON string, expected "scopeType" key with string value and "scopeList" key with array value');
+		if (
+			!isset($input['scopeType']) || !is_string($input['scopeType'])
+			|| !isset($input['scopeList']) || !is_array($input['scopeList'])
+			|| !isset($input['scopeListMeta']) || !is_string($input['scopeListMeta'])
+		) {
+			throw new \RuntimeException('Invalid input, expected "scopeType" key with string value, "scopeList" key with array value and "scopeListMeta" key with string value');
 		}
 
 		try {
-			ScopeType::validate($parsedData['scopeType']);
+			ScopeType::validate($input['scopeType']);
 		} catch (\InvalidArgumentException $e) {
 			throw new \RuntimeException($e->getMessage(), intval($e->getCode()), $e);
 		}
 
-		$scopeList = array_unique($parsedData['scopeList']);
+		// unscoped query
+		if ($input['scopeType'] === ScopeType::NONE) {
+			$response = $this->langRopeService->query($userId, $input['prompt']);
+			if (isset($response['error'])) {
+				throw new \RuntimeException('No result in ContextChat response. ' . $response['error']);
+			}
+			return $response;
+		}
+
+		// scoped query
+		$scopeList = array_unique($input['scopeList']);
 		if (count($scopeList) === 0) {
 			throw new \RuntimeException('No sources found');
 		}
 
 		// index sources before the query, not needed for providers
-		if ($parsedData['scopeType'] === ScopeType::SOURCE) {
-			$processedScopes = $this->indexFiles(...$parsedData['scopeList']);
-			$this->logger->debug('All valid files indexed, querying ContextChat', ['scopeType' => $parsedData['scopeType'], 'scopeList' => $processedScopes]);
-		} else {
+		if ($input['scopeType'] === ScopeType::SOURCE) {
+			$processedScopes = $this->indexFiles($userId, ...$input['scopeList']);
+			$this->logger->debug('All valid files indexed, querying ContextChat', ['scopeType' => $input['scopeType'], 'scopeList' => $processedScopes]);
+		} elseif ($input['scopeType'] === ScopeType::PROVIDER) {
 			$processedScopes = $scopeList;
-			$this->logger->debug('No need to index sources, querying ContextChat', ['scopeType' => $parsedData['scopeType'], 'scopeList' => $processedScopes]);
+			$this->logger->debug('No need to index sources, querying ContextChat', ['scopeType' => $input['scopeType'], 'scopeList' => $processedScopes]);
 		}
 
 		$response = $this->langRopeService->query(
-			$this->userId,
-			$parsedData['prompt'],
+			$userId,
+			$input['prompt'],
 			true,
-			$parsedData['scopeType'],
+			$input['scopeType'],
 			$processedScopes,
 		);
 
@@ -116,14 +116,14 @@ class ContextChatProvider implements IProvider, IProviderWithUserId {
 			throw new \RuntimeException('No result in ContextChat response: ' . $response['error']);
 		}
 
-		return $response['message'] ?? '';
+		return $response;
 	}
 
 	/**
 	 * @param array scopeList
 	 * @return array<string> List of scopes that were successfully indexed
 	 */
-	private function indexFiles(string ...$scopeList): array {
+	private function indexFiles(string $userId, string ...$scopeList): array {
 		$nodes = [];
 
 		foreach ($scopeList as $scope) {
@@ -135,9 +135,9 @@ class ContextChatProvider implements IProvider, IProviderWithUserId {
 			$nodeId = substr($scope, strlen(ProviderConfigService::getSourceId('')));
 
 			try {
-				$userFolder = $this->rootFolder->getUserFolder($this->userId);
+				$userFolder = $this->rootFolder->getUserFolder($userId);
 			} catch (NotPermittedException $e) {
-				$this->logger->warning('Could not get user folder for user ' . $this->userId . ': ' . $e->getMessage());
+				$this->logger->warning('Could not get user folder for user ' . $userId . ': ' . $e->getMessage());
 				continue;
 			}
 			$node = $userFolder->getById(intval($nodeId));
@@ -173,11 +173,11 @@ class ContextChatProvider implements IProvider, IProviderWithUserId {
 		foreach ($filteredNodes as $node) {
 			try {
 				if ($node['node'] instanceof File) {
-					$source = $this->scanService->getSourceFromFile($this->userId, Application::MIMETYPES, $node['node']);
+					$source = $this->scanService->getSourceFromFile($userId, Application::MIMETYPES, $node['node']);
 					$this->scanService->indexSources([$source]);
 					$indexedSources[] = $node['scope'];
 				} elseif ($node['node'] instanceof Folder) {
-					$fileSources = iterator_to_array($this->scanService->scanDirectory($this->userId, Application::MIMETYPES, $node['node']));
+					$fileSources = iterator_to_array($this->scanService->scanDirectory($userId, Application::MIMETYPES, $node['node']));
 					$indexedSources = array_merge(
 						$indexedSources,
 						array_map(fn (Source $source) => $source->reference, $fileSources),
@@ -189,13 +189,5 @@ class ContextChatProvider implements IProvider, IProviderWithUserId {
 		}
 
 		return $indexedSources;
-	}
-
-	public function getTaskType(): string {
-		return ContextChatTaskType::class;
-	}
-
-	public function setUserId(?string $userId): void {
-		$this->userId = $userId;
 	}
 }

@@ -28,7 +28,7 @@ jobs:
       matrix:
         php-versions: [ '8.1' ]
         databases: [ 'sqlite' ]
-        server-versions: [ 'master', 'stable29', 'stable28' ]
+        server-versions: [ 'master' ]
 
     name: Integration test on ${{ matrix.server-versions }} php@${{ matrix.php-versions }}
 
@@ -159,6 +159,7 @@ jobs:
           pip install --no-deps -r requirements.txt
           cp example.env .env
           echo "NEXTCLOUD_URL=http://localhost:8080" >> .env
+          sed -i 's/disable_aaa: false/disable_aaa: true/' config.cpu.yaml
           ./main.py &> backend_logs &
 
       - name: Register backend
