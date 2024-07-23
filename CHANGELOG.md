@@ -6,6 +6,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [3.0.0] – 2024-06-26
+
+### Changed
+- bump min NC version to 30 @kyteinsky
+
+### Fixed
+- fix content manager and update provider docs @kyteinsky @Rello
+
+### Added
+- task processing support @kyteinsky @julien-nc
+
+
 ## [2.2.1] – 2024-06-26
 
 ### Changed
