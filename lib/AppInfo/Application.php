@@ -14,7 +14,6 @@ use OCA\ContextChat\Listener\FileListener;
 use OCA\ContextChat\Service\ProviderConfigService;
 use OCA\ContextChat\TaskProcessing\ContextChatProvider;
 use OCA\ContextChat\TaskProcessing\ContextChatTaskType;
-use OCA\ContextChat\TaskProcessing\TextToTextProvider;
 use OCP\App\Events\AppDisableEvent;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
@@ -80,7 +79,6 @@ class Application extends App implements IBootstrap {
 		$context->registerEventListener(AppDisableEvent::class, AppDisableListener::class);
 		$context->registerTaskProcessingTaskType(ContextChatTaskType::class);
 		$context->registerTaskProcessingProvider(ContextChatProvider::class);
-		$context->registerTaskProcessingProvider(TextToTextProvider::class);
 
 		$providerConfigService = new ProviderConfigService($this->config);
 		/** @psalm-suppress ArgumentTypeCoercion, UndefinedClass  */
