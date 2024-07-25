@@ -73,6 +73,7 @@ class Prompt extends Command {
 			$task = new Task(ContextChatTaskType::ID, [
 				'scopeType' => ScopeType::SOURCE,
 				'scopeList' => $contextSourcesArray,
+				'scopeListMeta' =>  [],
 				'prompt' => $prompt,
 			], 'context_chat', $userId);
 		} elseif (!empty($contextProviders)) {
@@ -81,10 +82,11 @@ class Prompt extends Command {
 			$task = new Task(ContextChatTaskType::ID, [
 				'scopeType' => ScopeType::PROVIDER,
 				'scopeList' => $contextProvidersArray,
+				'scopeListMeta' =>  [],
 				'prompt' => $prompt,
 			], 'context_chat', $userId);
 		} else {
-			$task = new Task(ContextChatTaskType::ID, [ 'prompt' => $prompt, 'scopeType' => ScopeType::NONE ], 'context_chat', $userId);
+			$task = new Task(ContextChatTaskType::ID, [ 'prompt' => $prompt, 'scopeType' => ScopeType::NONE, 'scopeList' => [], 'scopeListMeta' =>  [] ], 'context_chat', $userId);
 		}
 
 		$this->taskProcessingManager->scheduleTask($task);
