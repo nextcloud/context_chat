@@ -84,7 +84,7 @@ class Prompt extends Command {
 				'prompt' => $prompt,
 			], 'context_chat', $userId);
 		} else {
-			$task = new Task(ContextChatTaskType::ID, [ 'prompt' => $prompt ], 'context_chat', $userId);
+			$task = new Task(ContextChatTaskType::ID, [ 'prompt' => $prompt, 'scopeType' => ScopeType::NONE ], 'context_chat', $userId);
 		}
 
 		$this->taskProcessingManager->scheduleTask($task);

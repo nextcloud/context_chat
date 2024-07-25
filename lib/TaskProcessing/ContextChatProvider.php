@@ -46,7 +46,27 @@ class ContextChatProvider implements ISynchronousProvider {
 		return 120;
 	}
 
+	public function getInputShapeEnumValues(): array {
+		return [];
+	}
+
+	public function getInputShapeDefaults(): array {
+		return [];
+	}
+
 	public function getOptionalInputShape(): array {
+		return [];
+	}
+
+	public function getOptionalInputShapeEnumValues(): array {
+		return [];
+	}
+
+	public function getOptionalInputShapeDefaults(): array {
+		return [];
+	}
+
+	public function getOutputShapeEnumValues(): array {
 		return [];
 	}
 
@@ -54,6 +74,9 @@ class ContextChatProvider implements ISynchronousProvider {
 		return [];
 	}
 
+	public function getOptionalOutputShapeEnumValues(): array {
+		return [];
+	}
 	/**
 	 * @inheritDoc
 	 */
