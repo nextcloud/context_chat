@@ -94,7 +94,7 @@ class Prompt extends Command {
 			sleep(1);
 		}
 		if ($task->getStatus() === Task::STATUS_SUCCESSFUL) {
-			$output->writeln($task->getOutput());
+			$output->writeln(var_export($task->getOutput(), true));
 			return 0;
 		} else {
 			$output->writeln($task->getErrorMessage());
