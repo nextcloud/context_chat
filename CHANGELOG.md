@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [3.0.1] – 2024-07-29
+
+### Fixed
+- Update context chat task type's description @kyteinsky
+- Prompt command fix: Use TaskProcessing instead of TextProcessing @marcelklehr
+- Prompt command fix: Don't try to write array to output @marcelklehr
+
+
 ## [3.0.0] – 2024-06-26
 
 ### Changed
