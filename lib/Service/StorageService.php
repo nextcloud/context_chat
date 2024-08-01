@@ -160,6 +160,6 @@ class StorageService {
 	}
 
 	private function getCacheQueryBuilder(): CacheQueryBuilder {
-		return new CacheQueryBuilder($this->db, $this->systemConfig, $this->logger, $this->metadataManager);
+		return new CacheQueryBuilder($this->db->getQueryBuilder(), $this->metadataManager);
 	}
 }
