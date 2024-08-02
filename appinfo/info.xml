@@ -17,7 +17,7 @@
 Note:
 Refer to the [Context Chat Backend's readme](https://github.com/nextcloud/context_chat_backend/?tab=readme-ov-file) and the [AppAPI's documentation](https://cloud-py-api.github.io/app_api/) for help with setup of AppAPI's deploy daemon.
 ]]></description>
-    <version>3.0.1</version>
+    <version>3.0.2</version>
     <licence>agpl</licence>
     <author>Julien Veyssier</author>
     <namespace>ContextChat</namespace>
