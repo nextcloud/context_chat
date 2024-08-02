@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [3.0.2] – 2024-08-02
+
+### Fixed
+- StorageService fix: CacheQueryBuilder OC API changed @marcelklehr
+
+
 ## [3.0.1] – 2024-07-29
 
 ### Fixed
