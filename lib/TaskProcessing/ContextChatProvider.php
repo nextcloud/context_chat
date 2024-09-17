@@ -6,6 +6,7 @@ namespace OCA\ContextChat\TaskProcessing;
 
 use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\Service\LangRopeService;
+use OCA\ContextChat\Service\MetadataService;
 use OCA\ContextChat\Service\ProviderConfigService;
 use OCA\ContextChat\Service\ScanService;
 use OCA\ContextChat\Type\ScopeType;
@@ -27,6 +28,7 @@ class ContextChatProvider implements ISynchronousProvider {
 		private IRootFolder $rootFolder,
 		private LoggerInterface $logger,
 		private ScanService $scanService,
+		private MetadataService $metadataService,
 	) {
 	}
 
@@ -77,6 +79,7 @@ class ContextChatProvider implements ISynchronousProvider {
 	public function getOptionalOutputShapeEnumValues(): array {
 		return [];
 	}
+
 	/**
 	 * @inheritDoc
 	 */
@@ -123,8 +126,12 @@ class ContextChatProvider implements ISynchronousProvider {
 			$processedScopes = $this->indexFiles($userId, ...$input['scopeList']);
 			$this->logger->debug('All valid files indexed, querying ContextChat', ['scopeType' => $input['scopeType'], 'scopeList' => $processedScopes]);
 		} elseif ($input['scopeType'] === ScopeType::PROVIDER) {
+			/** @var array<string> $scopeList */
 			$processedScopes = $scopeList;
 			$this->logger->debug('No need to index sources, querying ContextChat', ['scopeType' => $input['scopeType'], 'scopeList' => $processedScopes]);
+		} else {
+			// this should never happen
+			throw new \InvalidArgumentException('Invalid scope type');
 		}
 
 		$response = $this->langRopeService->query(
@@ -138,8 +145,24 @@ class ContextChatProvider implements ISynchronousProvider {
 		if (isset($response['error'])) {
 			throw new \RuntimeException('No result in ContextChat response: ' . $response['error']);
 		}
+		if (!isset($response['output']) || !is_string($response['output'])
+			|| !isset($response['sources']) || !is_array($response['sources'])) {
+			throw new \RuntimeException('Invalid response from ContextChat, expected "output" and "sources" keys');
+		}
 
-		return $response;
+		$jsonSources = array_map(
+			fn ($source) => json_encode($source),
+			$this->metadataService->getEnrichedSources($userId, ...$response['sources'] ?? [])
+		);
+		if (in_array(false, $jsonSources, true)) {
+			throw new \RuntimeException('Could not encode sources to JSON');
+		}
+
+		/** @psalm-suppress InvalidReturnStatement */
+		return [
+			'output' => $response['output'] ?? '',
+			'sources' => $jsonSources,
+		];
 	}
 
 	/**

@@ -51,6 +51,9 @@ class ProviderConfigService {
 		return true;
 	}
 
+	/**
+	 * @return array{ isInitiated: bool, classString: string } | null
+	 */
 	public function getProvider(string $providerKey): ?array {
 		$providers = $this->getProviders();
 		return $providers[$providerKey] ?? null;

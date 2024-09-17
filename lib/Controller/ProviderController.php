@@ -22,8 +22,8 @@
 
 namespace OCA\ContextChat\Controller;
 
+use OCA\ContextChat\Service\MetadataService;
 use OCA\ContextChat\Service\ProviderConfigService;
-use OCA\ContextChat\Service\ProviderMetadataService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\DataResponse;
@@ -34,7 +34,7 @@ class ProviderController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private ProviderMetadataService $providerService,
+		private MetadataService $metadataService,
 	) {
 		parent::__construct($appName, $request);
 	}
@@ -53,7 +53,17 @@ class ProviderController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function getProviders(): DataResponse {
-		$providers = $this->providerService->getEnrichedProviders();
-		return new DataResponse($providers);
+		$providers = $this->metadataService->getEnrichedProviders();
+		return new DataResponse(array_values($providers));
+	}
+
+	/**
+	 * @param array<string> $sources
+	 * @return DataResponse
+	 */
+	#[NoAdminRequired]
+	public function getMetadataFor(array $sources): DataResponse {
+		$enrichedSources = $this->metadataService->getEnrichedSources(...$sources);
+		return new DataResponse($enrichedSources);
 	}
 }
