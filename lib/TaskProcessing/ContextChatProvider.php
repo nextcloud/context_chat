@@ -82,6 +82,8 @@ class ContextChatProvider implements ISynchronousProvider {
 
 	/**
 	 * @inheritDoc
+	 * @return array{output: string, sources: list<string>}
+	 * @throws \RuntimeException
 	 */
 	public function process(?string $userId, array $input, callable $reportProgress): array {
 		if ($userId === null) {
@@ -112,7 +114,7 @@ class ContextChatProvider implements ISynchronousProvider {
 			if (isset($response['error'])) {
 				throw new \RuntimeException('No result in ContextChat response. ' . $response['error']);
 			}
-			return $response;
+			return $this->processResponse($userId, $response);
 		}
 
 		// scoped query
@@ -142,23 +144,37 @@ class ContextChatProvider implements ISynchronousProvider {
 			$processedScopes,
 		);
 
+		return $this->processResponse($userId, $response);
+	}
+
+	/**
+	 * Validate and enrich sources JSON strings of the response
+	 *
+	 * @param string $userId
+	 * @param array $response
+	 * @return array{output: string, sources: list<string>}
+	 * @throws \RuntimeException
+	 */
+	private function processResponse(string $userId, array $response): array {
 		if (isset($response['error'])) {
 			throw new \RuntimeException('No result in ContextChat response: ' . $response['error']);
 		}
 		if (!isset($response['output']) || !is_string($response['output'])
 			|| !isset($response['sources']) || !is_array($response['sources'])) {
-			throw new \RuntimeException('Invalid response from ContextChat, expected "output" and "sources" keys');
+			throw new \RuntimeException('Invalid response from ContextChat, expected "output" and "sources" keys: ' . json_encode($response));
 		}
 
-		$jsonSources = array_map(
+		$jsonSources = array_filter(array_map(
 			fn ($source) => json_encode($source),
-			$this->metadataService->getEnrichedSources($userId, ...$response['sources'] ?? [])
-		);
-		if (in_array(false, $jsonSources, true)) {
-			throw new \RuntimeException('Could not encode sources to JSON');
+			$this->metadataService->getEnrichedSources($userId, ...$response['sources'] ?? []),
+		), fn ($json) => is_string($json));
+
+		if (count($jsonSources) === 0) {
+			$this->logger->warning('No sources could be enriched', ['sources' => $response['sources']]);
+		} elseif (count($jsonSources) !== count($response['sources'] ?? [])) {
+			$this->logger->warning('Some sources could not be enriched', ['sources' => $response['sources'], 'jsonSources' => $jsonSources]);
 		}
 
-		/** @psalm-suppress InvalidReturnStatement */
 		return [
 			'output' => $response['output'] ?? '',
 			'sources' => $jsonSources,
