@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [3.1.0] - 2024-09-30
+
+### Added
+- task proc provider returns json string in sources @kyteinsky
+
+
 ## [3.0.2] – 2024-08-02
 
 ### Fixed
