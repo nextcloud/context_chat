@@ -76,20 +76,20 @@ class LangRopeService {
 			$enabledResponse = $appApiFunctions->exAppRequest('context_chat_backend', '/enabled', $this->userId, 'GET');
 
 			if (is_array($enabledResponse) && isset($enabledResponse['error'])) {
-				throw new RuntimeException('Error during request to ExApp (context_chat_backend): ' . $enabledResponse['error']);
+				throw new RuntimeException('Error during request to Context Chat Backend (ExApp): ' . $enabledResponse['error']);
 			}
 
 			$enabledResponse = $enabledResponse->getBody();
 
 			if (!is_string($enabledResponse)) {
-				$this->logger->error('Error during request to ExApp (context_chat_backend): response body is not a string', ['response' => $enabledResponse]);
-				throw new RuntimeException('Error during request to ExApp (context_chat_backend): response body is not a string');
+				$this->logger->error('Error during request to Context Chat Backend (ExApp): response body is not a string', ['response' => $enabledResponse]);
+				throw new RuntimeException('Error during request to Context Chat Backend (ExApp): response body is not a string');
 			}
 
 			$enabledResponse = json_decode($enabledResponse, true);
 			if ($enabledResponse === null) {
-				$this->logger->error('Error during request to ExApp (context_chat_backend): response body is not a valid JSON', ['response' => $enabledResponse]);
-				throw new RuntimeException('Error during request to ExApp (context_chat_backend): response body is not a valid JSON');
+				$this->logger->error('Error during request to Context Chat Backend (ExApp): response body is not a valid JSON', ['response' => $enabledResponse]);
+				throw new RuntimeException('Error during request to Context Chat Backend (ExApp): response body is not a valid JSON');
 			}
 
 			if (isset($enabledResponse['enabled']) && $enabledResponse['enabled'] === true) {
@@ -134,15 +134,26 @@ class LangRopeService {
 			$options,
 		);
 		if (is_array($response) && isset($response['error'])) {
-			throw new RuntimeException('Error during request to ExApp (context_chat_backend): ' . $response['error']);
+			throw new RuntimeException('Error during request to Context Chat Backend (ExApp): ' . $response['error']);
+		}
+		if (is_array($response)) {
+			// this should never happen since app_api only returns errors in an array
+			throw new RuntimeException('Error during request to Context Chat Backend (ExApp): response is not a valid response object');
+		}
+		if (intval($response->getStatusCode() / 100) !== 2) {
+			$this->logger->error('Error during request to Context Chat Backend (ExApp)', [
+				'code' => $response->getStatusCode(),
+				'response' => $response->getBody()
+			]);
+			throw new RuntimeException('Error during request to Context Chat Backend (ExApp)');
 		}
 
 		$resContentType = $response->getHeader('Content-Type');
 		if (strpos($resContentType, 'application/json') !== false) {
 			$body = $response->getBody();
 			if (!is_string($body)) {
-				$this->logger->error('Error during request to ExApp (context_chat_backend): response body is not a string, but content type is application/json', ['response' => $response]);
-				throw new RuntimeException('Error during request to ExApp (context_chat_backend): response body is not a string, but content type is application/json');
+				$this->logger->error('Error during request to Context Chat Backend (ExApp): response body is not a string, but content type is application/json', ['response' => $response]);
+				throw new RuntimeException('Error during request to Context Chat Backend (ExApp): response body is not a string, but content type is application/json');
 			}
 
 			return json_decode($body, true);
