@@ -1,5 +1,7 @@
 # Nextcloud Assistant Context Chat
 
+![](https://raw.githubusercontent.com/nextcloud/context_chat/main/img/Logo.png)
+
 ## Install
 1. Install two other mandatory apps for this app to work as desired in your Nextcloud install from the "Apps" page:
 - AppAPI (>= v2.0.x): https://apps.nextcloud.com/apps/app_api
