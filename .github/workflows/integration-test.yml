@@ -80,17 +80,18 @@ jobs:
         with:
           path: apps/${{ env.APP_NAME }}
 
-      - name: Checkout AppAPI
-        uses: actions/checkout@v4
-        with:
-          repository: cloud-py-api/app_api
-          path: apps/app_api
-
       - name: Checkout backend
         uses: actions/checkout@v4
         with:
           repository: nextcloud/context_chat_backend
           path: context_chat_backend/
+
+      - name: Get backend app version
+        id: appinfo
+        uses: skjnldsv/xpath-action@7e6a7c379d0e9abc8acaef43df403ab4fc4f770c # master
+        with:
+          filename: context_chat_backend/appinfo/info.xml
+          expression: "/info/version/text()"
 
       - name: Read package.json node and npm engines version
         uses: skjnldsv/read-package-engines-version-actions@v3
@@ -120,7 +121,7 @@ jobs:
           sleep 25
           mkdir data
           ./occ maintenance:install --verbose --database=${{ matrix.databases }} --database-name=nextcloud --database-host=127.0.0.1 --database-port=$MYSQL_PORT --database-user=root --database-pass=rootpassword --admin-user admin --admin-pass password
-          php -S localhost:8080 &
+          composer run serve &
 
       - name: Set up Nextcloud
         if: ${{ matrix.databases == 'pgsql'}}
@@ -128,10 +129,10 @@ jobs:
           sleep 25
           mkdir data
           ./occ maintenance:install --verbose --database=${{ matrix.databases }} --database-name=nextcloud --database-host=127.0.0.1 --database-port=$PGSQL_PORT --database-user=root --database-pass=rootpassword --admin-user admin --admin-pass password
-          php -S localhost:8080 &
+          composer run serve &
 
-      - name: Enable app and app_api
-        run: ./occ app:enable -vvv -f ${{ env.APP_NAME }} app_api
+      - name: Enable context_chat, app_api and testing
+        run: ./occ app:enable -vvv -f ${{ env.APP_NAME }} app_api testing
 
       - name: Checkout documentation
         uses: actions/checkout@v4
@@ -141,9 +142,9 @@ jobs:
 
       - name: Prepare docs
         run: |
-          cd data/admin/files/documentation
-          find ./admin_manual/ -depth -name "*.rst" -exec sh -c 'mv "$1" "${1%.rst}.txt"' _ {} \;
-          git status
+          cd data/admin/files
+          mv documentation/admin_manual .
+          rm -rf documentation
 
       - name: Setup python 3.11
         uses: actions/setup-python@v5
@@ -159,21 +160,25 @@ jobs:
           pip install --no-deps -r requirements.txt
           cp example.env .env
           echo "NEXTCLOUD_URL=http://localhost:8080" >> .env
-          sed -i 's/disable_aaa: false/disable_aaa: true/' config.cpu.yaml
-          ./main.py &> backend_logs &
+          ./main.py | tee backend_logs &
 
       - name: Register backend
         run: |
+          set -x
+          ./occ config:system:set debug --value true
+          ./occ config:system:set loglevel --value 0
           ./occ app_api:daemon:register --net host manual_install "Manual Install" manual-install http localhost http://localhost:8080
-          ./occ app_api:app:register context_chat_backend manual_install --json-info "{\"appid\":\"context_chat_backend\",\"name\":\"Context Chat Backend\",\"daemon_config_name\":\"manual_install\",\"version\":\"2.2.0\",\"secret\":\"12345\",\"port\":10034,\"scopes\":[],\"system_app\":0}" --force-scopes --wait-finish
+          timeout 120 ./occ app_api:app:register context_chat_backend manual_install --json-info "{\"appid\":\"context_chat_backend\",\"name\":\"Context Chat Backend\",\"daemon_config_name\":\"manual_install\",\"version\":\"${{ fromJson(steps.appinfo.outputs.result).version }}\",\"secret\":\"12345\",\"port\":10034,\"scopes\":[],\"system_app\":0}" --force-scopes --wait-finish
 
       - name: Scan files
         run: |
           ./occ files:scan admin
-          ./occ context_chat:scan -m text/plain admin
+          ./occ context_chat:scan admin
 
       - name: Run prompt
         run: |
+          ./occ background-job:worker 'OC\TaskProcessing\SynchronousBackgroundJob' &
+          ./occ background-job:worker 'OC\TaskProcessing\SynchronousBackgroundJob' &
           ./occ context_chat:prompt admin "Which factors are taken into account for the Ethical AI Rating?"
 
       - name: Show logs

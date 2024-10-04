@@ -120,7 +120,7 @@ class ContextChatProvider implements ISynchronousProvider {
 		// scoped query
 		$scopeList = array_unique($input['scopeList']);
 		if (count($scopeList) === 0) {
-			throw new \RuntimeException('No sources found');
+			throw new \RuntimeException('Empty scope list provided, use unscoped query instead');
 		}
 
 		// index sources before the query, not needed for providers
@@ -134,6 +134,10 @@ class ContextChatProvider implements ISynchronousProvider {
 		} else {
 			// this should never happen
 			throw new \InvalidArgumentException('Invalid scope type');
+		}
+
+		if (count($processedScopes) === 0) {
+			throw new \RuntimeException('No supported sources found in the scope list, extend the list or use unscoped query instead');
 		}
 
 		$response = $this->langRopeService->query(
@@ -162,6 +166,14 @@ class ContextChatProvider implements ISynchronousProvider {
 		if (!isset($response['output']) || !is_string($response['output'])
 			|| !isset($response['sources']) || !is_array($response['sources'])) {
 			throw new \RuntimeException('Invalid response from ContextChat, expected "output" and "sources" keys: ' . json_encode($response));
+		}
+
+		if (count($response['sources']) === 0) {
+			$this->logger->info('No sources found in the response', ['response' => $response]);
+			return [
+				'output' => $response['output'] ?? '',
+				'sources' => [],
+			];
 		}
 
 		$jsonSources = array_filter(array_map(
