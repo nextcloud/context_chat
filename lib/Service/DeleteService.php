@@ -67,7 +67,7 @@ class DeleteService {
 				continue;
 			}
 
-			if (!is_array($bucket[$type][$userId])) {
+			if (!isset($bucket[$type][$userId])) {
 				$bucket[$type][$userId] = [];
 			}
 			$bucket[$type][$userId][] = $payload;
