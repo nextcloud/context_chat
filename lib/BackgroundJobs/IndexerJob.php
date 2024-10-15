@@ -108,7 +108,7 @@ class IndexerJob extends TimedJob {
 	 * @return int
 	 */
 	protected function getBatchSize(): int {
-		return 2000;
+		return $this->appConfig->getAppValueInt('indexing_batch_size', 100);
 	}
 
 	/**
