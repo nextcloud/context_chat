@@ -30,7 +30,7 @@ use Psr\Log\LoggerInterface;
 
 class IndexerJob extends TimedJob {
 
-	public const DEAFULT_MAX_INDEXING_TIME = 5 * 60;
+	public const DEFAULT_MAX_INDEXING_TIME = 5 * 60;
 
 	public function __construct(
 		ITimeFactory            $time,
@@ -114,7 +114,7 @@ class IndexerJob extends TimedJob {
 	}
 
 	protected function getMaxIndexingTime(): int {
-		return $this->appConfig->getAppValue('indexing_max_time', self::DEFAULT_MAX_INDEXING_TIME);
+		return $this->appConfig->getAppValueInt('indexing_max_time', self::DEFAULT_MAX_INDEXING_TIME);
 	}
 
 	/**
