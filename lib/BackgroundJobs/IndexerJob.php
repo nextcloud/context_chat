@@ -30,6 +30,8 @@ use Psr\Log\LoggerInterface;
 
 class IndexerJob extends TimedJob {
 
+	public const DEAFULT_MAX_INDEXING_TIME = 5 * 60;
+
 	public function __construct(
 		ITimeFactory            $time,
 		private LoggerInterface $logger,
@@ -42,7 +44,7 @@ class IndexerJob extends TimedJob {
 		private IAppConfig     	$appConfig,
 	) {
 		parent::__construct($time);
-		$this->setInterval(60 * 5);
+		$this->setInterval($this->getMaxIndexingTime());
 		$this->setTimeSensitivity(self::TIME_INSENSITIVE);
 	}
 
@@ -111,13 +113,22 @@ class IndexerJob extends TimedJob {
 		return $this->appConfig->getAppValueInt('indexing_batch_size', 100);
 	}
 
+	protected function getMaxIndexingTime(): int {
+		return $this->appConfig->getAppValue('indexing_max_time', self::DEFAULT_MAX_INDEXING_TIME);
+	}
+
 	/**
 	 * @param QueueFile[] $files
 	 * @return void
 	 * @throws \RuntimeException|\ErrorException
 	 */
 	protected function index(array $files): void {
+		$maxTime = $this->getMaxIndexingTime();
+		$startTime = time();
 		foreach ($files as $queueFile) {
+			if ($startTime + $maxTime > time()) {
+				break;
+			}
 			$file = current($this->rootFolder->getById($queueFile->getFileId()));
 			if (!$file instanceof File) {
 				continue;
