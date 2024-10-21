@@ -126,7 +126,7 @@ class IndexerJob extends TimedJob {
 		$maxTime = $this->getMaxIndexingTime();
 		$startTime = time();
 		foreach ($files as $queueFile) {
-			if ($startTime + $maxTime > time()) {
+			if ($startTime + $maxTime < time()) {
 				break;
 			}
 			$file = current($this->rootFolder->getById($queueFile->getFileId()));
