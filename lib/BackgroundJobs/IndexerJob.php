@@ -46,6 +46,8 @@ class IndexerJob extends TimedJob {
 		parent::__construct($time);
 		$this->setInterval($this->getMaxIndexingTime());
 		$this->setTimeSensitivity(self::TIME_INSENSITIVE);
+		// Only allow one indexer job at a time
+		$this->setAllowParallelRuns(false);
 	}
 
 	/**
