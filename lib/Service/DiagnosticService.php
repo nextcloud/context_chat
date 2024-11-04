@@ -19,7 +19,7 @@ class DiagnosticService {
      * @throws AppConfigTypeConflictException
      */
 	public function getBackgroundJobDiagnostics(): array {
-		return $this->appConfig->getAppValueArray('background_jobs_diagnostics', []);
+		return $this->appConfig->getAppValueArray('background_jobs_diagnostics', [], true);
 	}
 
 	/**
