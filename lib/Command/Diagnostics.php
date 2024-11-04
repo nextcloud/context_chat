@@ -42,7 +42,7 @@ class Diagnostics extends Command {
 			$output->writeln($jobCategory);
             $count = 0;
 			foreach ($this->diagnosticService->getBackgroundJobDiagnostics() as $job => $stats) {
-				[$jobClass, $jobId] = explode($job, '-', 2);
+				[$jobClass, $jobId] = explode('-', $job, 2);
 				if ($jobClass !== $jobCategory) {
 					continue;
 				}
