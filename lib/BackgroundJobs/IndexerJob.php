@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace OCA\ContextChat\BackgroundJobs;
 
 use OCA\ContextChat\Db\QueueFile;
+use OCA\ContextChat\Service\DiagnosticService;
 use OCA\ContextChat\Service\LangRopeService;
 use OCA\ContextChat\Service\ProviderConfigService;
 use OCA\ContextChat\Service\QueueService;
@@ -42,6 +43,7 @@ class IndexerJob extends TimedJob {
 		private StorageService  $storageService,
 		private IRootFolder     $rootFolder,
 		private IAppConfig     	$appConfig,
+		private DiagnosticService $diagnosticService,
 	) {
 		parent::__construct($time);
 		$this->setInterval($this->getMaxIndexingTime());
@@ -73,10 +75,13 @@ class IndexerJob extends TimedJob {
 			return;
 		}
 
+		$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
+
 		// Setup Filesystem for a users that can access this mount
 		$mounts = array_values(array_filter($this->userMountCache->getMountsForStorageId($storageId), function (ICachedMountInfo $mount) use ($rootId) {
 			return $mount->getRootId() === $rootId;
 		}));
+
 		if (count($mounts) > 0) {
 			\OC_Util::setupFS($mounts[0]->getUser()->getUID());
 		}
@@ -126,6 +131,7 @@ class IndexerJob extends TimedJob {
 		$maxTime = $this->getMaxIndexingTime();
 		$startTime = time();
 		foreach ($files as $queueFile) {
+			$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
 			if ($startTime + $maxTime < time()) {
 				break;
 			}
@@ -135,6 +141,7 @@ class IndexerJob extends TimedJob {
 			}
 			$userIds = $this->storageService->getUsersForFileId($queueFile->getFileId());
 			foreach ($userIds as $userId) {
+				$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
 				try {
 					try {
 						$fileHandle = $file->fopen('r');
