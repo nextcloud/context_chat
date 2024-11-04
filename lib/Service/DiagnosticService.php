@@ -14,10 +14,10 @@ class DiagnosticService {
 	) {
 	}
 
-    /**
-     * @return array
-     * @throws AppConfigTypeConflictException
-     */
+	/**
+	 * @return array
+	 * @throws AppConfigTypeConflictException
+	 */
 	public function getBackgroundJobDiagnostics(): array {
 		return $this->appConfig->getAppValueArray('background_jobs_diagnostics', [], true);
 	}
@@ -39,10 +39,10 @@ class DiagnosticService {
 	 */
 	public function sendHeartbeat(string $class, int $id): void {
 		$key = $class . '-' . $id;
-        try {
-            $diagnostics = $this->getBackgroundJobDiagnostics();
-            if (!isset($diagnostics[$key])) {
-                $diagnostics[$key] = [];
+		try {
+			$diagnostics = $this->getBackgroundJobDiagnostics();
+			if (!isset($diagnostics[$key])) {
+				$diagnostics[$key] = [];
 			}
 			$diagnostics[$key] = array_merge(['last_seen' => time()], $diagnostics[$key]);
 			$this->setBackgroundJobDiagnostics($diagnostics);

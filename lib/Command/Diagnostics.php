@@ -40,26 +40,26 @@ class Diagnostics extends Command {
 			StorageCrawlJob::class
 		] as $jobCategory) {
 			$output->writeln($jobCategory);
-            $count = 0;
+			$count = 0;
 			foreach ($this->diagnosticService->getBackgroundJobDiagnostics() as $job => $stats) {
 				[$jobClass, $jobId] = explode('-', $job, 2);
 				if ($jobClass !== $jobCategory) {
 					continue;
 				}
-                $count++;
+				$count++;
 				$output->write("\t$jobId\t");
 				foreach ($stats as $stat => $value) {
 					if ($stat === 'last_seen') {
-						$output->write((new \DateTime('@' . $value))->format('Y-m-d H:i:s'));
+						$output->write('last_seen=' . (new \DateTime('@' . $value))->format('Y-m-d H:i:s'));
 					}
 				}
 				$output->writeln("");
 			}
-            if ($count === 0) {
-                $output->writeln('No jobs running.');
-            }
+			if ($count === 0) {
+				$output->writeln('No jobs running.');
+			}
 			$output->writeln('');
 		}
-        return 0;
+		return 0;
 	}
 }
