@@ -49,8 +49,8 @@ class Diagnostics extends Command {
                 $count++;
 				$output->write("\t$jobId\t");
 				foreach ($stats as $stat => $value) {
-					if ($value === 'last_seen') {
-						$output->write((new \DateTime($stat))->format('Y-m-d H:i:s'));
+					if ($stat === 'last_seen') {
+						$output->write((new \DateTime('@' . $value))->format('Y-m-d H:i:s'));
 					}
 				}
 				$output->writeln("");
