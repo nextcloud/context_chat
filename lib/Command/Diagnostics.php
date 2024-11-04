@@ -58,7 +58,7 @@ class Diagnostics extends Command {
             if ($count === 0) {
                 $output->writeln('No jobs running.');
             }
-            $output->writeln('');
+			$output->writeln('');
 		}
         return 0;
 	}

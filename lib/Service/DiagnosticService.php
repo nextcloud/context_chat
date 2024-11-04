@@ -43,8 +43,8 @@ class DiagnosticService {
             $diagnostics = $this->getBackgroundJobDiagnostics();
             if (!isset($diagnostics[$key])) {
                 $diagnostics[$key] = [];
-            }
-            $diagnostics[$key] = array_merge(['last_seen' => time()], $diagnostics[$key]);
+			}
+			$diagnostics[$key] = array_merge(['last_seen' => time()], $diagnostics[$key]);
 			$this->setBackgroundJobDiagnostics($diagnostics);
 		} catch (\OCP\Exceptions\AppConfigTypeConflictException|\JsonException  $e) {
 			$this->logger->warning('Error during context chat diagnostic heartbeat', ['exception' => $e]);
