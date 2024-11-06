@@ -140,13 +140,6 @@ class LangRopeService {
 			// this should never happen since app_api only returns errors in an array
 			throw new RuntimeException('Error during request to Context Chat Backend (ExApp): response is not a valid response object');
 		}
-		if (intval($response->getStatusCode() / 100) !== 2) {
-			$this->logger->error('Error during request to Context Chat Backend (ExApp)', [
-				'code' => $response->getStatusCode(),
-				'response' => $response->getBody()
-			]);
-			throw new RuntimeException('Error during request to Context Chat Backend (ExApp)');
-		}
 
 		$resContentType = $response->getHeader('Content-Type');
 		if (strpos($resContentType, 'application/json') !== false) {
@@ -156,10 +149,25 @@ class LangRopeService {
 				throw new RuntimeException('Error during request to Context Chat Backend (ExApp): response body is not a string, but content type is application/json');
 			}
 
-			return json_decode($body, true);
+			$finalBody = json_decode($body, true);
+		} else {
+			$finalBody = ['response' => $response->getBody()];
 		}
 
-		return ['response' => $response->getBody()];
+		if (intval($response->getStatusCode() / 100) !== 2) {
+			$this->logger->error('Error during request to Context Chat Backend (ExApp)', [
+				'code' => $response->getStatusCode(),
+				'response' => $response->getBody(),
+			]);
+			throw new RuntimeException(
+				'Error during request to Context Chat Backend (ExApp) with status code '
+				. $response->getStatusCode()
+				. ': '
+				. (isset($finalBody['error']) ? $finalBody['error'] : 'unknown error')
+			);
+		}
+
+		return $finalBody;
 	}
 
 	/**
