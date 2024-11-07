@@ -36,7 +36,8 @@ class ScanFiles extends Command {
 				InputArgument::REQUIRED,
 				'The user ID to scan the storage of'
 			)
-			->addOption('mimetype', 'm', InputOption::VALUE_REQUIRED, 'The mime type filter');
+			->addOption('mimetype', 'm', InputOption::VALUE_REQUIRED, 'The mime type filter')
+			->addOption('directory', 'd', InputOption::VALUE_REQUIRED, 'The directory to scan, relative to the user\'s home directory');
 	}
 
 	protected function execute(InputInterface $input, OutputInterface $output) {
@@ -50,7 +51,7 @@ class ScanFiles extends Command {
 		}
 
 		$userId = $input->getArgument('user_id');
-		$scan = $this->scanService->scanUserFiles($userId, $mimeTypeFilter);
+		$scan = $this->scanService->scanUserFiles($userId, $mimeTypeFilter, $input->getOption('directory'));
 		foreach ($scan as $s) {
 			$output->writeln('[' . $userId . '] Scanned ' . $s->title);
 		}
