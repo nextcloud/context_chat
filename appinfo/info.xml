@@ -41,6 +41,7 @@ Refer to the [Context Chat Backend's readme](https://github.com/nextcloud/contex
 	<commands>
 		<command>OCA\ContextChat\Command\ScanFiles</command>
 		<command>OCA\ContextChat\Command\Prompt</command>
+		<command>OCA\ContextChat\Command\Diagnostics</command>
 	</commands>
     <!--settings>
         <admin>OCA\ContextChat\Settings\Admin</admin>

@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace OCA\ContextChat\BackgroundJobs;
 
 use OCA\ContextChat\Db\QueueFile;
+use OCA\ContextChat\Service\DiagnosticService;
 use OCA\ContextChat\Service\QueueService;
 use OCA\ContextChat\Service\StorageService;
 use OCP\AppFramework\Utility\ITimeFactory;
@@ -23,7 +24,9 @@ class StorageCrawlJob extends QueuedJob {
 		private LoggerInterface $logger,
 		private QueueService $queue,
 		private IJobList $jobList,
-		private StorageService $storageService) {
+		private StorageService $storageService,
+		private DiagnosticService $diagnosticService,
+	) {
 		parent::__construct($timeFactory);
 	}
 
@@ -40,6 +43,8 @@ class StorageCrawlJob extends QueuedJob {
 		// Remove current iteration
 		$this->jobList->remove(self::class, $argument);
 
+		$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
+
 		$i = 0;
 		foreach ($this->storageService->getFilesInMount($storageId, $overrideRoot, $lastFileId, self::BATCH_SIZE) as $fileId) {
 			$queueFile = new QueueFile();
@@ -47,6 +52,7 @@ class StorageCrawlJob extends QueuedJob {
 			$queueFile->setRootId($rootId);
 			$queueFile->setFileId($fileId);
 			$queueFile->setUpdate(false);
+			$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
 			try {
 				$this->queue->insertIntoQueue($queueFile);
 			} catch (Exception $e) {
