@@ -47,7 +47,7 @@ class IndexerJob extends TimedJob {
 	) {
 		parent::__construct($time);
 		$this->setInterval($this->getMaxIndexingTime());
-		$this->setTimeSensitivity(self::TIME_INSENSITIVE);
+		$this->setTimeSensitivity(self::TIME_SENSITIVE);
 	}
 
 	/**
