@@ -6,6 +6,24 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [4.0.0-beta] - 2024-11-08
+
+### Changed
+- Increase max indexing time (#67) @marcelklehr
+- Speed up indexing by indexing all the time (#72) @marcelklehr
+
+### Fixed
+- Better error handling and some fixes (#61) @kyteinsky
+- Undefined key check in delete service (#64) @kyteinsky
+- Stop inflation of Indexer jobs (#66) @marcelklehr
+- Parse and pass on received error msg in an exception (#70) @kyteinsky
+
+### Added
+- Check in screenshots and add a logo (#62) @marcelklehr
+- Make indexing batch size configurable (#65) @kyteinsky
+- Add background job diagnostics (#69) @marcelklehr
+
+
 ## [3.1.0] - 2024-09-30
 
 ### Added
