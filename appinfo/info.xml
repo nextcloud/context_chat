@@ -6,18 +6,19 @@
     <description><![CDATA[
     Ask questions to nextcloud Assistant about the content of your documents.
 
-## Install
-1. Install two other mandatory apps for this app to work as desired in your Nextcloud install from the "Apps" page:
-- AppAPI (>= v2.0.x): https://apps.nextcloud.com/apps/app_api
-- Assistant: https://apps.nextcloud.com/apps/assistant (The OCS API or the `occ` commands can also be used to interact with this app but it recommended to do that through a Text Processing OCP API consumer like the Assistant app.)
-2. Install this app (Nextcloud Assistant Context Chat): https://apps.nextcloud.com/apps/context_chat
-3. Install the Context Chat Backend app (https://apps.nextcloud.com/apps/context_chat_backend) from the "External Apps" page. It is important to note here that the backend app should have the same major and minor version as this app (context_chat)
-4. Start using Context Chat from the Assistant UI
+Install the given apps for Context Chat to work as desired **in the given order**:
+- [AppAPI from the Apps page](https://apps.nextcloud.com/apps/app_api)
+- [Context Chat Backend (same major and minor version as Context Chat app below) from the External Apps page](https://apps.nextcloud.com/apps/context_chat_backend)
+- [Context Chat (same major and minor version as the backend) from the Apps page](https://apps.nextcloud.com/apps/context_chat)
+- [Assistant from the Apps page](https://apps.nextcloud.com/apps/assistant). The OCS API or the `occ` commands can also be used to interact with this app but it recommended to do that through a Task Processing OCP API consumer like the Assistant app, which is also the officially supported universal UI for all the AI providers.
+- Text2Text Task Processing Provider like [llm2 from the External Apps page](https://apps.nextcloud.com/apps/llm2) or [integration_openai from the Apps page](https://apps.nextcloud.com/apps/integration_openai)
+
+Setup background job workers as described here: https://docs.nextcloud.com/server/latest/admin_manual/ai/overview.html#improve-ai-task-pickup-speed
 
 Note:
 Refer to the [Context Chat Backend's readme](https://github.com/nextcloud/context_chat_backend/?tab=readme-ov-file) and the [AppAPI's documentation](https://cloud-py-api.github.io/app_api/) for help with setup of AppAPI's deploy daemon.
 ]]></description>
-    <version>3.1.0</version>
+    <version>4.0.0-beta</version>
     <licence>agpl</licence>
     <author>Julien Veyssier</author>
     <namespace>ContextChat</namespace>
