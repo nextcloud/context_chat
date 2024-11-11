@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [4.0.0-beta2] - 2024-11-11
+
+### Fixed
+- Add migration step to reset indexing (#74) @marcelklehr
+
+
 ## [4.0.0-beta] - 2024-11-08
 
 ### Changed
