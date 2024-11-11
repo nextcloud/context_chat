@@ -27,7 +27,7 @@ jobs:
       fail-fast: false
       matrix:
         php-versions: [ '8.1' ]
-        databases: [ 'sqlite' ]
+        databases: [ 'pgsql' ]
         server-versions: [ 'master' ]
 
     name: Integration test on ${{ matrix.server-versions }} php@${{ matrix.php-versions }}
@@ -35,6 +35,8 @@ jobs:
     env:
       MYSQL_PORT: 4444
       PGSQL_PORT: 4445
+      # use the same db for ccb and nextcloud
+      CCB_DB_URL: postgresql+psycopg://root:rootpassword@localhost:4445/nextcloud
 
     services:
       mysql:
@@ -45,7 +47,7 @@ jobs:
           MYSQL_ROOT_PASSWORD: rootpassword
         options: --health-cmd="mysqladmin ping" --health-interval 5s --health-timeout 2s --health-retries 5
       postgres:
-        image: postgres
+        image: pgvector/pgvector:pg17
         ports:
           - 4445:5432/tcp
         env:
@@ -144,6 +146,14 @@ jobs:
         run: |
           cd data/admin/files
           mv documentation/admin_manual .
+          cp -R documentation/developer_manual .
+          cd developer_manual
+          find . -type f -name "*.rst" -exec bash -c 'mv "$0" "${0%.rst}.md"' {} \;
+          cd ..
+          cp -R documentation/developer_manual ./developer_manual2
+          cd developer_manual2
+          find . -type f -name "*.rst" -exec bash -c 'mv "$0" "${0%.rst}.txt"' {} \;
+          cd ..
           rm -rf documentation
 
       - name: Setup python 3.11
@@ -157,10 +167,11 @@ jobs:
         run: |
           cd context_chat_backend
           pip install --upgrade pip setuptools wheel
-          pip install --no-deps -r requirements.txt
+          pip install -r requirements.txt
           cp example.env .env
           echo "NEXTCLOUD_URL=http://localhost:8080" >> .env
-          ./main.py | tee backend_logs &
+          python3 -u ./main.py > backend_logs 2>&1 &
+          echo $! > ../pid.txt          # Save the process ID (PID)
 
       - name: Register backend
         run: |
@@ -170,20 +181,70 @@ jobs:
           ./occ app_api:daemon:register --net host manual_install "Manual Install" manual-install http localhost http://localhost:8080
           timeout 120 ./occ app_api:app:register context_chat_backend manual_install --json-info "{\"appid\":\"context_chat_backend\",\"name\":\"Context Chat Backend\",\"daemon_config_name\":\"manual_install\",\"version\":\"${{ fromJson(steps.appinfo.outputs.result).version }}\",\"secret\":\"12345\",\"port\":10034,\"scopes\":[],\"system_app\":0}" --force-scopes --wait-finish
 
+      - name: Scan files, baseline
+        run: |
+          ./occ files:scan admin
+          ./occ context_chat:scan admin -m text/plain
+
+      - name: Check python memory usage
+        run: |
+          ps -p $(cat pid.txt) -o pid,cmd,%mem,rss --sort=-%mem
+          ps -p $(cat pid.txt) -o %mem --no-headers > initial_mem.txt
+
       - name: Scan files
         run: |
           ./occ files:scan admin
-          ./occ context_chat:scan admin
+          ./occ context_chat:scan admin -m text/markdown &
+          ./occ context_chat:scan admin -m text/x-rst
 
-      - name: Run prompt
+      - name: Check python memory usage
+        run: |
+          ps -p $(cat pid.txt) -o pid,cmd,%mem,rss --sort=-%mem
+          ps -p $(cat pid.txt) -o %mem --no-headers > after_scan_mem.txt
+
+      - name: Run the prompts
         run: |
           ./occ background-job:worker 'OC\TaskProcessing\SynchronousBackgroundJob' &
           ./occ background-job:worker 'OC\TaskProcessing\SynchronousBackgroundJob' &
           ./occ context_chat:prompt admin "Which factors are taken into account for the Ethical AI Rating?"
+          ./occ context_chat:prompt admin "Welche Faktoren beeinflussen das Ethical AI Rating?"
+
+      - name: Check python memory usage
+        run: |
+          ps -p $(cat pid.txt) -o pid,cmd,%mem,rss --sort=-%mem
+          ps -p $(cat pid.txt) -o %mem --no-headers > after_prompt_mem.txt
+
+      - name: Compare memory usage and detect leak
+        run: |
+          initial_mem=$(cat initial_mem.txt | tr -d ' ')
+          final_mem=$(cat after_scan_mem.txt | tr -d ' ')
+          echo "Initial Memory Usage: $initial_mem%"
+          echo "Memory Usage after scan: $final_mem%"
+
+          if (( $(echo "$final_mem > $initial_mem" | bc -l) )); then
+            echo "Memory usage has increased during scan. Possible memory leak detected!"
+          else
+            echo "Memory usage during scan is stable. No memory leak detected."
+          fi
+
+      - name: Compare memory usage and detect leak
+        run: |
+          initial_mem=$(cat after_scan_mem.txt | tr -d ' ')
+          final_mem=$(cat after_prompt_mem.txt | tr -d ' ')
+          echo "Initial Memory Usage: $initial_mem%"
+          echo "Memory Usage after prompt: $final_mem%"
+
+          if (( $(echo "$final_mem > $initial_mem" | bc -l) )); then
+            echo "Memory usage has increased during prompt. Possible memory leak detected!"
+          else
+            echo "Memory usage during prompt is stable. No memory leak detected."
+          fi
 
       - name: Show logs
         if: always()
         run: |
           tail data/nextcloud.log
-          echo '--------------------------------------------------'
+          echo '------------------------- BACKEND LOGS -------------------------'
           [ -f context_chat_backend/backend_logs ] && cat context_chat_backend/backend_logs || echo "No backend logs"
+          echo '------------------------- EMBEDDING SERVER LOGS -------------------------'
+          [ -f context_chat_backend/embedding_model.log ] && cat context_chat_backend/embedding_model.log || echo "No embedding backend logs"
