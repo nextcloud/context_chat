@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [4.0.0-beta3] - 2024-11-21
+
+### Added
+- Enforce a max count of running indexer jobs (#77) @marcelklehr
+
+
 ## [4.0.0-beta2] - 2024-11-11
 
 ### Fixed
