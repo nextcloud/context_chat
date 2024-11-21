@@ -19,6 +19,7 @@ use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\IJobList;
 use OCP\BackgroundJob\TimedJob;
 use OCP\DB\Exception;
+use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\Files\Config\ICachedMountInfo;
 use OCP\Files\Config\IUserMountCache;
 use OCP\Files\File;
@@ -26,12 +27,23 @@ use OCP\Files\InvalidPathException;
 use OCP\Files\IRootFolder;
 use OCP\Files\NotFoundException;
 use OCP\Files\NotPermittedException;
+use OCP\IDBConnection;
 use OCP\Lock\LockedException;
 use Psr\Log\LoggerInterface;
 
+/**
+ * Indexer Job
+ * Makes use of the following app config settings:
+ *
+ * auto_indexing: bool = true The job only runs if this is true
+ * indexing_batch_size: int = 100 The number of files to index per run
+ * indexing_max_time: int = 30*60 The number of seconds to index files for per run, regardless of batch size
+ * indexing_max_jobs_count: int = 3 The maximum number of Indexer jobs allowed to run at the same time
+ */
 class IndexerJob extends TimedJob {
 
 	public const DEFAULT_MAX_INDEXING_TIME = 30 * 60;
+	public const DEFAULT_MAX_JOBS_COUNT = 3;
 
 	public function __construct(
 		ITimeFactory            $time,
@@ -44,6 +56,8 @@ class IndexerJob extends TimedJob {
 		private IRootFolder     $rootFolder,
 		private IAppConfig     	$appConfig,
 		private DiagnosticService $diagnosticService,
+		private IDBConnection $db,
+		private ITimeFactory $timeFactory,
 	) {
 		parent::__construct($time);
 		$this->setInterval($this->getMaxIndexingTime());
@@ -64,6 +78,9 @@ class IndexerJob extends TimedJob {
 		$storageId = $argument['storageId'];
 		$rootId = $argument['rootId'];
 		if ($this->appConfig->getAppValue('auto_indexing', 'true') === 'false') {
+			return;
+		}
+		if ($this->hasEnoughRunningJobs()) {
 			return;
 		}
 		$this->logger->debug('Index files of storage ' . $storageId);
@@ -120,6 +137,37 @@ class IndexerJob extends TimedJob {
 
 	protected function getMaxIndexingTime(): int {
 		return $this->appConfig->getAppValueInt('indexing_max_time', self::DEFAULT_MAX_INDEXING_TIME);
+	}
+
+	protected function hasEnoughRunningJobs(): bool {
+		// Sleep a bit randomly to avoid a scenario where all jobs are started at the same time and kill themselves directly
+		sleep(rand(1, 3 * 60));
+		if (!$this->jobList->hasReservedJob(static::class)) {
+			// short circuit to false if no jobs are running, yet
+			return false;
+		}
+		$count = 0;
+		foreach ($this->jobList->getJobsIterator(static::class, null, 0) as $job) {
+			// Check if job is running
+			$query = $this->db->getQueryBuilder();
+			$query->select('*')
+				->from('jobs')
+				->where($query->expr()->gt('reserved_at', $query->createNamedParameter($this->timeFactory->getTime() - 6 * 3600, IQueryBuilder::PARAM_INT)))
+				->andWhere($query->expr()->eq('id', $query->createNamedParameter($job->getId(), IQueryBuilder::PARAM_INT)))
+				->setMaxResults(1);
+
+			try {
+				$result = $query->executeQuery();
+				if ($result->fetch() !== false) {
+					// count if it's running
+					$count++;
+				}
+				$result->closeCursor();
+			} catch (Exception $e) {
+				$this->logger->warning('Querying reserved jobs failed', ['exception' => $e]);
+			}
+		}
+		return $count >= $this->appConfig->getAppValueInt('indexing_max_jobs_count', self::DEFAULT_MAX_JOBS_COUNT);
 	}
 
 	/**
