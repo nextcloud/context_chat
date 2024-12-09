@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Nextcloud - ContextChat
  *
@@ -16,7 +17,7 @@ use OCA\ContextChat\BackgroundJobs\SubmitContentJob;
 use OCA\ContextChat\Db\QueueContentItem;
 use OCA\ContextChat\Db\QueueContentItemMapper;
 use OCA\ContextChat\Event\ContentProviderRegisterEvent;
-use OCA\ContextChat\Service\DeleteService;
+use OCA\ContextChat\Service\ActionService;
 use OCA\ContextChat\Service\ProviderConfigService;
 use OCP\BackgroundJob\IJobList;
 use OCP\EventDispatcher\IEventDispatcher;
@@ -30,7 +31,7 @@ class ContentManager {
 		private IJobList $jobList,
 		private ProviderConfigService $providerConfig,
 		private QueueContentItemMapper $mapper,
-		private DeleteService $deleteService,
+		private ActionService $actionService,
 		private LoggerInterface $logger,
 		private IEventDispatcher $eventDispatcher,
 	) {
@@ -50,7 +51,7 @@ class ContentManager {
 
 		try {
 			Server::get($providerClass);
-		} catch (ContainerExceptionInterface | NotFoundExceptionInterface $e) {
+		} catch (ContainerExceptionInterface|NotFoundExceptionInterface $e) {
 			$this->logger->warning('Could not find content provider by class name', ['classString' => $providerClass, 'exception' => $e]);
 			return;
 		}
@@ -108,34 +109,113 @@ class ContentManager {
 	 * @param string $appId
 	 * @param string $providerId
 	 * @param string $itemId
-	 * @param array $users
+	 * @param array<string> $users
 	 * @return void
-	 * @since 1.1.0
+	 * @deprecated 4.0.0
 	 */
 	public function removeContentForUsers(string $appId, string $providerId, string $itemId, array $users): void {
 		$this->collectAllContentProviders();
 
-		foreach ($users as $userId) {
-			$this->deleteService->deleteSources($userId, [
-				ProviderConfigService::getSourceId($itemId, ProviderConfigService::getConfigKey($appId, $providerId))
-			]);
-		}
+		$this->actionService->updateAccess(
+			UpdateAccessOp::DENY,
+			$users,
+			ProviderConfigService::getSourceId($itemId, ProviderConfigService::getConfigKey($appId, $providerId)),
+		);
 	}
 
 	/**
-	 * Remove all content items from the knowledge base of context chat for specified users
+	 * Deny access to all content items for the given provider for specified users.
+	 * If no user has access to the content items, it will be removed from the knowledge base.
 	 *
 	 * @param string $appId
 	 * @param string $providerId
-	 * @param array $users
+	 * @param array<string> $users
 	 * @return void
-	 * @since 1.1.0
+	 * @deprecated 4.0.0
 	 */
 	public function removeAllContentForUsers(string $appId, string $providerId, array $users): void {
 		$this->collectAllContentProviders();
+		$this->actionService->updateAccessProvider(
+			UpdateAccessOp::DENY,
+			$users,
+			ProviderConfigService::getConfigKey($appId, $providerId),
+		);
+	}
 
-		foreach ($users as $userId) {
-			$this->deleteService->deleteSourcesByProvider($userId, ProviderConfigService::getConfigKey($appId, $providerId));
-		}
+	/**
+	 * Update access for a content item for specified users.
+	 * This modifies the access list for the content item,
+	 * 	allowing or denying access to the specified users.
+	 * If no user has access to the content item, it will be removed from the knowledge base.
+	 *
+	 * @param string $appId
+	 * @param string $providerId
+	 * @param string $itemId
+	 * @param string $op
+	 * @param array $userIds
+	 * @return void
+	 * @since 4.0.0
+	 */
+	public function updateAccess(string $appId, string $providerId, string $itemId, string $op, array $userIds): void {
+		$this->collectAllContentProviders();
+
+		$this->actionService->updateAccess(
+			$op,
+			$userIds,
+			ProviderConfigService::getSourceId($itemId, ProviderConfigService::getConfigKey($appId, $providerId)),
+		);
+	}
+
+	/**
+	 * Update access for a content item for specified users declaratively.
+	 * This overwrites the access list for the content item,
+	 * 	allowing only the specified users access to it.
+	 *
+	 * @param string $appId
+	 * @param string $providerId
+	 * @param string $itemId
+	 * @param array $userIds
+	 * @return void
+	 * @since 4.0.0
+	 */
+	public function updateAccessDeclarative(string $appId, string $providerId, string $itemId, array $userIds): void {
+		$this->collectAllContentProviders();
+
+		$this->actionService->updateAccessDeclSource(
+			$userIds,
+			ProviderConfigService::getSourceId($itemId, ProviderConfigService::getConfigKey($appId, $providerId)),
+		);
+	}
+
+	/**
+	 * Delete all content items and access lists for a provider.
+	 * This does not unregister the provider itself.
+	 *
+	 * @param string $appId
+	 * @param string $providerId
+	 * @return void
+	 * @since 4.0.0
+	 */
+	public function deleteProvider(string $appId, string $providerId): void {
+		$this->collectAllContentProviders();
+		$this->actionService->deleteProvider(ProviderConfigService::getConfigKey($appId, $providerId));
+	}
+
+	/**
+	 * Remove a content item from the knowledge base of context chat.
+	 *
+	 * @param string $appId
+	 * @param string $providerId
+	 * @param string[] $itemIds
+	 * @return void
+	 * @since 4.0.0
+	 */
+	public function deleteContent(string $appId, string $providerId, string ...$itemIds): void {
+		$this->collectAllContentProviders();
+
+		$providerKey = ProviderConfigService::getConfigKey($appId, $providerId);
+		$this->actionService->deleteSources(...array_map(function (string $itemId) use ($providerKey) {
+			return ProviderConfigService::getSourceId($itemId, $providerKey);
+		}, $itemIds));
 	}
 }

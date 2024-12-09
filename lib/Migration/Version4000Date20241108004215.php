@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Nextcloud - ContextChat
  *
@@ -45,7 +46,7 @@ class Version4000Date20241108004215 extends SimpleMigrationStep {
 	 */
 	public function postSchemaChange(IOutput $output, Closure $schemaClosure, array $options) {
 		$output->startProgress(10);
-		foreach([
+		foreach ([
 			SchedulerJob::class,
 			StorageCrawlJob::class,
 			IndexerJob::class,

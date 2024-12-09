@@ -1,4 +1,5 @@
 <?php
+
 /*
  * Copyright (c) 2022 The Recognize contributors.
  * Copyright (c) 2023 Marcel Klehr <mklehr@gmx.net>
@@ -45,14 +46,15 @@ class QueueMapper extends QBMapper {
 	}
 
 	/**
-	 * @param QueueFile $file
+	 * @param QueueFile[] $files
 	 * @return void
 	 * @throws \OCP\DB\Exception
 	 */
-	public function removeFromQueue(QueueFile $file) : void {
+	public function removeFromQueue(array $files) : void {
+		$fileIds = array_map(fn (QueueFile $file) => $file->getId(), $files);
 		$qb = $this->db->getQueryBuilder();
 		$qb->delete($this->getTableName())
-			->where($qb->expr()->eq('id', $qb->createPositionalParameter($file->getId())))
+			->where($qb->expr()->in('id', $qb->createPositionalParameter($fileIds, IQueryBuilder::PARAM_INT_ARRAY)))
 			->executeStatement();
 	}
 

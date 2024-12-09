@@ -1,4 +1,5 @@
 <?php
+
 /*
  * Copyright (c) 2020-2022 The Recognize contributors.
  * Copyright (c) 2023 Marcel Klehr <mklehr@gmx.net>

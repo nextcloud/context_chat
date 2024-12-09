@@ -1,4 +1,5 @@
 <?php
+
 /*
  * Copyright (c) 2021-2022 The Recognize contributors.
  * Copyright (c) 2023 Marcel Klehr <mklehr@gmx.net>
@@ -20,7 +21,8 @@ use Psr\Log\LoggerInterface;
 class StorageCrawlJob extends QueuedJob {
 	public const BATCH_SIZE = 2000;
 
-	public function __construct(ITimeFactory $timeFactory,
+	public function __construct(
+		ITimeFactory $timeFactory,
 		private LoggerInterface $logger,
 		private QueueService $queue,
 		private IJobList $jobList,

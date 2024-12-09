@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Nextcloud - ContextChat
  *
@@ -11,6 +12,7 @@ namespace OCA\ContextChat\AppInfo;
 
 use OCA\ContextChat\Listener\AppDisableListener;
 use OCA\ContextChat\Listener\FileListener;
+use OCA\ContextChat\Listener\UserDeletedListener;
 use OCA\ContextChat\Service\ProviderConfigService;
 use OCA\ContextChat\TaskProcessing\ContextChatProvider;
 use OCA\ContextChat\TaskProcessing\ContextChatTaskType;
@@ -27,11 +29,12 @@ use OCP\Files\Events\NodeRemovedFromCache;
 use OCP\IConfig;
 use OCP\Share\Events\ShareCreatedEvent;
 use OCP\Share\Events\ShareDeletedEvent;
+use OCP\User\Events\UserDeletedEvent;
 
 class Application extends App implements IBootstrap {
 
 	public const APP_ID = 'context_chat';
-	public const MIN_APP_API_VERSION = '2.0.3';
+	public const MIN_APP_API_VERSION = '3.0.0';
 
 	public const CC_DEFAULT_REQUEST_TIMEOUT = 60 * 50; // 50 mins
 	// max size per file + max size of the batch of files to be embedded in a single request
@@ -77,6 +80,7 @@ class Application extends App implements IBootstrap {
 		$context->registerEventListener(NodeRemovedFromCache::class, FileListener::class);
 		$context->registerEventListener(NodeWrittenEvent::class, FileListener::class);
 		$context->registerEventListener(AppDisableEvent::class, AppDisableListener::class);
+		$context->registerEventListener(UserDeletedEvent::class, UserDeletedListener::class);
 		$context->registerTaskProcessingTaskType(ContextChatTaskType::class);
 		$context->registerTaskProcessingProvider(ContextChatProvider::class);
 

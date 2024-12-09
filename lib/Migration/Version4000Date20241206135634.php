@@ -1,16 +1,11 @@
 <?php
 
-/**
- * Nextcloud - ContextChat
- *
- * This file is licensed under the Affero General Public License version 3 or
- * later. See the COPYING file.
- *
- * @author Anupam Kumar <kyteinsky@gmail.com>
- * @copyright Anupam Kumar 2024
- */
-
 declare(strict_types=1);
+
+/**
+ * SPDX-FileCopyrightText: 2024 Nextcloud GmbH and Nextcloud contributors
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
 
 namespace OCA\ContextChat\Migration;
 
@@ -20,7 +15,7 @@ use OCP\DB\Types;
 use OCP\Migration\IOutput;
 use OCP\Migration\SimpleMigrationStep;
 
-class Version2002Date20240619004215 extends SimpleMigrationStep {
+class Version4000Date20241206135634 extends SimpleMigrationStep {
 	/**
 	 * @param IOutput $output
 	 * @param Closure(): ISchemaWrapper $schemaClosure
@@ -31,8 +26,8 @@ class Version2002Date20240619004215 extends SimpleMigrationStep {
 		/** @var ISchemaWrapper $schema */
 		$schema = $schemaClosure();
 
-		if (!$schema->hasTable('context_chat_delete_queue')) {
-			$table = $schema->createTable('context_chat_delete_queue');
+		if (!$schema->hasTable('context_chat_action_queue')) {
+			$table = $schema->createTable('context_chat_action_queue');
 
 			$table->addColumn('id', Types::BIGINT, [
 				'autoincrement' => true,
@@ -44,16 +39,11 @@ class Version2002Date20240619004215 extends SimpleMigrationStep {
 				'notnull' => true,
 				'length' => 128,
 			]);
-			$table->addColumn('user_id', Types::STRING, [
-				'notnull' => true,
-				'length' => 512,
-			]);
-			$table->addColumn('payload', Types::STRING, [
-				'notnull' => true,
-				'length' => 512,
+			$table->addColumn('payload', Types::TEXT, [
+				'notnull' => false,
 			]);
 
-			$table->setPrimaryKey(['id'], 'ccc_delete_queue_id');
+			$table->setPrimaryKey(['id'], 'ccc_action_queue_id');
 		}
 
 		return $schema;

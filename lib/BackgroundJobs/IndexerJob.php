@@ -1,4 +1,5 @@
 <?php
+
 /*
  * Copyright (c) 2022 The Recognize contributors.
  * This file is licensed under the Affero General Public License version 3 or later. See the COPYING file.
@@ -7,6 +8,7 @@ declare(strict_types=1);
 
 namespace OCA\ContextChat\BackgroundJobs;
 
+use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\Db\QueueFile;
 use OCA\ContextChat\Service\DiagnosticService;
 use OCA\ContextChat\Service\LangRopeService;
@@ -34,15 +36,15 @@ class IndexerJob extends TimedJob {
 	public const DEFAULT_MAX_INDEXING_TIME = 30 * 60;
 
 	public function __construct(
-		ITimeFactory            $time,
+		ITimeFactory $time,
 		private LoggerInterface $logger,
-		private QueueService    $queue,
+		private QueueService $queue,
 		private IUserMountCache $userMountCache,
-		private IJobList        $jobList,
+		private IJobList $jobList,
 		private LangRopeService $langRopeService,
-		private StorageService  $storageService,
-		private IRootFolder     $rootFolder,
-		private IAppConfig     	$appConfig,
+		private StorageService $storageService,
+		private IRootFolder $rootFolder,
+		private IAppConfig $appConfig,
 		private DiagnosticService $diagnosticService,
 	) {
 		parent::__construct($time);
@@ -130,49 +132,73 @@ class IndexerJob extends TimedJob {
 	protected function index(array $files): void {
 		$maxTime = $this->getMaxIndexingTime();
 		$startTime = time();
+		$sources = [];
+		$allSourceIds = [];
+		$loadedSources = [];
+		$size = 0;
+
 		foreach ($files as $queueFile) {
 			$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
 			if ($startTime + $maxTime < time()) {
 				break;
 			}
+
 			$file = current($this->rootFolder->getById($queueFile->getFileId()));
 			if (!$file instanceof File) {
 				continue;
 			}
+
+			$file_size = $file->getSize();
+			if ($size + $file_size > Application::CC_MAX_SIZE || count($sources) >= Application::CC_MAX_FILES) {
+				$loadedSources = array_merge($loadedSources, $this->langRopeService->indexSources($sources));
+				$sources = [];
+				$size = 0;
+			}
+
 			$userIds = $this->storageService->getUsersForFileId($queueFile->getFileId());
-			foreach ($userIds as $userId) {
-				$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
-				try {
-					try {
-						$fileHandle = $file->fopen('r');
-					} catch (LockedException|NotPermittedException $e) {
-						$this->logger->error('Could not open file ' . $file->getPath() . ' for reading', ['exception' => $e]);
-						continue;
-					}
-					if (!is_resource($fileHandle)) {
-						$this->logger->warning('File handle for' . $file->getPath() . ' is not readable');
-						continue;
-					}
-					$source = new Source(
-						$userId,
-						ProviderConfigService::getSourceId($file->getId()),
-						$file->getPath(),
-						$fileHandle,
-						$file->getMtime(),
-						$file->getMimeType(),
-						ProviderConfigService::getDefaultProviderKey(),
-					);
-				} catch (InvalidPathException|NotFoundException $e) {
-					$this->logger->error('Could not find file ' . $file->getPath(), ['exception' => $e]);
-					continue 2;
-				}
-				$this->langRopeService->indexSources([$source]);
-			}
+			$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
+
 			try {
-				$this->queue->removeFromQueue($queueFile);
-			} catch (Exception $e) {
-				$this->logger->error('Could not remove file from queue', ['exception' => $e]);
+				try {
+					$fileHandle = $file->fopen('r');
+				} catch (LockedException|NotPermittedException $e) {
+					$this->logger->error('Could not open file ' . $file->getPath() . ' for reading', ['exception' => $e]);
+					continue;
+				}
+				if (!is_resource($fileHandle)) {
+					$this->logger->warning('File handle for' . $file->getPath() . ' is not readable');
+					continue;
+				}
+
+				$sources[] = new Source(
+					$userIds,
+					ProviderConfigService::getSourceId($file->getId()),
+					$file->getPath(),
+					$fileHandle,
+					$file->getMtime(),
+					$file->getMimeType(),
+					ProviderConfigService::getDefaultProviderKey(),
+				);
+				$allSourceIds[] = ProviderConfigService::getSourceId($file->getId());
+			} catch (InvalidPathException|NotFoundException $e) {
+				$this->logger->error('Could not find file ' . $file->getPath(), ['exception' => $e]);
+				continue;
 			}
+		}
+
+		if (count($sources) > 0) {
+			$loadedSources = array_merge($loadedSources, $this->langRopeService->indexSources($sources));
+		}
+
+		$emptyInvalidSources = array_diff($allSourceIds, $loadedSources);
+		if (count($emptyInvalidSources) > 0) {
+			$this->logger->info('Invalid or empty sources that were not indexed', ['sourceIds' => $emptyInvalidSources]);
+		}
+
+		try {
+			$this->queue->removeFromQueue($files);
+		} catch (Exception $e) {
+			$this->logger->error('Could not remove indexed files from queue', ['exception' => $e]);
 		}
 	}
 }
