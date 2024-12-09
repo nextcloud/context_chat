@@ -151,7 +151,7 @@ class ContentManager {
 	 * @param string $appId
 	 * @param string $providerId
 	 * @param string $itemId
-	 * @param string $op
+	 * @param string $op UpdateAccessOp::*
 	 * @param array $userIds
 	 * @return void
 	 * @since 4.0.0
@@ -163,6 +163,27 @@ class ContentManager {
 			$op,
 			$userIds,
 			ProviderConfigService::getSourceId($itemId, ProviderConfigService::getConfigKey($appId, $providerId)),
+		);
+	}
+
+	/**
+	 * Update access for content items from the given provider for specified users.
+	 * If no user has access to the content item, it will be removed from the knowledge base.
+	 *
+	 * @param string $appId
+	 * @param string $providerId
+	 * @param string $op UpdateAccessOp::*
+	 * @param array $userIds
+	 * @return void
+	 * @since 4.0.0
+	 */
+	public function updateAccessProvider(string $appId, string $providerId, string $op, array $userIds): void {
+		$this->collectAllContentProviders();
+
+		$this->actionService->updateAccessProvider(
+			$op,
+			$userIds,
+			ProviderConfigService::getConfigKey($appId, $providerId),
 		);
 	}
 
