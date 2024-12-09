@@ -44,72 +44,77 @@ class ActionJob extends QueuedJob {
 			return;
 		}
 
-		foreach ($entities as $entity) {
-			$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
+		try {
+			foreach ($entities as $entity) {
+				$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
 
-			switch ($entity->getType()) {
-				case ActionType::DELETE_SOURCE_IDS:
-					$decoded = json_decode($entity->getPayload(), true);
-					if (!is_array($decoded) || !isset($decoded['sourceIds'])) {
-						$this->logger->warning('Invalid payload for DELETE_SOURCE_IDS action', ['payload' => $entity->getPayload()]);
+				switch ($entity->getType()) {
+					case ActionType::DELETE_SOURCE_IDS:
+						$decoded = json_decode($entity->getPayload(), true);
+						if (!is_array($decoded) || !isset($decoded['sourceIds'])) {
+							$this->logger->warning('Invalid payload for DELETE_SOURCE_IDS action', ['payload' => $entity->getPayload()]);
+							break;
+						}
+						$this->networkService->deleteSources($decoded['sourceIds']);
 						break;
-					}
-					$this->networkService->deleteSources($decoded['sourceIds']);
-					break;
 
-				case ActionType::DELETE_PROVIDER_ID:
-					$decoded = json_decode($entity->getPayload(), true);
-					if (!is_array($decoded) || !isset($decoded['providerId'])) {
-						$this->logger->warning('Invalid payload for DELETE_PROVIDER_ID action', ['payload' => $entity->getPayload()]);
+					case ActionType::DELETE_PROVIDER_ID:
+						$decoded = json_decode($entity->getPayload(), true);
+						if (!is_array($decoded) || !isset($decoded['providerId'])) {
+							$this->logger->warning('Invalid payload for DELETE_PROVIDER_ID action', ['payload' => $entity->getPayload()]);
+							break;
+						}
+						$this->networkService->deleteProvider($decoded['providerId']);
 						break;
-					}
-					$this->networkService->deleteProvider($decoded['providerId']);
-					break;
 
-				case ActionType::DELETE_USER_ID:
-					$decoded = json_decode($entity->getPayload(), true);
-					if (!is_array($decoded) || !isset($decoded['userId'])) {
-						$this->logger->warning('Invalid payload for DELETE_USER_ID action', ['payload' => $entity->getPayload()]);
+					case ActionType::DELETE_USER_ID:
+						$decoded = json_decode($entity->getPayload(), true);
+						if (!is_array($decoded) || !isset($decoded['userId'])) {
+							$this->logger->warning('Invalid payload for DELETE_USER_ID action', ['payload' => $entity->getPayload()]);
+							break;
+						}
+						$this->networkService->deleteUser($decoded['userId']);
 						break;
-					}
-					$this->networkService->deleteUser($decoded['userId']);
-					break;
 
-				case ActionType::UPDATE_ACCESS_SOURCE_ID:
-					$decoded = json_decode($entity->getPayload(), true);
-					if (!is_array($decoded) || !isset($decoded['op']) || !isset($decoded['userIds']) || !isset($decoded['sourceId'])) {
-						$this->logger->warning('Invalid payload for UPDATE_ACCESS_SOURCE_ID action', ['payload' => $entity->getPayload()]);
+					case ActionType::UPDATE_ACCESS_SOURCE_ID:
+						$decoded = json_decode($entity->getPayload(), true);
+						if (!is_array($decoded) || !isset($decoded['op']) || !isset($decoded['userIds']) || !isset($decoded['sourceId'])) {
+							$this->logger->warning('Invalid payload for UPDATE_ACCESS_SOURCE_ID action', ['payload' => $entity->getPayload()]);
+							break;
+						}
+						$this->networkService->updateAccess($decoded['op'], $decoded['userIds'], $decoded['sourceId']);
 						break;
-					}
-					$this->networkService->updateAccess($decoded['op'], $decoded['userIds'], $decoded['sourceId']);
-					break;
 
-				case ActionType::UPDATE_ACCESS_PROVIDER_ID:
-					$decoded = json_decode($entity->getPayload(), true);
-					if (!is_array($decoded) || !isset($decoded['op']) || !isset($decoded['userIds']) || !isset($decoded['providerId'])) {
-						$this->logger->warning('Invalid payload for UPDATE_ACCESS_PROVIDER_ID action', ['payload' => $entity->getPayload()]);
+					case ActionType::UPDATE_ACCESS_PROVIDER_ID:
+						$decoded = json_decode($entity->getPayload(), true);
+						if (!is_array($decoded) || !isset($decoded['op']) || !isset($decoded['userIds']) || !isset($decoded['providerId'])) {
+							$this->logger->warning('Invalid payload for UPDATE_ACCESS_PROVIDER_ID action', ['payload' => $entity->getPayload()]);
+							break;
+						}
+						$this->networkService->updateAccessProvider($decoded['op'], $decoded['userIds'], $decoded['providerId']);
 						break;
-					}
-					$this->networkService->updateAccessProvider($decoded['op'], $decoded['userIds'], $decoded['providerId']);
-					break;
 
-				case ActionType::UPDATE_ACCESS_DECL_SOURCE_ID:
-					$decoded = json_decode($entity->getPayload(), true);
-					if (!is_array($decoded) || !isset($decoded['userIds']) || !isset($decoded['sourceId'])) {
-						$this->logger->warning('Invalid payload for UPDATE_ACCESS_DECL_SOURCE_ID action', ['payload' => $entity->getPayload()]);
+					case ActionType::UPDATE_ACCESS_DECL_SOURCE_ID:
+						$decoded = json_decode($entity->getPayload(), true);
+						if (!is_array($decoded) || !isset($decoded['userIds']) || !isset($decoded['sourceId'])) {
+							$this->logger->warning('Invalid payload for UPDATE_ACCESS_DECL_SOURCE_ID action', ['payload' => $entity->getPayload()]);
+							break;
+						}
+						$this->networkService->updateAccessDeclarative($decoded['userIds'], $decoded['sourceId']);
 						break;
-					}
-					$this->networkService->updateAccessDeclarative($decoded['userIds'], $decoded['sourceId']);
-					break;
 
-				default:
-					$this->logger->warning('Unknown action type', ['type' => $entity->getType()]);
+					default:
+						$this->logger->warning('Unknown action type', ['type' => $entity->getType()]);
+				}
 			}
-		}
 
-		foreach ($entities as $entity) {
-			$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
-			$this->actionMapper->removeFromQueue($entity);
+			foreach ($entities as $entity) {
+				$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
+				$this->actionMapper->removeFromQueue($entity);
+			}
+		} catch (\Throwable $e) {
+			$this->jobList->add(static::class);
+			throw $e;
 		}
 
 		$this->jobList->add(static::class);
