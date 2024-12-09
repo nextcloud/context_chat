@@ -58,7 +58,7 @@ class ActionService {
 		$batches = array_chunk($sourceIds, self::BATCH_SIZE);
 
 		foreach ($batches as $batch) {
-			$payload = json_encode($batch);
+			$payload = json_encode(['sourceIds' => $batch]);
 			if ($payload === false) {
 				$this->logger->warning('Failed to json_encode sourceIds for deletion', ['sourceIds' => $batch]);
 				continue;
