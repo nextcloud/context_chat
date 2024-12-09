@@ -1,4 +1,5 @@
 <?php
+
 /*
  * Copyright (c) 2022 The Recognize contributors.
  * Copyright (c) 2023 Marcel Klehr <mklehr@gmx.net>
@@ -34,12 +35,13 @@ class StorageService {
 	];
 
 	public function __construct(
-		private IDBConnection   $db,
+		private IDBConnection $db,
 		private LoggerInterface $logger,
-		private SystemConfig    $systemConfig,
+		private SystemConfig $systemConfig,
 		private IMimeTypeLoader $mimeTypes,
 		private IUserMountCache $userMountCache,
-		private IFilesMetadataManager $metadataManager) {
+		private IFilesMetadataManager $metadataManager,
+	) {
 	}
 
 	/**

@@ -53,7 +53,7 @@ class Diagnostics extends Command {
 						$output->write('last_seen=' . (new \DateTime('@' . $value))->format('Y-m-d H:i:s'));
 					}
 				}
-				$output->writeln("");
+				$output->writeln('');
 			}
 			if ($count === 0) {
 				$output->writeln('No jobs running.');

@@ -1,4 +1,5 @@
 <?php
+
 /*
  * Copyright (c) 2022 The Recognize contributors.
  * This file is licensed under the Affero General Public License version 3 or later. See the COPYING file.
@@ -16,7 +17,8 @@ class QueueService {
 
 	public function __construct(
 		private QueueMapper $queueMapper,
-		private IJobList    $jobList) {
+		private IJobList $jobList,
+	) {
 	}
 
 	/**
@@ -63,12 +65,12 @@ class QueueService {
 
 	/**
 	 * @param string $model
-	 * @param QueueFile $queueFile
+	 * @param QueueFile[] $files
 	 * @return void
 	 * @throws \OCP\DB\Exception
 	 */
-	public function removeFromQueue(QueueFile $queueFile): void {
-		$this->queueMapper->removeFromQueue($queueFile);
+	public function removeFromQueue(array $files): void {
+		$this->queueMapper->removeFromQueue($files);
 	}
 
 	public function clearQueue(): void {

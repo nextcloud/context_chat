@@ -247,11 +247,14 @@ class ContextChatProvider implements ISynchronousProvider {
 		foreach ($filteredNodes as $node) {
 			try {
 				if ($node['node'] instanceof File) {
-					$source = $this->scanService->getSourceFromFile($userId, Application::MIMETYPES, $node['node']);
-					$this->scanService->indexSources([$source]);
+					$source = $this->scanService->getSourceFromFile(Application::MIMETYPES, $node['node']);
+					if ($source === null) {
+						continue;
+					}
+					$this->langRopeService->indexSources([$source]);
 					$indexedSources[] = $node['scope'];
 				} elseif ($node['node'] instanceof Folder) {
-					$fileSources = iterator_to_array($this->scanService->scanDirectory($userId, Application::MIMETYPES, $node['node']));
+					$fileSources = iterator_to_array($this->scanService->scanDirectory(Application::MIMETYPES, $node['node']));
 					$indexedSources = array_merge(
 						$indexedSources,
 						array_map(fn (Source $source) => $source->reference, $fileSources),

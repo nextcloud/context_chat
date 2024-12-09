@@ -1,4 +1,5 @@
 <?php
+
 /*
  * Copyright (c) 2022 The Recognize contributors.
  * Copyright (c) 2023 Marcel Klehr <mklehr@gmx.net>
@@ -9,7 +10,8 @@ namespace OCA\ContextChat\Listener;
 
 use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\Db\QueueFile;
-use OCA\ContextChat\Service\DeleteService;
+use OCA\ContextChat\Public\UpdateAccessOp;
+use OCA\ContextChat\Service\ActionService;
 use OCA\ContextChat\Service\ProviderConfigService;
 use OCA\ContextChat\Service\QueueService;
 use OCA\ContextChat\Service\StorageService;
@@ -44,7 +46,8 @@ class FileListener implements IEventListener {
 		private StorageService $storageService,
 		private IManager $shareManager,
 		private IRootFolder $rootFolder,
-		private DeleteService $deleteService) {
+		private ActionService $actionService,
+	) {
 	}
 
 	public function handle(Event $event): void {
@@ -58,14 +61,23 @@ class FileListener implements IEventListener {
 
 		if ($event instanceof ShareCreatedEvent) {
 			$share = $event->getShare();
-			$ownerId = $share->getShareOwner();
 			$node = $share->getNode();
 
-			$accessList = $this->shareManager->getAccessList($node, true, true);
-			/**
-			 * @var string[] $userIds
-			 */
-			$userIds = array_keys($accessList['users']);
+			switch ($share->getShareType()) {
+				case \OCP\Share\IShare::TYPE_USER:
+					$userIds = [$share->getSharedWith()];
+					break;
+				case \OCP\Share\IShare::TYPE_GROUP:
+					// todo: probably a group listener so when a user enters/leaves a group, we can update the access for all files shared with that group
+					$accessList = $this->shareManager->getAccessList($node, true, true);
+					/**
+					 * @var string[] $userIds
+					 */
+					$userIds = array_keys($accessList['users']);
+					break;
+				default:
+					return;
+			}
 
 			if ($node->getType() === FileInfo::TYPE_FOLDER) {
 				$mount = $node->getMountPoint();
@@ -74,27 +86,22 @@ class FileListener implements IEventListener {
 				}
 				$files = $this->storageService->getFilesInMount($mount->getNumericStorageId(), $node->getId(), 0, 0);
 				foreach ($files as $fileId) {
-					foreach ($userIds as $userId) {
-						if ($userId === $ownerId) {
-							continue;
-						}
-						$file = current($this->rootFolder->getById($fileId));
-						if (!$file instanceof File) {
-							continue;
-						}
-						$this->postInsert($file, false, true);
+					$file = current($this->rootFolder->getById($fileId));
+					if (!$file instanceof File) {
+						continue;
 					}
+					$this->actionService->updateAccess(
+						UpdateAccessOp::ALLOW,
+						$userIds,
+						ProviderConfigService::getSourceId($file->getId()),
+					);
 				}
 			} else {
-				foreach ($userIds as $userId) {
-					if ($userId === $ownerId) {
-						continue;
-					}
-					if (!$node instanceof File) {
-						continue;
-					}
-					$this->postInsert($node, false, true);
-				}
+				$this->actionService->updateAccess(
+					UpdateAccessOp::ALLOW,
+					$userIds,
+					ProviderConfigService::getSourceId($node->getId()),
+				);
 			}
 		}
 
@@ -124,8 +131,12 @@ class FileListener implements IEventListener {
 					$fileRefs[] = ProviderConfigService::getSourceId($node->getId());
 				}
 
-				foreach ($userIds as $userId) {
-					$this->deleteService->deleteSources($userId, $fileRefs);
+				foreach ($fileRefs as $fileRef) {
+					$this->actionService->updateAccess(
+						UpdateAccessOp::DENY,
+						$userIds,
+						$fileRef,
+					);
 				}
 			} else {
 				if (!$this->allowedMimeType($node)) {
@@ -133,9 +144,11 @@ class FileListener implements IEventListener {
 				}
 
 				$fileRef = ProviderConfigService::getSourceId($node->getId());
-				foreach ($userIds as $userId) {
-					$this->deleteService->deleteSources($userId, [$fileRef]);
-				}
+				$this->actionService->updateAccess(
+					UpdateAccessOp::DENY,
+					$userIds,
+					$fileRef,
+				);
 			}
 		}
 
@@ -196,10 +209,8 @@ class FileListener implements IEventListener {
 			return;
 		}
 
-		foreach ($this->storageService->getUsersForFileId($node->getId()) as $userId) {
-			$fileRef = ProviderConfigService::getSourceId($node->getId());
-			$this->deleteService->deleteSources($userId, [$fileRef]);
-		}
+		$fileRef = ProviderConfigService::getSourceId($node->getId());
+		$this->actionService->deleteSources($fileRef);
 	}
 
 	/**
@@ -249,7 +260,7 @@ class FileListener implements IEventListener {
 		}
 	}
 
-	private function allowedMimeType(File $file) {
+	private function allowedMimeType(File $file): bool {
 		$mimeType = $file->getMimeType();
 		return in_array($mimeType, Application::MIMETYPES, true);
 	}

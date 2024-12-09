@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Nextcloud - ContextChat
  *
@@ -6,13 +7,14 @@
  * later. See the COPYING file.
  *
  * @author Anupam Kumar <kyteinsky@gmail.com>
- * @copyright Anupam Kumar 2024
+ * @copyright Anupam Kumar 2023
  */
+
+declare(strict_types=1);
 
 namespace OCA\ContextChat\Type;
 
-class DeleteContext {
-	public const SOURCE_ONE_USER = 'source_one_user';
-	public const PROVIDER_ONE_USER = 'provider_one_user';
-	public const PROVIDER_ALL_USERS = 'provider_all_users';
+class UpdateAccessOp {
+	public const ALLOW = 'allow';
+	public const DENY = 'deny';
 }
