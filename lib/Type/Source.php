@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Nextcloud - ContextChat
  *
@@ -13,11 +14,11 @@ namespace OCA\ContextChat\Type;
 
 class Source {
 	public function __construct(
-		public string $userId,
+		public array $userIds,
 		public string $reference,
 		public string $title,
 		public mixed $content,
-		public int | string $modified,
+		public int|string $modified,
 		public string $type,
 		public string $provider,
 	) {

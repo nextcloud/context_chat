@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Nextcloud - ContextChat
  *
@@ -21,6 +22,7 @@ use OCA\ContextChat\Type\Source;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\IJobList;
 use OCP\BackgroundJob\QueuedJob;
+use Psr\Log\LoggerInterface;
 
 class SubmitContentJob extends QueuedJob {
 	private const BATCH_SIZE = 20;
@@ -30,6 +32,7 @@ class SubmitContentJob extends QueuedJob {
 		private LangRopeService $service,
 		private QueueContentItemMapper $mapper,
 		private IJobList $jobList,
+		private LoggerInterface $logger,
 	) {
 		parent::__construct($timeFactory);
 	}
@@ -45,34 +48,25 @@ class SubmitContentJob extends QueuedJob {
 			return;
 		}
 
-		/** @var array<string, array<QueueContentItem>> */
-		$bucketed = [];
-		foreach ($entities as $entity) {
-			foreach (explode(',', $entity->getUsers()) as $userId) {
-				if (!is_array($bucketed[$userId])) {
-					$bucketed[$userId] = [];
-				}
-				$bucketed[$userId][] = $entity;
-			}
-		}
+		$sources = array_map(function (QueueContentItem $item) {
+			$providerKey = ProviderConfigService::getConfigKey($item->getAppId(), $item->getProviderId());
+			$sourceId = ProviderConfigService::getSourceId($item->getItemId(), $providerKey);
+			return new Source(
+				explode(',', $item->getUsers()),
+				$sourceId,
+				$item->getTitle(),
+				$item->getContent(),
+				$item->getLastModified()->getTimeStamp(),
+				$item->getDocumentType(),
+				$providerKey,
+			);
+		}, $entities);
 
-		foreach ($bucketed as $userId => $entities) {
-			$sources = array_map(function (QueueContentItem $item) use ($userId) {
-				$providerKey = ProviderConfigService::getConfigKey($item->getAppId(), $item->getProviderId());
-				$sourceId = ProviderConfigService::getSourceId($item->getItemId(), $providerKey);
-				return new Source(
-					$userId,
-					$sourceId,
-					$item->getTitle(),
-					$item->getContent(),
-					$item->getLastModified()->getTimeStamp(),
-					$item->getDocumentType(),
-					$providerKey,
-				);
-			}, $entities);
-
-			$this->service->indexSources($sources);
-		}
+		$loadedSources = $this->service->indexSources($sources);
+		$this->logger->info('Indexed sources for providers', [
+			'count' => count($loadedSources),
+			'sources' => $loadedSources,
+		]);
 
 		foreach ($entities as $entity) {
 			$this->mapper->removeFromQueue($entity);

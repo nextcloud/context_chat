@@ -1,4 +1,5 @@
 <?php
+
 /*
  * Copyright (c) 2021-2022 The Recognize contributors.
  * Copyright (c) 2023 Marcel Klehr <mklehr@gmx.net>
@@ -16,10 +17,12 @@ use Psr\Log\LoggerInterface;
 
 class SchedulerJob extends QueuedJob {
 
-	public function __construct(ITimeFactory $timeFactory,
+	public function __construct(
+		ITimeFactory $timeFactory,
 		private LoggerInterface $logger,
 		private IJobList $jobList,
-		private StorageService $storageService) {
+		private StorageService $storageService,
+	) {
 		parent::__construct($timeFactory);
 	}
 
@@ -28,7 +31,7 @@ class SchedulerJob extends QueuedJob {
 	 */
 	protected function run($argument): void {
 		foreach ($this->storageService->getMounts() as $mount) {
-			$this->logger->debug('Scheduling StorageCrawlJob storage_id='.$mount['storage_id'].' root_id='.$mount['root_id' ]);
+			$this->logger->debug('Scheduling StorageCrawlJob storage_id=' . $mount['storage_id'] . ' root_id=' . $mount['root_id' ]);
 			$this->jobList->add(StorageCrawlJob::class, [
 				'storage_id' => $mount['storage_id'],
 				'root_id' => $mount['root_id' ],

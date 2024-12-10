@@ -16,15 +16,15 @@ namespace OCA\ContextChat\Listener;
 
 use OCA\ContextChat\Service\ActionService;
 use OCA\ContextChat\Service\ProviderConfigService;
-use OCP\App\Events\AppDisableEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
+use OCP\User\Events\UserDeletedEvent;
 use Psr\Log\LoggerInterface;
 
 /**
  * @template-implements IEventListener<Event>
  */
-class AppDisableListener implements IEventListener {
+class UserDeletedListener implements IEventListener {
 	public function __construct(
 		private ProviderConfigService $providerConfig,
 		private ActionService $actionService,
@@ -33,27 +33,10 @@ class AppDisableListener implements IEventListener {
 	}
 
 	public function handle(Event $event): void {
-		if (!($event instanceof AppDisableEvent)) {
+		if (!($event instanceof UserDeletedEvent)) {
 			return;
 		}
 
-		foreach ($this->providerConfig->getProviders() as $key => $values) {
-			/** @var string[] */
-			$identifierValues = explode('__', $key, 2);
-
-			if (empty($identifierValues)) {
-				$this->logger->warning('Invalid provider key', ['key' => $key]);
-				continue;
-			}
-
-			[$appId, $providerId] = $identifierValues;
-
-			if ($appId !== $event->getAppId()) {
-				continue;
-			}
-
-			$this->providerConfig->removeProvider($appId, $providerId);
-			$this->actionService->deleteProvider($providerId);
-		}
+		$this->actionService->deleteUser($event->getUid());
 	}
 }

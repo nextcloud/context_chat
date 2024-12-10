@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Nextcloud - ContextChat
  *
@@ -36,7 +37,6 @@ class LangRopeService {
 		private IURLGenerator $urlGenerator,
 		private IUserManager $userMan,
 		private ProviderConfigService $providerService,
-		private DeleteService $deleteService,
 		private ?string $userId,
 	) {
 	}
@@ -64,9 +64,10 @@ class LangRopeService {
 			throw new RuntimeException('AppAPI app version is too old, please update it to at least ' . Application::MIN_APP_API_VERSION);
 		}
 
+		// todo: app_api is always available now (composer update)
 		try {
 			$appApiFunctions = \OCP\Server::get(\OCA\AppAPI\PublicFunctions::class);
-		} catch (ContainerExceptionInterface | NotFoundExceptionInterface $e) {
+		} catch (ContainerExceptionInterface|NotFoundExceptionInterface $e) {
 			throw new RuntimeException('Could not get AppAPI public functions');
 		}
 
@@ -155,66 +156,109 @@ class LangRopeService {
 		}
 
 		if (intval($response->getStatusCode() / 100) !== 2) {
-			$this->logger->error('Error during request to Context Chat Backend (ExApp)', [
+			$this->logger->error('Error received from Context Chat Backend (ExApp)', [
 				'code' => $response->getStatusCode(),
-				'response' => $response->getBody(),
+				'response' => $finalBody,
 			]);
-			throw new RuntimeException(
-				'Error during request to Context Chat Backend (ExApp) with status code '
-				. $response->getStatusCode()
-				. ': '
-				. (isset($finalBody['error']) ? $finalBody['error'] : 'unknown error')
-			);
+
+			if (intval($response->getStatusCode() / 100) === 5) {
+				// only throw for 5xx errors
+				throw new RuntimeException(
+					'Error received from Context Chat Backend (ExApp) with status code '
+					. $response->getStatusCode()
+					. ': '
+					. (isset($finalBody['error']) ? $finalBody['error'] : 'unknown error')
+				);
+			}
 		}
 
 		return $finalBody;
 	}
 
 	/**
-	 * @param string $providerKey
+	 * @param string[] $sourceIds
 	 * @return void
 	 */
-	public function deleteSourcesByProviderForAllUsers(string $providerKey): void {
+	public function deleteSources(array $sourceIds): void {
 		$params = [
-			'providerKey' => $providerKey,
-		];
-		$this->requestToExApp('/deleteSourcesByProviderForAllUsers', 'POST', $params);
-	}
-
-	/**
-	 * @param string $userId
-	 * @param string $providerKey
-	 * @return void
-	 */
-	public function deleteSourcesByProvider(string $userId, string $providerKey): void {
-		$params = [
-			'userId' => $userId,
-			'providerKey' => $providerKey,
-		];
-		$this->requestToExApp('/deleteSourcesByProvider', 'POST', $params);
-	}
-
-	/**
-	 * @param string $userId
-	 * @param string[] $sourceNames
-	 * @return void
-	 */
-	public function deleteSources(string $userId, array $sourceNames): void {
-		$params = [
-			'userId' => $userId,
-			'sourceNames' => $sourceNames,
+			'sourceIds' => $sourceIds,
 		];
 		$this->requestToExApp('/deleteSources', 'POST', $params);
 	}
 
 	/**
-	 * @param Source[] $sources
+	 * @param string $providerKey
 	 * @return void
+	 */
+	public function deleteProvider(string $providerKey): void {
+		$params = [
+			'providerKey' => $providerKey,
+		];
+		$this->requestToExApp('/deleteProvider', 'POST', $params);
+	}
+
+	/**
+	 * @param string $userId
+	 * @return void
+	 */
+	public function deleteUser(string $userId): void {
+		$params = [
+			'userId' => $userId,
+		];
+		$this->requestToExApp('/deleteUser', 'POST', $params);
+	}
+
+	/**
+	 * @param string $op UpdateAccessOp::*
+	 * @param string[] $userIds
+	 * @param string $sourceId
+	 * @return void
+	 */
+	public function updateAccess(string $op, array $userIds, string $sourceId): void {
+		$params = [
+			'op' => $op,
+			'userIds' => $userIds,
+			'sourceId' => $sourceId,
+		];
+		$this->requestToExApp('/updateAccess', 'POST', $params);
+	}
+
+	/**
+	 * @param string $op UpdateAccessOp::*
+	 * @param string[] $userIds
+	 * @param string $providerId
+	 * @return void
+	 */
+	public function updateAccessProvider(string $op, array $userIds, string $providerId): void {
+		$params = [
+			'op' => $op,
+			'userIds' => $userIds,
+			'providerId' => $providerId,
+		];
+		$this->requestToExApp('/updateAccessProvider', 'POST', $params);
+	}
+
+	/**
+	 * @param string[] $userIds
+	 * @param string $sourceId
+	 * @return void
+	 */
+	public function updateAccessDeclarative(array $userIds, string $sourceId): void {
+		$params = [
+			'userIds' => $userIds,
+			'sourceId' => $sourceId,
+		];
+		$this->requestToExApp('/updateAccessDeclarative', 'POST', $params);
+	}
+
+	/**
+	 * @param Source[] $sources
+	 * @return array<string>
 	 * @throws RuntimeException
 	 */
-	public function indexSources(array $sources): void {
+	public function indexSources(array $sources): array {
 		if (count($sources) === 0) {
-			return;
+			return [];
 		}
 
 		$params = array_map(function (Source $source) {
@@ -223,7 +267,7 @@ class LangRopeService {
 				'filename' => $source->reference, // eg. 'files__default: 555'
 				'contents' => $source->content,
 				'headers' => [
-					'userId' => $source->userId,
+					'userIds' => implode(',', $source->userIds),
 					'title' => $source->title,
 					'type' => $source->type,
 					'modified' => $source->modified,
@@ -232,7 +276,11 @@ class LangRopeService {
 			];
 		}, $sources);
 
-		$this->requestToExApp('/loadSources', 'PUT', $params, 'multipart/form-data');
+		$response = $this->requestToExApp('/loadSources', 'PUT', $params, 'multipart/form-data');
+		if (!isset($response['loaded_sources'])) {
+			return [];
+		}
+		return $response['loaded_sources'];
 	}
 
 	/**
@@ -304,7 +352,7 @@ class LangRopeService {
 				}
 
 				if (!isset($provider['classString'])) {
-					$this->logger->warning("Provider does not have a class string", ['provider' => $provider]);
+					$this->logger->warning('Provider does not have a class string', ['provider' => $provider]);
 					continue;
 				}
 
@@ -313,7 +361,7 @@ class LangRopeService {
 				try {
 					/** @var IContentProvider */
 					$providerObj = Server::get($classString);
-				} catch (ContainerExceptionInterface | NotFoundExceptionInterface $e) {
+				} catch (ContainerExceptionInterface|NotFoundExceptionInterface $e) {
 					$this->logger->warning('Could not run initial import for content provider', ['exception' => $e]);
 					continue;
 				}

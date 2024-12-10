@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Nextcloud - ContextChat
  *
@@ -15,7 +16,6 @@ use OCA\ContextChat\Public\ContentManager;
 use OCA\ContextChat\Public\IContentProvider;
 use OCP\App\IAppManager;
 use OCP\Files\FileInfo;
-use OCP\Files\Folder;
 use OCP\Files\IRootFolder;
 use OCP\IL10N;
 use OCP\IURLGenerator;
@@ -90,8 +90,7 @@ class MetadataService {
 	}
 
 	private function getIdFromSource(string $sourceId): string {
-		preg_match('/^[^_: ]+__[^_: ]+: (\d+)$/', $sourceId, $matches);
-		if (count($matches) !== 2) {
+		if (!preg_match('/^[^_: ]+__[^_: ]+: (\d+)$/', $sourceId, $matches)) {
 			throw new \InvalidArgumentException("Invalid source id $sourceId");
 		}
 		return $matches[1];
@@ -153,7 +152,7 @@ class MetadataService {
 				$url = $klass->getItemUrl($this->getIdFromSource($source));
 				$provider['url'] = $url;
 				$enrichedSources[] = $provider;
-			} catch (ContainerExceptionInterface | NotFoundExceptionInterface $e) {
+			} catch (ContainerExceptionInterface|NotFoundExceptionInterface $e) {
 				$this->logger->warning('Could not find content provider by class name', ['classString' => $providerConfig['classString'], 'exception' => $e]);
 				continue;
 			}

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Nextcloud - ContextChat
  *
@@ -48,12 +49,13 @@ class InitialContentImportJob extends QueuedJob {
 		try {
 			/** @var IContentProvider */
 			$providerObj = Server::get($argument);
-		} catch (ContainerExceptionInterface | NotFoundExceptionInterface $e) {
+		} catch (ContainerExceptionInterface|NotFoundExceptionInterface $e) {
 			$this->logger->warning('Could not run initial import for content provider', ['exception' => $e]);
 			return;
 		}
 
 		if (!$this->appManager->isEnabledForUser($providerObj->getAppId())) {
+			$this->logger->info('App is not enabled for user, skipping content import', ['appId' => $providerObj->getAppId()]);
 			return;
 		}
 
@@ -62,6 +64,7 @@ class InitialContentImportJob extends QueuedJob {
 		if (!isset($registeredProviders[$identifier])
 			|| $registeredProviders[$identifier]['isInitiated']
 		) {
+			$this->logger->info('Provider has already been initiated, skipping content import', ['provider' => $identifier]);
 			return;
 		}
 
