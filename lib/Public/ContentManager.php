@@ -231,7 +231,7 @@ class ContentManager {
 	 * @return void
 	 * @since 4.0.0
 	 */
-	public function deleteContent(string $appId, string $providerId, string ...$itemIds): void {
+	public function deleteContent(string $appId, string $providerId, array $itemIds): void {
 		$this->collectAllContentProviders();
 
 		$providerKey = ProviderConfigService::getConfigKey($appId, $providerId);

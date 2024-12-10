@@ -156,15 +156,15 @@ class LangRopeService {
 		}
 
 		if (intval($response->getStatusCode() / 100) !== 2) {
-			$this->logger->error('Error during request to Context Chat Backend (ExApp)', [
+			$this->logger->error('Error received from Context Chat Backend (ExApp)', [
 				'code' => $response->getStatusCode(),
-				'response' => $response->getBody(),
+				'response' => $finalBody,
 			]);
 
 			if (intval($response->getStatusCode() / 100) === 5) {
 				// only throw for 5xx errors
 				throw new RuntimeException(
-					'Error during request to Context Chat Backend (ExApp) with status code '
+					'Error received from Context Chat Backend (ExApp) with status code '
 					. $response->getStatusCode()
 					. ': '
 					. (isset($finalBody['error']) ? $finalBody['error'] : 'unknown error')
