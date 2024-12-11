@@ -238,6 +238,10 @@ class FileListener implements IEventListener {
 			return;
 		}
 
+		if (!$this->allowedPath($node)) {
+			return;
+		}
+
 		$queueFile = new QueueFile();
 		if ($node->getMountPoint()->getNumericStorageId() === null) {
 			return;
@@ -260,8 +264,13 @@ class FileListener implements IEventListener {
 		}
 	}
 
-	private function allowedMimeType(File $file): bool {
+	private function allowedMimeType(Node $file): bool {
 		$mimeType = $file->getMimeType();
 		return in_array($mimeType, Application::MIMETYPES, true);
+	}
+
+	private function allowedPath(Node $file): bool {
+		$path = $file->getPath();
+		return !preg_match('/^\/.+\/(files_versions|files_trashbin)\/.+/', $path, $matches);
 	}
 }
