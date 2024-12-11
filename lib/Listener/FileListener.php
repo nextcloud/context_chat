@@ -53,7 +53,7 @@ class FileListener implements IEventListener {
 	public function handle(Event $event): void {
 		if ($event instanceof NodeWrittenEvent) {
 			$node = $event->getNode();
-			if ($node instanceof File) {
+			if (!$node instanceof File) {
 				return;
 			}
 			$this->postInsert($node, false, true);
