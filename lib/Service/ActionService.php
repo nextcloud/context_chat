@@ -18,6 +18,7 @@ use OCA\ContextChat\BackgroundJobs\ActionJob;
 use OCA\ContextChat\Db\QueueAction;
 use OCA\ContextChat\Db\QueueActionMapper;
 use OCA\ContextChat\Type\ActionType;
+use OCA\ContextChat\Type\UpdateAccessOp;
 use OCP\BackgroundJob\IJobList;
 use Psr\Log\LoggerInterface;
 
@@ -32,7 +33,7 @@ class ActionService {
 	}
 
 	/**
-	 * @param string $type
+	 * @param ActionType::* $type
 	 * @param string $payload
 	 * @return void
 	 */
@@ -94,7 +95,7 @@ class ActionService {
 	}
 
 	/**
-	 * @param string $op
+	 * @param UpdateAccessOp::* $op
 	 * @param string[] $userIds
 	 * @param string $sourceId
 	 * @return void
@@ -109,7 +110,7 @@ class ActionService {
 	}
 
 	/**
-	 * @param string $op
+	 * @param UpdateAccessOp::* $op
 	 * @param string[] $userIds
 	 * @param string $providerId
 	 * @return void

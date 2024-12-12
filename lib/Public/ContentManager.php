@@ -111,6 +111,7 @@ class ContentManager {
 	 * @param string $itemId
 	 * @param array<string> $users
 	 * @return void
+	 * @since 1.1.0
 	 * @deprecated 4.0.0
 	 */
 	public function removeContentForUsers(string $appId, string $providerId, string $itemId, array $users): void {
@@ -131,6 +132,7 @@ class ContentManager {
 	 * @param string $providerId
 	 * @param array<string> $users
 	 * @return void
+	 * @since 1.1.0
 	 * @deprecated 4.0.0
 	 */
 	public function removeAllContentForUsers(string $appId, string $providerId, array $users): void {
