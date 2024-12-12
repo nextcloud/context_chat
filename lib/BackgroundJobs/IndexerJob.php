@@ -135,6 +135,7 @@ class IndexerJob extends TimedJob {
 		$sources = [];
 		$allSourceIds = [];
 		$loadedSources = [];
+		$retryQFiles = [];
 		$size = 0;
 
 		foreach ($files as $queueFile) {
@@ -161,8 +162,12 @@ class IndexerJob extends TimedJob {
 			try {
 				try {
 					$fileHandle = $file->fopen('r');
-				} catch (LockedException|NotPermittedException $e) {
+				} catch (NotPermittedException $e) {
 					$this->logger->error('Could not open file ' . $file->getPath() . ' for reading', ['exception' => $e]);
+					continue;
+				} catch (LockedException $e) {
+					$retryQFiles[] = $queueFile;
+					$this->logger->info('File ' . $file->getPath() . ' is locked, could not read for indexing. Adding it to the next batch.');
 					continue;
 				}
 				if (!is_resource($fileHandle)) {
@@ -197,6 +202,10 @@ class IndexerJob extends TimedJob {
 
 		try {
 			$this->queue->removeFromQueue($files);
+			// add files that were locked to the end of the queue
+			foreach ($retryQFiles as $queueFile) {
+				$this->queue->insertIntoQueue($queueFile);
+			}
 		} catch (Exception $e) {
 			$this->logger->error('Could not remove indexed files from queue', ['exception' => $e]);
 		}
