@@ -51,7 +51,6 @@ class ShareListener implements IEventListener {
 					$userIds = [$share->getSharedWith()];
 					break;
 				case \OCP\Share\IShare::TYPE_GROUP:
-					// todo: probably a group listener so when a user enters/leaves a group, we can update the access for all files shared with that group
 					$accessList = $this->shareManager->getAccessList($node, true, true);
 					/**
 					 * @var string[] $userIds
@@ -148,11 +147,9 @@ class ShareListener implements IEventListener {
 				}
 
 				foreach ($files as $file) {
-					$owner = $file->getOwner()->getUID();
 					$this->actionService->updateAccessDeclSource(
 						$userIds,
 						ProviderConfigService::getSourceId($file->getId()),
-						$owner,
 					);
 				}
 			} else {
@@ -161,11 +158,9 @@ class ShareListener implements IEventListener {
 				}
 
 				$fileRef = ProviderConfigService::getSourceId($node->getId());
-				$owner = $node->getOwner()->getUID();
 				$this->actionService->updateAccessDeclSource(
 					$userIds,
 					$fileRef,
-					$owner,
 				);
 			}
 		}
