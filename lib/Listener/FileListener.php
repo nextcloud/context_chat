@@ -10,11 +10,9 @@ namespace OCA\ContextChat\Listener;
 
 use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\Db\QueueFile;
-use OCA\ContextChat\Public\UpdateAccessOp;
 use OCA\ContextChat\Service\ActionService;
 use OCA\ContextChat\Service\ProviderConfigService;
 use OCA\ContextChat\Service\QueueService;
-use OCA\ContextChat\Service\StorageService;
 use OCP\DB\Exception;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -30,9 +28,6 @@ use OCP\Files\InvalidPathException;
 use OCP\Files\IRootFolder;
 use OCP\Files\Node;
 use OCP\Files\NotFoundException;
-use OCP\Share\Events\ShareCreatedEvent;
-use OCP\Share\Events\ShareDeletedEvent;
-use OCP\Share\IManager;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -43,8 +38,6 @@ class FileListener implements IEventListener {
 	public function __construct(
 		private LoggerInterface $logger,
 		private QueueService $queue,
-		private StorageService $storageService,
-		private IManager $shareManager,
 		private IRootFolder $rootFolder,
 		private ActionService $actionService,
 	) {
@@ -57,99 +50,6 @@ class FileListener implements IEventListener {
 				return;
 			}
 			$this->postInsert($node, false, true);
-		}
-
-		if ($event instanceof ShareCreatedEvent) {
-			$share = $event->getShare();
-			$node = $share->getNode();
-
-			switch ($share->getShareType()) {
-				case \OCP\Share\IShare::TYPE_USER:
-					$userIds = [$share->getSharedWith()];
-					break;
-				case \OCP\Share\IShare::TYPE_GROUP:
-					// todo: probably a group listener so when a user enters/leaves a group, we can update the access for all files shared with that group
-					$accessList = $this->shareManager->getAccessList($node, true, true);
-					/**
-					 * @var string[] $userIds
-					 */
-					$userIds = array_keys($accessList['users']);
-					break;
-				default:
-					return;
-			}
-
-			if ($node->getType() === FileInfo::TYPE_FOLDER) {
-				$mount = $node->getMountPoint();
-				if ($mount->getNumericStorageId() === null) {
-					return;
-				}
-				$files = $this->storageService->getFilesInMount($mount->getNumericStorageId(), $node->getId(), 0, 0);
-				foreach ($files as $fileId) {
-					$file = current($this->rootFolder->getById($fileId));
-					if (!$file instanceof File) {
-						continue;
-					}
-					$this->actionService->updateAccess(
-						UpdateAccessOp::ALLOW,
-						$userIds,
-						ProviderConfigService::getSourceId($file->getId()),
-					);
-				}
-			} else {
-				$this->actionService->updateAccess(
-					UpdateAccessOp::ALLOW,
-					$userIds,
-					ProviderConfigService::getSourceId($node->getId()),
-				);
-			}
-		}
-
-		if ($event instanceof ShareDeletedEvent) {
-			$share = $event->getShare();
-			$node = $share->getNode();
-
-			$accessList = $this->shareManager->getAccessList($node, true, true);
-			/**
-			 * @var string[] $userIds
-			 */
-			$userIds = array_keys($accessList['users']);
-
-			if ($node instanceof Folder) {
-				$mount = $node->getMountPoint();
-				if ($mount->getNumericStorageId() === null) {
-					return;
-				}
-				$files = $this->storageService->getFilesInMount($mount->getNumericStorageId(), $node->getId(), 0, 0);
-				$fileRefs = [];
-
-				foreach ($files as $fileId) {
-					$node = current($this->rootFolder->getById($fileId));
-					if (!$node instanceof File) {
-						continue;
-					}
-					$fileRefs[] = ProviderConfigService::getSourceId($node->getId());
-				}
-
-				foreach ($fileRefs as $fileRef) {
-					$this->actionService->updateAccess(
-						UpdateAccessOp::DENY,
-						$userIds,
-						$fileRef,
-					);
-				}
-			} else {
-				if (!$this->allowedMimeType($node)) {
-					return;
-				}
-
-				$fileRef = ProviderConfigService::getSourceId($node->getId());
-				$this->actionService->updateAccess(
-					UpdateAccessOp::DENY,
-					$userIds,
-					$fileRef,
-				);
-			}
 		}
 
 		if ($event instanceof BeforeNodeDeletedEvent) {

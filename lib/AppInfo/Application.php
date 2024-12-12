@@ -12,6 +12,7 @@ namespace OCA\ContextChat\AppInfo;
 
 use OCA\ContextChat\Listener\AppDisableListener;
 use OCA\ContextChat\Listener\FileListener;
+use OCA\ContextChat\Listener\ShareListener;
 use OCA\ContextChat\Listener\UserDeletedListener;
 use OCA\ContextChat\Service\ProviderConfigService;
 use OCA\ContextChat\TaskProcessing\ContextChatProvider;
@@ -74,13 +75,13 @@ class Application extends App implements IBootstrap {
 	public function register(IRegistrationContext $context): void {
 		$context->registerEventListener(BeforeNodeDeletedEvent::class, FileListener::class);
 		$context->registerEventListener(NodeCreatedEvent::class, FileListener::class);
-		$context->registerEventListener(ShareCreatedEvent::class, FileListener::class);
-		$context->registerEventListener(ShareDeletedEvent::class, FileListener::class);
 		$context->registerEventListener(CacheEntryInsertedEvent::class, FileListener::class);
 		$context->registerEventListener(NodeRemovedFromCache::class, FileListener::class);
 		$context->registerEventListener(NodeWrittenEvent::class, FileListener::class);
 		$context->registerEventListener(AppDisableEvent::class, AppDisableListener::class);
 		$context->registerEventListener(UserDeletedEvent::class, UserDeletedListener::class);
+		$context->registerEventListener(ShareCreatedEvent::class, ShareListener::class);
+		$context->registerEventListener(ShareDeletedEvent::class, ShareListener::class);
 		$context->registerTaskProcessingTaskType(ContextChatTaskType::class);
 		$context->registerTaskProcessingProvider(ContextChatProvider::class);
 
