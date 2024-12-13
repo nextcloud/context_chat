@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Nextcloud - ContextChat
  *
@@ -17,26 +18,26 @@ use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\IDBConnection;
 
 /**
- * @template-extends QBMapper<QueueDelete>
+ * @template-extends QBMapper<QueueAction>
  */
-class QueueDeleteMapper extends QBMapper {
+class QueueActionMapper extends QBMapper {
 	/**
 	 * @var IDBConnection $db
 	 */
 	protected $db;
 
 	public function __construct(IDBConnection $db) {
-		parent::__construct($db, 'context_chat_delete_queue', QueueDelete::class);
+		parent::__construct($db, 'context_chat_action_queue', QueueAction::class);
 	}
 
 	/**
 	 * @param int $limit
-	 * @return array<QueueDelete>
+	 * @return array<QueueAction>
 	 * @throws \OCP\DB\Exception
 	 */
 	public function getFromQueue(int $limit): array {
 		$qb = $this->db->getQueryBuilder();
-		$qb->select(QueueDelete::$columns)
+		$qb->select(QueueAction::$columns)
 			->from($this->getTableName())
 			->setMaxResults($limit);
 
@@ -44,11 +45,11 @@ class QueueDeleteMapper extends QBMapper {
 	}
 
 	/**
-	 * @param QueueDelete $item
+	 * @param QueueAction $item
 	 * @return void
 	 * @throws \OCP\DB\Exception
 	 */
-	public function removeFromQueue(QueueDelete $item): void {
+	public function removeFromQueue(QueueAction $item): void {
 		$qb = $this->db->getQueryBuilder();
 		$qb->delete($this->getTableName())
 			->where($qb->expr()->eq('id', $qb->createPositionalParameter($item->getId())))
@@ -56,16 +57,15 @@ class QueueDeleteMapper extends QBMapper {
 	}
 
 	/**
-	 * @param QueueDelete $item
+	 * @param QueueAction $item
 	 * @return void
 	 * @throws \OCP\DB\Exception
 	 */
-	public function insertIntoQueue(QueueDelete $item): void {
+	public function insertIntoQueue(QueueAction $item): void {
 		$qb = $this->db->getQueryBuilder();
 		$qb->insert($this->getTableName())
 			->values([
 				'type' => $qb->createPositionalParameter($item->getType(), IQueryBuilder::PARAM_STR),
-				'user_id' => $qb->createPositionalParameter($item->getUserId(), IQueryBuilder::PARAM_STR),
 				'payload' => $qb->createPositionalParameter($item->getPayload(), IQueryBuilder::PARAM_STR),
 			])
 			->executeStatement();

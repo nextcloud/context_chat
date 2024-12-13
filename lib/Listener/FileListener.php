@@ -1,4 +1,5 @@
 <?php
+
 /*
  * Copyright (c) 2022 The Recognize contributors.
  * Copyright (c) 2023 Marcel Klehr <mklehr@gmx.net>
@@ -9,10 +10,9 @@ namespace OCA\ContextChat\Listener;
 
 use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\Db\QueueFile;
-use OCA\ContextChat\Service\DeleteService;
+use OCA\ContextChat\Service\ActionService;
 use OCA\ContextChat\Service\ProviderConfigService;
 use OCA\ContextChat\Service\QueueService;
-use OCA\ContextChat\Service\StorageService;
 use OCP\DB\Exception;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -28,9 +28,6 @@ use OCP\Files\InvalidPathException;
 use OCP\Files\IRootFolder;
 use OCP\Files\Node;
 use OCP\Files\NotFoundException;
-use OCP\Share\Events\ShareCreatedEvent;
-use OCP\Share\Events\ShareDeletedEvent;
-use OCP\Share\IManager;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -41,102 +38,18 @@ class FileListener implements IEventListener {
 	public function __construct(
 		private LoggerInterface $logger,
 		private QueueService $queue,
-		private StorageService $storageService,
-		private IManager $shareManager,
 		private IRootFolder $rootFolder,
-		private DeleteService $deleteService) {
+		private ActionService $actionService,
+	) {
 	}
 
 	public function handle(Event $event): void {
 		if ($event instanceof NodeWrittenEvent) {
 			$node = $event->getNode();
-			if ($node instanceof File) {
+			if (!$node instanceof File) {
 				return;
 			}
 			$this->postInsert($node, false, true);
-		}
-
-		if ($event instanceof ShareCreatedEvent) {
-			$share = $event->getShare();
-			$ownerId = $share->getShareOwner();
-			$node = $share->getNode();
-
-			$accessList = $this->shareManager->getAccessList($node, true, true);
-			/**
-			 * @var string[] $userIds
-			 */
-			$userIds = array_keys($accessList['users']);
-
-			if ($node->getType() === FileInfo::TYPE_FOLDER) {
-				$mount = $node->getMountPoint();
-				if ($mount->getNumericStorageId() === null) {
-					return;
-				}
-				$files = $this->storageService->getFilesInMount($mount->getNumericStorageId(), $node->getId(), 0, 0);
-				foreach ($files as $fileId) {
-					foreach ($userIds as $userId) {
-						if ($userId === $ownerId) {
-							continue;
-						}
-						$file = current($this->rootFolder->getById($fileId));
-						if (!$file instanceof File) {
-							continue;
-						}
-						$this->postInsert($file, false, true);
-					}
-				}
-			} else {
-				foreach ($userIds as $userId) {
-					if ($userId === $ownerId) {
-						continue;
-					}
-					if (!$node instanceof File) {
-						continue;
-					}
-					$this->postInsert($node, false, true);
-				}
-			}
-		}
-
-		if ($event instanceof ShareDeletedEvent) {
-			$share = $event->getShare();
-			$node = $share->getNode();
-
-			$accessList = $this->shareManager->getAccessList($node, true, true);
-			/**
-			 * @var string[] $userIds
-			 */
-			$userIds = array_keys($accessList['users']);
-
-			if ($node instanceof Folder) {
-				$mount = $node->getMountPoint();
-				if ($mount->getNumericStorageId() === null) {
-					return;
-				}
-				$files = $this->storageService->getFilesInMount($mount->getNumericStorageId(), $node->getId(), 0, 0);
-				$fileRefs = [];
-
-				foreach ($files as $fileId) {
-					$node = current($this->rootFolder->getById($fileId));
-					if (!$node instanceof File) {
-						continue;
-					}
-					$fileRefs[] = ProviderConfigService::getSourceId($node->getId());
-				}
-
-				foreach ($userIds as $userId) {
-					$this->deleteService->deleteSources($userId, $fileRefs);
-				}
-			} else {
-				if (!$this->allowedMimeType($node)) {
-					return;
-				}
-
-				$fileRef = ProviderConfigService::getSourceId($node->getId());
-				foreach ($userIds as $userId) {
-					$this->deleteService->deleteSources($userId, [$fileRef]);
-				}
-			}
 		}
 
 		if ($event instanceof BeforeNodeDeletedEvent) {
@@ -196,10 +109,8 @@ class FileListener implements IEventListener {
 			return;
 		}
 
-		foreach ($this->storageService->getUsersForFileId($node->getId()) as $userId) {
-			$fileRef = ProviderConfigService::getSourceId($node->getId());
-			$this->deleteService->deleteSources($userId, [$fileRef]);
-		}
+		$fileRef = ProviderConfigService::getSourceId($node->getId());
+		$this->actionService->deleteSources($fileRef);
 	}
 
 	/**
@@ -227,6 +138,10 @@ class FileListener implements IEventListener {
 			return;
 		}
 
+		if (!$this->allowedPath($node)) {
+			return;
+		}
+
 		$queueFile = new QueueFile();
 		if ($node->getMountPoint()->getNumericStorageId() === null) {
 			return;
@@ -249,8 +164,13 @@ class FileListener implements IEventListener {
 		}
 	}
 
-	private function allowedMimeType(File $file) {
+	private function allowedMimeType(Node $file): bool {
 		$mimeType = $file->getMimeType();
 		return in_array($mimeType, Application::MIMETYPES, true);
+	}
+
+	private function allowedPath(Node $file): bool {
+		$path = $file->getPath();
+		return !preg_match('/^\/.+\/(files_versions|files_trashbin)\/.+/', $path, $matches);
 	}
 }

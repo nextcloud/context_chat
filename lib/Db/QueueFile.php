@@ -1,4 +1,5 @@
 <?php
+
 /*
  * Copyright (c) 2022 The Recognize contributors.
  * Copyright (c) 2023 Marcel Klehr <mklehr@gmx.net>
@@ -29,9 +30,9 @@ class QueueFile extends Entity {
 	protected $rootId;
 	protected $update;
 
-	/** @var string[]  */
+	/** @var string[] */
 	public static array $columns = ['id', 'file_id', 'storage_id', 'root_id', 'update'];
-	/** @var string[]  */
+	/** @var string[] */
 	public static array $fields = ['id', 'fileId', 'storageId', 'rootId', 'update'];
 
 	public function __construct() {

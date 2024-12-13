@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Nextcloud - ContextChat
  *
@@ -29,6 +30,7 @@ class ScanService {
 		private IL10N $l10n,
 		private IConfig $config,
 		private LangRopeService $langRopeService,
+		private StorageService $storageService,
 	) {
 	}
 
@@ -45,17 +47,16 @@ class ScanService {
 			$userFolder = $this->root->getUserFolder($userId)->get($directory);
 		}
 
-		yield from ($this->scanDirectory($userId, $mimeTypeFilter, $userFolder));
+		yield from ($this->scanDirectory($mimeTypeFilter, $userFolder));
 		return [];
 	}
 
 	/**
-	 * @param string $userId
 	 * @param array $mimeTypeFilter
 	 * @param Folder $directory
 	 * @return \Generator<Source>
 	 */
-	public function scanDirectory(string $userId, array $mimeTypeFilter, Folder $directory): \Generator {
+	public function scanDirectory(array $mimeTypeFilter, Folder $directory): \Generator {
 		$sources = [];
 		$size = 0;
 		foreach ($directory->getDirectoryListing() as $node) {
@@ -63,12 +64,12 @@ class ScanService {
 				$node_size = $node->getSize();
 
 				if ($size + $node_size > Application::CC_MAX_SIZE || count($sources) >= Application::CC_MAX_FILES) {
-					$this->indexSources($sources);
+					$this->langRopeService->indexSources($sources);
 					$sources = [];
 					$size = 0;
 				}
 
-				$source = $this->getSourceFromFile($userId, $mimeTypeFilter, $node);
+				$source = $this->getSourceFromFile($mimeTypeFilter, $node);
 				if ($source === null) {
 					continue;
 				}
@@ -82,19 +83,19 @@ class ScanService {
 		}
 
 		if (count($sources) > 0) {
-			$this->indexSources($sources);
+			$this->langRopeService->indexSources($sources);
 		}
 
 		foreach ($directory->getDirectoryListing() as $node) {
 			if ($node instanceof Folder) {
-				yield from $this->scanDirectory($userId, $mimeTypeFilter, $node);
+				yield from $this->scanDirectory($mimeTypeFilter, $node);
 			}
 		}
 
 		return [];
 	}
 
-	public function getSourceFromFile(string $userId, array $mimeTypeFilter, File $node): Source | null {
+	public function getSourceFromFile(array $mimeTypeFilter, File $node): ?Source {
 		if (!in_array($node->getMimeType(), $mimeTypeFilter)) {
 			return null;
 		}
@@ -108,18 +109,16 @@ class ScanService {
 
 		$providerKey = ProviderConfigService::getDefaultProviderKey();
 		$sourceId = ProviderConfigService::getSourceId($node->getId());
+		$userIds = $this->storageService->getUsersForFileId($node->getId());
+		$path = substr($node->getInternalPath(), 6); // remove 'files/' prefix
 		return new Source(
-			$userId,
+			$userIds,
 			$sourceId,
-			$node->getPath(),
+			$path,
 			$fileHandle,
 			$node->getMTime(),
 			$node->getMimeType(),
 			$providerKey,
 		);
-	}
-
-	public function indexSources(array $sources): void {
-		$this->langRopeService->indexSources($sources);
 	}
 }

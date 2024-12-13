@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Nextcloud - ContextChat
  *
@@ -23,7 +24,7 @@ class ProviderConfigService {
 	) {
 	}
 
-	public static function getSourceId(int | string $nodeId, ?string $providerId = null): string {
+	public static function getSourceId(int|string $nodeId, ?string $providerId = null): string {
 		return ($providerId ?? self::getDefaultProviderKey()) . ': ' . $nodeId;
 	}
 

@@ -23,7 +23,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 class ScanFiles extends Command {
 
 	public function __construct(
-		private ScanService $scanService
+		private ScanService $scanService,
 	) {
 		parent::__construct();
 	}
