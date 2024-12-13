@@ -58,8 +58,7 @@ class StorageCrawlJob extends QueuedJob {
 			try {
 				$this->queue->insertIntoQueue($queueFile);
 			} catch (Exception $e) {
-				$this->logger->error('Failed to add file to queue', ['exception' => $e]);
-				return;
+				$this->logger->error('Failed to add file to queue', ['fileId' => $fileId, 'exception' => $e]);
 			}
 			$i++;
 		}
