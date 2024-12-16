@@ -4,6 +4,8 @@
 -->
 # Nextcloud Assistant Context Chat
 
+[![REUSE status](https://api.reuse.software/badge/github.com/nextcloud/context_chat)](https://api.reuse.software/info/github.com/nextcloud/context_chat)
+
 ![](https://raw.githubusercontent.com/nextcloud/context_chat/main/img/Logo.png)
 
 ## Install
