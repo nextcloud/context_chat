@@ -21,6 +21,7 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use OCP\Files\Cache\CacheEntryInsertedEvent;
 use OCP\Files\Events\Node\BeforeNodeDeletedEvent;
 use OCP\Files\Events\Node\NodeCreatedEvent;
+use OCP\Files\Events\Node\NodeRenamedEvent;
 use OCP\Files\Events\Node\NodeWrittenEvent;
 use OCP\Files\Events\NodeRemovedFromCache;
 use OCP\IConfig;
@@ -72,6 +73,7 @@ class Application extends App implements IBootstrap {
 		$context->registerEventListener(BeforeNodeDeletedEvent::class, FileListener::class);
 		$context->registerEventListener(NodeCreatedEvent::class, FileListener::class);
 		$context->registerEventListener(CacheEntryInsertedEvent::class, FileListener::class);
+		$context->registerEventListener(NodeRenamedEvent::class, FileListener::class);
 		$context->registerEventListener(NodeRemovedFromCache::class, FileListener::class);
 		$context->registerEventListener(NodeWrittenEvent::class, FileListener::class);
 		$context->registerEventListener(AppDisableEvent::class, AppDisableListener::class);

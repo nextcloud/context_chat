@@ -15,12 +15,14 @@ use OCA\ContextChat\Db\QueueFile;
 use OCA\ContextChat\Service\ActionService;
 use OCA\ContextChat\Service\ProviderConfigService;
 use OCA\ContextChat\Service\QueueService;
+use OCA\ContextChat\Service\StorageService;
 use OCP\DB\Exception;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use OCP\Files\Cache\CacheEntryInsertedEvent;
 use OCP\Files\Events\Node\BeforeNodeDeletedEvent;
 use OCP\Files\Events\Node\NodeCreatedEvent;
+use OCP\Files\Events\Node\NodeRenamedEvent;
 use OCP\Files\Events\Node\NodeWrittenEvent;
 use OCP\Files\Events\NodeRemovedFromCache;
 use OCP\Files\File;
@@ -30,6 +32,7 @@ use OCP\Files\InvalidPathException;
 use OCP\Files\IRootFolder;
 use OCP\Files\Node;
 use OCP\Files\NotFoundException;
+use OCP\Share\IManager;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -42,6 +45,8 @@ class FileListener implements IEventListener {
 		private QueueService $queue,
 		private IRootFolder $rootFolder,
 		private ActionService $actionService,
+		private StorageService $storageService,
+		private IManager $shareManager,
 	) {
 	}
 
@@ -73,6 +78,33 @@ class FileListener implements IEventListener {
 				return;
 			}
 			$this->postInsert($node);
+			return;
+		}
+
+		if ($event instanceof NodeRenamedEvent) {
+			$targetNode = $event->getTarget();
+
+			if ($targetNode instanceof Folder) {
+				$files = $this->storageService->getAllFilesInFolder($targetNode);
+			} else {
+				$files = [$targetNode];
+			}
+
+			foreach ($files as $file) {
+				if (!$file instanceof File) {
+					continue;
+				}
+				$shareAccessList = $this->shareManager->getAccessList($file, true, true);
+				/**
+				 * @var string[] $shareUserIds
+				 */
+				$shareUserIds = array_keys($shareAccessList['users']);
+				$fileUserIds = $this->storageService->getUsersForFileId($file->getId());
+
+				$userIds = array_unique(array_merge($shareUserIds, $fileUserIds));
+				$fileRef = ProviderConfigService::getSourceId($file->getId());
+				$this->actionService->updateAccessDeclSource($userIds, $fileRef);
+			}
 			return;
 		}
 

@@ -64,13 +64,8 @@ class ShareListener implements IEventListener {
 			}
 
 			if ($node->getType() === FileInfo::TYPE_FOLDER) {
-				$mount = $node->getMountPoint();
-				if ($mount->getNumericStorageId() === null) {
-					return;
-				}
-				$files = $this->storageService->getFilesInMount($mount->getNumericStorageId(), $node->getId(), 0, 0);
-				foreach ($files as $fileId) {
-					$file = current($this->rootFolder->getById($fileId));
+				$files = $this->storageService->getAllFilesInFolder($node);
+				foreach ($files as $file) {
 					if (!$file instanceof File) {
 						continue;
 					}
@@ -133,21 +128,7 @@ class ShareListener implements IEventListener {
 			$userIds = array_unique(array_merge($realFileUserIds, $shareUserIds));
 
 			if ($node instanceof Folder) {
-				$mount = $node->getMountPoint();
-				if ($mount->getNumericStorageId() === null) {
-					return;
-				}
-				$files = $this->storageService->getFilesInMount($mount->getNumericStorageId(), $node->getId(), 0, 0);
-				$files = [];
-
-				foreach ($files as $fileId) {
-					$node = current($this->rootFolder->getById($fileId));
-					if (!$node instanceof File) {
-						continue;
-					}
-					$files[] = $node;
-				}
-
+				$files = $this->storageService->getAllFilesInFolder($node);
 				foreach ($files as $file) {
 					$this->actionService->updateAccessDeclSource(
 						$userIds,
