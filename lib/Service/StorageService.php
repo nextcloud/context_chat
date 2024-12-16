@@ -16,7 +16,11 @@ use OCP\DB\Exception;
 use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\Files\Config\ICachedMountInfo;
 use OCP\Files\Config\IUserMountCache;
+use OCP\Files\File;
+use OCP\Files\Folder;
 use OCP\Files\IMimeTypeLoader;
+use OCP\Files\IRootFolder;
+use OCP\Files\Node;
 use OCP\FilesMetadata\IFilesMetadataManager;
 use OCP\IDBConnection;
 use Psr\Log\LoggerInterface;
@@ -41,6 +45,7 @@ class StorageService {
 		private IMimeTypeLoader $mimeTypes,
 		private IUserMountCache $userMountCache,
 		private IFilesMetadataManager $metadataManager,
+		private IRootFolder $rootFolder,
 	) {
 	}
 
@@ -159,6 +164,32 @@ class StorageService {
 		return array_map(static function (ICachedMountInfo $mountInfo) {
 			return $mountInfo->getUser()->getUID();
 		}, $mountInfos);
+	}
+
+	/**
+	 * @param Node $node
+	 * @return array<File>
+	 */
+	public function getAllFilesInFolder(Node $node): array {
+		if (!$node instanceof Folder) {
+			return [];
+		}
+		$mount = $node->getMountPoint();
+		if ($mount->getNumericStorageId() === null) {
+			return [];
+		}
+		$filesGen = $this->getFilesInMount($mount->getNumericStorageId(), $node->getId(), 0, 0);
+		$files = [];
+
+		foreach ($filesGen as $fileId) {
+			$node = current($this->rootFolder->getById($fileId));
+			if (!$node instanceof File) {
+				continue;
+			}
+			$files[] = $node;
+		}
+
+		return $files;
 	}
 
 	private function getCacheQueryBuilder(): CacheQueryBuilder {
