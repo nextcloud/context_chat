@@ -1,11 +1,13 @@
 <?php
 
-/*
- * Copyright (c) 2021-2022 The Recognize contributors.
- * Copyright (c) 2023 Marcel Klehr <mklehr@gmx.net>
- * This file is licensed under the Affero General Public License version 3 or later. See the COPYING file.
- */
 declare(strict_types=1);
+
+/**
+ * SPDX-FileCopyrightText: 2023 Nextcloud GmbH and Nextcloud contributors
+ * SPDX-FileCopyrightText: 2021-2022 The Recognize contributors
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+
 namespace OCA\ContextChat\BackgroundJobs;
 
 use OCA\ContextChat\AppInfo\Application;

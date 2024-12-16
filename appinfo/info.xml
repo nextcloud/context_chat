@@ -1,10 +1,14 @@
 <?xml version="1.0"?>
+<!--
+  - SPDX-FileCopyrightText: 2023 Nextcloud GmbH and Nextcloud contributors
+  - SPDX-License-Identifier: AGPL-3.0-or-later
+-->
 <info>
     <id>context_chat</id>
     <name>Nextcloud Assistant Context Chat</name>
     <summary>Chat with your documents</summary>
     <description><![CDATA[
-    Ask questions to nextcloud Assistant about the content of your documents.
+    Ask questions to Nextcloud Assistant about the content of your documents.
 
 Install the given apps for Context Chat to work as desired **in the given order**:
 - [AppAPI from the Apps page](https://apps.nextcloud.com/apps/app_api)

@@ -1,10 +1,11 @@
 <?php
 
-/*
- * Copyright (c) 2022 The Recognize contributors.
- * This file is licensed under the Affero General Public License version 3 or later. See the COPYING file.
- */
 declare(strict_types=1);
+
+/**
+ * SPDX-FileCopyrightText: 2022 The Recognize contributors
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
 
 namespace OCA\ContextChat\Service;
 

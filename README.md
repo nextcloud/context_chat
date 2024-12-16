@@ -1,3 +1,7 @@
+<!--
+  - SPDX-FileCopyrightText: 2023 Nextcloud GmbH and Nextcloud contributors
+  - SPDX-License-Identifier: AGPL-3.0-or-later
+-->
 # Nextcloud Assistant Context Chat
 
 ![](https://raw.githubusercontent.com/nextcloud/context_chat/main/img/Logo.png)
