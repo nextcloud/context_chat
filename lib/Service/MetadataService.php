@@ -133,7 +133,7 @@ class MetadataService {
 				continue;
 			}
 
-			$providerKey = explode('__', $source, 2)[0];
+			$providerKey = explode(': ', $source, 2)[0];
 			if (!array_key_exists($providerKey, $enrichedProviders)) {
 				$this->logger->warning('Could not find content provider by key', ['providerKey' => $providerKey, 'enrichedProviders' => $enrichedProviders]);
 				continue;
@@ -149,8 +149,10 @@ class MetadataService {
 			try {
 				/** @var IContentProvider */
 				$klass = Server::get($providerConfig['classString']);
-				$url = $klass->getItemUrl($this->getIdFromSource($source));
+				$itemId = $this->getIdFromSource($source);
+				$url = $klass->getItemUrl($itemId);
 				$provider['url'] = $url;
+				$provider['label'] .= ' #' . $itemId;
 				$enrichedSources[] = $provider;
 			} catch (ContainerExceptionInterface|NotFoundExceptionInterface $e) {
 				$this->logger->warning('Could not find content provider by class name', ['classString' => $providerConfig['classString'], 'exception' => $e]);
