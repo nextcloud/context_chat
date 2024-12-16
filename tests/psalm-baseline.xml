@@ -20,4 +20,9 @@
       <code><![CDATA[Command]]></code>
     </UndefinedClass>
   </file>
+  <file src="lib/Command/Statistics.php">
+    <UndefinedClass>
+      <code><![CDATA[Command]]></code>
+    </UndefinedClass>
+  </file>
 </files>
