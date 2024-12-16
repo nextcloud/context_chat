@@ -1,11 +1,8 @@
 <?php
 
 /**
- * Nextcloud - ContextChat
- *
- *
- * @author Julien Veyssier <julien-nc@posteo.net>
- * @copyright Julien Veyssier 2023
+ * SPDX-FileCopyrightText: 2023 Nextcloud GmbH and Nextcloud contributors
+ * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
 namespace OCA\ContextChat\AppInfo;

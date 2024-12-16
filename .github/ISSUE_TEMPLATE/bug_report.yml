@@ -1,4 +1,6 @@
-name: Bug Report
+# SPDX-FileCopyrightText: 2023 Nextcloud GmbH and Nextcloud contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+name: 🐞 Bug Report
 description: Create a bug report for context_chat
 labels: ['bug']
 body:
