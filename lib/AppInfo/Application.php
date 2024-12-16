@@ -14,7 +14,6 @@ use OCA\ContextChat\Listener\AppDisableListener;
 use OCA\ContextChat\Listener\FileListener;
 use OCA\ContextChat\Listener\ShareListener;
 use OCA\ContextChat\Listener\UserDeletedListener;
-use OCA\ContextChat\Service\ProviderConfigService;
 use OCA\ContextChat\TaskProcessing\ContextChatProvider;
 use OCA\ContextChat\TaskProcessing\ContextChatTaskType;
 use OCP\App\Events\AppDisableEvent;
@@ -84,10 +83,6 @@ class Application extends App implements IBootstrap {
 		$context->registerEventListener(ShareDeletedEvent::class, ShareListener::class);
 		$context->registerTaskProcessingTaskType(ContextChatTaskType::class);
 		$context->registerTaskProcessingProvider(ContextChatProvider::class);
-
-		$providerConfigService = new ProviderConfigService($this->config);
-		/** @psalm-suppress ArgumentTypeCoercion, UndefinedClass  */
-		$providerConfigService->updateProvider('files', 'default', '', true);
 	}
 
 	public function boot(IBootContext $context): void {

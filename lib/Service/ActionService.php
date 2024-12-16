@@ -137,4 +137,11 @@ class ActionService {
 		}
 		$this->scheduleAction(ActionType::UPDATE_ACCESS_DECL_SOURCE_ID, $payload);
 	}
+
+	/**
+	 * @throws \OCP\DB\Exception
+	 */
+	public function count(): int {
+		return $this->actionMapper->count();
+	}
 }

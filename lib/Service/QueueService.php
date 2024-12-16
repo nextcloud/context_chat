@@ -63,6 +63,12 @@ class QueueService {
 		return $this->queueMapper->getFromQueue($storageId, $rootId, $batchSize);
 	}
 
+	public function existsQueueFileId(int $fileId): bool {
+		$queueItem = new QueueFile();
+		$queueItem->setFileId($fileId);
+		return $this->queueMapper->existsQueueItem($queueItem);
+	}
+
 	/**
 	 * @param string $model
 	 * @param QueueFile[] $files
@@ -80,7 +86,7 @@ class QueueService {
 	/**
 	 * @throws \OCP\DB\Exception
 	 */
-	public function count(): int|false {
+	public function count(): int {
 		return $this->queueMapper->count();
 	}
 }

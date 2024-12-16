@@ -40,14 +40,14 @@ Refer to the [Context Chat Backend's readme](https://github.com/nextcloud/contex
 		<job>OCA\ContextChat\BackgroundJobs\SchedulerJob</job>
 	</background-jobs>
 	<commands>
-		<command>OCA\ContextChat\Command\ScanFiles</command>
-		<command>OCA\ContextChat\Command\Prompt</command>
 		<command>OCA\ContextChat\Command\Diagnostics</command>
+		<command>OCA\ContextChat\Command\Prompt</command>
+		<command>OCA\ContextChat\Command\ScanFiles</command>
+		<command>OCA\ContextChat\Command\Statistics</command>
 	</commands>
-    <!--settings>
-        <admin>OCA\ContextChat\Settings\Admin</admin>
-        <admin-section>OCA\ContextChat\Settings\AdminSection</admin-section>
-        <personal>OCA\ContextChat\Settings\Personal</personal>
-        <personal-section>OCA\ContextChat\Settings\PersonalSection</personal-section>
-    </settings-->
+    <repair-steps>
+        <install>
+            <step>OCA\ContextChat\Repair\AppInstallStep</step>
+        </install>
+    </repair-steps>
 </info>
