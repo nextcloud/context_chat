@@ -8,6 +8,7 @@
 declare(strict_types=1);
 namespace OCA\ContextChat\BackgroundJobs;
 
+use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\Db\QueueFile;
 use OCA\ContextChat\Service\DiagnosticService;
 use OCA\ContextChat\Service\QueueService;
@@ -16,6 +17,7 @@ use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\IJobList;
 use OCP\BackgroundJob\QueuedJob;
 use OCP\DB\Exception;
+use OCP\IAppConfig;
 use Psr\Log\LoggerInterface;
 
 class StorageCrawlJob extends QueuedJob {
@@ -28,6 +30,7 @@ class StorageCrawlJob extends QueuedJob {
 		private IJobList $jobList,
 		private StorageService $storageService,
 		private DiagnosticService $diagnosticService,
+		private IAppConfig $appConfig,
 	) {
 		parent::__construct($timeFactory);
 	}
@@ -71,6 +74,9 @@ class StorageCrawlJob extends QueuedJob {
 				'override_root' => $overrideRoot,
 				'last_file_id' => $queueFile->getFileId(),
 			]);
+
+			// the last job to set this value will win
+			$this->appConfig->setValueInt(Application::APP_ID, 'last_indexed_file_id', $queueFile->getFileId());
 		}
 	}
 }

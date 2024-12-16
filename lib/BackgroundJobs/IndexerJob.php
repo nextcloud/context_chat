@@ -82,6 +82,7 @@ class IndexerJob extends TimedJob {
 		if ($this->appConfig->getAppValue('auto_indexing', 'true') === 'false') {
 			return;
 		}
+		$this->setInitialIndexCompletion();
 		if ($this->hasEnoughRunningJobs()) {
 			return;
 		}
@@ -257,5 +258,29 @@ class IndexerJob extends TimedJob {
 		} catch (Exception $e) {
 			$this->logger->error('Could not remove indexed files from queue', ['exception' => $e]);
 		}
+	}
+
+	private function setInitialIndexCompletion(): void {
+		// if  last indexed time is already set, we don't need to do anything
+		if ($this->appConfig->getAppValueInt('last_indexed_time', 0, false) !== 0) {
+			return;
+		}
+
+		// if any storage crawler jobs are running, we don't need to do anything
+		if ($this->jobList->hasReservedJob(StorageCrawlJob::class)) {
+			return;
+		}
+
+		// if the last indexed file id is in the queue, we don't need to do anything
+		$lastIndexedFileId = $this->appConfig->getAppValueInt('last_indexed_file_id', 0, false);
+		if ($lastIndexedFileId === 0) {
+			return;
+		}
+		if ($this->queue->existsQueueFileId($lastIndexedFileId)) {
+			return;
+		}
+
+		$this->logger->info('Initial index completion detected, setting last indexed time');
+		$this->appConfig->setAppValueInt('last_indexed_time', $this->timeFactory->getTime(), false);
 	}
 }

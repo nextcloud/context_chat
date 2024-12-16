@@ -70,4 +70,18 @@ class QueueActionMapper extends QBMapper {
 			])
 			->executeStatement();
 	}
+
+	/**
+	 * @throws \OCP\DB\Exception
+	 */
+	public function count() : int {
+		$qb = $this->db->getQueryBuilder();
+		$result = $qb->select($qb->func()->count('id'))
+			->from($this->getTableName())
+			->executeQuery();
+		if (($cnt = $result->fetchOne()) !== false) {
+			return (int)$cnt;
+		}
+		return 0;
+	}
 }
