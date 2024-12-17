@@ -10,6 +10,23 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [4.0.0] - 2024-12-17
+
+### Changed
+- Database Schema Update (#79) @kyteinsky
+
+### Fixed
+- Fix content provider metadata population (#81) @kyteinsky
+
+### Added
+- Add user delete listener (#79) @kyteinsky
+- Add more methods to content manager (#79) @kyteinsky
+- Add context_chat:stats for indexing completion time (#80) @kyteinsky
+- Add reuse compliance (#83) @AndyScherzinger
+- Add node rename listener (#82) @kyteinsky
+- Repeat db clear migration for beta to stable upgrade (#84) @kyteinsky
+
+
 ## [4.0.0-beta3] - 2024-11-21
 
 ### Added
