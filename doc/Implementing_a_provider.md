@@ -56,9 +56,14 @@ To add content and register your provider implementation you will need to use th
 The ContentManager has the following methods:
 
  * `registerContentProvider(string $providerClass)`
- * `submitContent(string $appId, array $items)` Providers can use this to submit content for indexing in context chat
- * `removeContentForUsers(string $appId, string $providerId, string $itemId, array $users)` Remove a content item from the knowledge base of context chat for specified users
- * `removeAllContentForUsers(string $appId, string $providerId, array $users)` Remove all content items from the knowledge base of context chat for specified users
+ * `submitContent(string $appId, array $items)` Providers can use this to submit content for indexing in context chat.
+ * `removeContentForUsers(string $appId, string $providerId, string $itemId, array $users)` Remove a content item from the knowledge base of context chat for specified users. (deprecated)
+ * `removeAllContentForUsers(string $appId, string $providerId, array $users)` Remove all content items from the knowledge base of context chat for specified users. (deprecated)
+ * `updateAccess(string $appId, string $providerId, string $itemId, string $op, array $userIds)` Update the access rights for a content item. Use \OCA\ContextChat\Public\UpdateAccessOp constants for the $op operation.
+ * `updateAccessProvider(string $appId, string $providerId, string $op, array $userIds)` Update the access rights for all content items of a provider. Use \OCA\ContextChat\Public\UpdateAccessOp constants for the $op operation.
+ * `updateAccessDeclarative(string $appId, string $providerId, string $itemId, array $userIds)` Update the access rights for a content item. This method is declarative and will replace the current access rights with the provided ones.
+ * `deleteProvider(string $appId, string $providerId)` Remove all content items of a provider from the knowledge base of context chat.
+ * `deleteContent(string $appId, string $providerId, array $itemIds)` Remove content items from the knowledge base of context chat.
 
 ### The event implementation
 To register your content provider, your app needs to listen to the `OCA\ContextChat\Event\ContentProviderRegisterEvent` event and call the `registerContentProvider` method in the event for every provider you want to register.
@@ -103,3 +108,8 @@ new ContentItem(
 ```
 
 `documentType` is a natural language term for your document type in English, e.g. `E-Mail` or `Bookmark`.
+
+### Note
+
+1. Ensure the item IDs are unique across all users for a given provider.
+2. App ID and provider ID cannot contain double underscores `__`, spaces ` `, or colons `:`.
