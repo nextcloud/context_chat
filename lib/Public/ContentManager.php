@@ -51,6 +51,16 @@ class ContentManager {
 			return;
 		}
 
+		if (str_contains($appId, '__') || str_contains($appId, ' ') || str_contains($appId, ':')) {
+			$this->logger->warning('App ID contains invalid characters, refrain from using double underscores, spaces or colons.', ['appId' => $appId]);
+			return;
+		}
+
+		if (str_contains($providerId, '__') || str_contains($providerId, ' ') || str_contains($providerId, ':')) {
+			$this->logger->warning('Provider ID contains invalid characters, refrain from using double underscores, spaces or colons.', ['providerId' => $providerId]);
+			return;
+		}
+
 		$this->providerConfig->updateProvider($appId, $providerId, $providerClass);
 
 		if (!$this->jobList->has(InitialContentImportJob::class, $providerClass)) {
@@ -148,7 +158,7 @@ class ContentManager {
 	 * @param string $appId
 	 * @param string $providerId
 	 * @param string $itemId
-	 * @param string $op UpdateAccessOp::*
+	 * @param UpdateAccessOp::* $op
 	 * @param array $userIds
 	 * @return void
 	 * @since 4.0.0
@@ -169,7 +179,7 @@ class ContentManager {
 	 *
 	 * @param string $appId
 	 * @param string $providerId
-	 * @param string $op UpdateAccessOp::*
+	 * @param UpdateAccessOp::* $op
 	 * @param array $userIds
 	 * @return void
 	 * @since 4.0.0

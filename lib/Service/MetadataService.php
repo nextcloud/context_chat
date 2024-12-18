@@ -85,7 +85,7 @@ class MetadataService {
 	}
 
 	private function getIdFromSource(string $sourceId): string {
-		if (!preg_match('/^[^_: ]+__[^_: ]+: (\d+)$/', $sourceId, $matches)) {
+		if (!preg_match('/^[^: ]+__[^: ]+: (\d+)$/', $sourceId, $matches)) {
 			throw new \InvalidArgumentException("Invalid source id $sourceId");
 		}
 		return $matches[1];
