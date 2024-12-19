@@ -10,6 +10,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [4.0.1] - 2024-12-19
+
+### Fixed
+- Allow underscores in appids for source id (#86) @kyteinsky
+- Update content provider docs (#86) @kyteinsky
+- Make sure userIDs is a list in updateAccessDeclarative calls (#87) @marcelklehr
+- Reduce sleep time in indexer job (#88) @kyteinsky
+
+
 ## [4.0.0] - 2024-12-17
 
 ### Changed
