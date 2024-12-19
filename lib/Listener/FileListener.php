@@ -101,7 +101,7 @@ class FileListener implements IEventListener {
 				$shareUserIds = array_keys($shareAccessList['users']);
 				$fileUserIds = $this->storageService->getUsersForFileId($file->getId());
 
-				$userIds = array_unique(array_merge($shareUserIds, $fileUserIds));
+				$userIds = array_values(array_unique(array_merge($shareUserIds, $fileUserIds)));
 				$fileRef = ProviderConfigService::getSourceId($file->getId());
 				$this->actionService->updateAccessDeclSource($userIds, $fileRef);
 			}
