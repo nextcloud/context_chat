@@ -125,7 +125,7 @@ class ShareListener implements IEventListener {
 			//	who have really lost access to the file and are present in $fileUserIds list
 			$realFileUserIds = array_diff($fileUserIds, $reallyUnsharedWith);
 			// merge the share and file lists to get the final list of user(s) who have access to the file
-			$userIds = array_unique(array_merge($realFileUserIds, $shareUserIds));
+			$userIds = array_values(array_unique(array_merge($realFileUserIds, $shareUserIds)));
 
 			if ($node instanceof Folder) {
 				$files = $this->storageService->getAllFilesInFolder($node);
