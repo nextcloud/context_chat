@@ -145,7 +145,7 @@ class IndexerJob extends TimedJob {
 
 	protected function hasEnoughRunningJobs(): bool {
 		// Sleep a bit randomly to avoid a scenario where all jobs are started at the same time and kill themselves directly
-		sleep(rand(1, 3 * 60));
+		sleep(rand(1, 30));
 		if (!$this->jobList->hasReservedJob(static::class)) {
 			// short circuit to false if no jobs are running, yet
 			return false;
