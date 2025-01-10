@@ -47,7 +47,7 @@ use Psr\Log\LoggerInterface;
 class IndexerJob extends TimedJob {
 
 	public const DEFAULT_MAX_INDEXING_TIME = 30 * 60;
-	public const DEFAULT_MAX_JOBS_COUNT = 3;
+	public const DEFAULT_MAX_JOBS_COUNT = 10;
 
 	public function __construct(
 		ITimeFactory $time,
