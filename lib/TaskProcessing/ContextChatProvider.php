@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace OCA\ContextChat\TaskProcessing;
 
 use OCA\ContextChat\AppInfo\Application;
+use OCA\ContextChat\Exceptions\RetryIndexException;
 use OCA\ContextChat\Service\LangRopeService;
 use OCA\ContextChat\Service\MetadataService;
 use OCA\ContextChat\Service\ProviderConfigService;
@@ -267,6 +268,8 @@ class ContextChatProvider implements ISynchronousProvider {
 				}
 			} catch (RuntimeException $e) {
 				$this->logger->warning('Could not index file/folder with ID ' . $node['node']->getId() . ': ' . $e->getMessage());
+			} catch (RetryIndexException $e) {
+				$this->logger->debug('This source is already being processed from another request, skipping', ['exception' => $e]);
 			}
 		}
 

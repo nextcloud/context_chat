@@ -11,6 +11,7 @@ namespace OCA\ContextChat\BackgroundJobs;
 
 use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\Db\QueueFile;
+use OCA\ContextChat\Exceptions\RetryIndexException;
 use OCA\ContextChat\Service\DiagnosticService;
 use OCA\ContextChat\Service\LangRopeService;
 use OCA\ContextChat\Service\ProviderConfigService;
@@ -46,7 +47,7 @@ use Psr\Log\LoggerInterface;
 class IndexerJob extends TimedJob {
 
 	public const DEFAULT_MAX_INDEXING_TIME = 30 * 60;
-	public const DEFAULT_MAX_JOBS_COUNT = 3;
+	public const DEFAULT_MAX_JOBS_COUNT = 10;
 
 	public function __construct(
 		ITimeFactory $time,
@@ -186,6 +187,8 @@ class IndexerJob extends TimedJob {
 		$allSourceIds = [];
 		$loadedSources = [];
 		$retryQFiles = [];
+		// work along with $sources to keep track of the $queueFile's that are being indexed
+		$trackedQFiles = [];
 		$size = 0;
 
 		foreach ($files as $queueFile) {
@@ -201,9 +204,19 @@ class IndexerJob extends TimedJob {
 
 			$file_size = $file->getSize();
 			if ($size + $file_size > Application::CC_MAX_SIZE || count($sources) >= Application::CC_MAX_FILES) {
-				$loadedSources = array_merge($loadedSources, $this->langRopeService->indexSources($sources));
-				$sources = [];
-				$size = 0;
+				try {
+					$loadedSources = array_merge($loadedSources, $this->langRopeService->indexSources($sources));
+					$sources = [];
+					$trackedQFiles = [];
+					$size = 0;
+				} catch (RetryIndexException $e) {
+					$this->logger->debug('At least one source is already being processed from another request, trying again soon', ['exception' => $e]);
+					$retryQFiles = array_merge($retryQFiles, $trackedQFiles);
+					$sources = [];
+					$trackedQFiles = [];
+					$size = 0;
+					continue;
+				}
 			}
 
 			$userIds = $this->storageService->getUsersForFileId($queueFile->getFileId());
@@ -234,6 +247,7 @@ class IndexerJob extends TimedJob {
 					$file->getMimeType(),
 					ProviderConfigService::getDefaultProviderKey(),
 				);
+				$trackedQFiles[] = $queueFile;
 				$allSourceIds[] = ProviderConfigService::getSourceId($file->getId());
 			} catch (InvalidPathException|NotFoundException $e) {
 				$this->logger->error('Could not find file ' . $file->getPath(), ['exception' => $e]);
@@ -242,7 +256,12 @@ class IndexerJob extends TimedJob {
 		}
 
 		if (count($sources) > 0) {
-			$loadedSources = array_merge($loadedSources, $this->langRopeService->indexSources($sources));
+			try {
+				$loadedSources = array_merge($loadedSources, $this->langRopeService->indexSources($sources));
+			} catch (RetryIndexException $e) {
+				$this->logger->debug('At least one source is already being processed from another request, trying again soon', ['exception' => $e]);
+				return;
+			}
 		}
 
 		$emptyInvalidSources = array_diff($allSourceIds, $loadedSources);
