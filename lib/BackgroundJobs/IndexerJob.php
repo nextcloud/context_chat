@@ -187,6 +187,8 @@ class IndexerJob extends TimedJob {
 		$allSourceIds = [];
 		$loadedSources = [];
 		$retryQFiles = [];
+		// work along with $sources to keep track of the $queueFile's that are being indexed
+		$trackedQFiles = [];
 		$size = 0;
 
 		foreach ($files as $queueFile) {
@@ -205,10 +207,15 @@ class IndexerJob extends TimedJob {
 				try {
 					$loadedSources = array_merge($loadedSources, $this->langRopeService->indexSources($sources));
 					$sources = [];
+					$trackedQFiles = [];
 					$size = 0;
 				} catch (RetryIndexException $e) {
 					$this->logger->debug('At least one source is already being processed from another request, trying again soon', ['exception' => $e]);
-					return;
+					$retryQFiles = array_merge($retryQFiles, $trackedQFiles);
+					$sources = [];
+					$trackedQFiles = [];
+					$size = 0;
+					continue;
 				}
 			}
 
@@ -240,6 +247,7 @@ class IndexerJob extends TimedJob {
 					$file->getMimeType(),
 					ProviderConfigService::getDefaultProviderKey(),
 				);
+				$trackedQFiles[] = $queueFile;
 				$allSourceIds[] = ProviderConfigService::getSourceId($file->getId());
 			} catch (InvalidPathException|NotFoundException $e) {
 				$this->logger->error('Could not find file ' . $file->getPath(), ['exception' => $e]);
