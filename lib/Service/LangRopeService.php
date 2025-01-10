@@ -8,6 +8,7 @@
 namespace OCA\ContextChat\Service;
 
 use OCA\ContextChat\AppInfo\Application;
+use OCA\ContextChat\Exceptions\RetryIndexException;
 use OCA\ContextChat\Public\IContentProvider;
 use OCA\ContextChat\Type\Source;
 use OCP\App\IAppManager;
@@ -152,9 +153,17 @@ class LangRopeService {
 			$this->logger->error('Error received from Context Chat Backend (ExApp)', [
 				'code' => $response->getStatusCode(),
 				'response' => $finalBody,
+				'route' => $route,
+				'method' => $method,
+				'retry' => $response->getHeader('cc-retry'),
 			]);
 
-			if (intval($response->getStatusCode() / 100) === 5) {
+			if ($response->getHeader('cc-retry') === 'true') {
+				// At least one source is already being processed from another request, retry in some time
+				throw new RetryIndexException('At least one source is already being processed from another request, retry in some time');
+			}
+
+			if ($response->getStatusCode() >= 500) {
 				// only throw for 5xx errors
 				throw new RuntimeException(
 					'Error received from Context Chat Backend (ExApp) with status code '

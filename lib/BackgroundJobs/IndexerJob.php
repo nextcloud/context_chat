@@ -11,6 +11,7 @@ namespace OCA\ContextChat\BackgroundJobs;
 
 use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\Db\QueueFile;
+use OCA\ContextChat\Exceptions\RetryIndexException;
 use OCA\ContextChat\Service\DiagnosticService;
 use OCA\ContextChat\Service\LangRopeService;
 use OCA\ContextChat\Service\ProviderConfigService;
@@ -201,9 +202,14 @@ class IndexerJob extends TimedJob {
 
 			$file_size = $file->getSize();
 			if ($size + $file_size > Application::CC_MAX_SIZE || count($sources) >= Application::CC_MAX_FILES) {
-				$loadedSources = array_merge($loadedSources, $this->langRopeService->indexSources($sources));
-				$sources = [];
-				$size = 0;
+				try {
+					$loadedSources = array_merge($loadedSources, $this->langRopeService->indexSources($sources));
+					$sources = [];
+					$size = 0;
+				} catch (RetryIndexException $e) {
+					$this->logger->debug('At least one source is already being processed from another request, trying again soon', ['exception' => $e]);
+					return;
+				}
 			}
 
 			$userIds = $this->storageService->getUsersForFileId($queueFile->getFileId());
@@ -242,7 +248,12 @@ class IndexerJob extends TimedJob {
 		}
 
 		if (count($sources) > 0) {
-			$loadedSources = array_merge($loadedSources, $this->langRopeService->indexSources($sources));
+			try {
+				$loadedSources = array_merge($loadedSources, $this->langRopeService->indexSources($sources));
+			} catch (RetryIndexException $e) {
+				$this->logger->debug('At least one source is already being processed from another request, trying again soon', ['exception' => $e]);
+				return;
+			}
 		}
 
 		$emptyInvalidSources = array_diff($allSourceIds, $loadedSources);

@@ -11,6 +11,7 @@ namespace OCA\ContextChat\BackgroundJobs;
 
 use OCA\ContextChat\Db\QueueContentItem;
 use OCA\ContextChat\Db\QueueContentItemMapper;
+use OCA\ContextChat\Exceptions\RetryIndexException;
 use OCA\ContextChat\Service\LangRopeService;
 use OCA\ContextChat\Service\ProviderConfigService;
 use OCA\ContextChat\Type\Source;
@@ -57,11 +58,17 @@ class SubmitContentJob extends QueuedJob {
 			);
 		}, $entities);
 
-		$loadedSources = $this->service->indexSources($sources);
-		$this->logger->info('Indexed sources for providers', [
-			'count' => count($loadedSources),
-			'sources' => $loadedSources,
-		]);
+		try {
+			$loadedSources = $this->service->indexSources($sources);
+			$this->logger->info('Indexed sources for providers', [
+				'count' => count($loadedSources),
+				'sources' => $loadedSources,
+			]);
+		} catch (RetryIndexException $e) {
+			$this->logger->debug('At least one source is already being processed from another request, trying again soon', ['exception' => $e]);
+			$this->jobList->add(static::class);
+			return;
+		}
 
 		foreach ($entities as $entity) {
 			$this->mapper->removeFromQueue($entity);
