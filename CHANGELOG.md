@@ -10,6 +10,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [4.0.2] - 2025-01-11
+
+### Changed
+- Increase the max no. of concurrent jobs (#93) @kyteinsky
+
+### Fixed
+- Add files caught in RetryIndexException to the end of the queue (#93) @kyteinsky
+- Prevent two concurrent requests processing the same source (#93) @kyteinsky
+
+
 ## [4.0.1] - 2024-12-19
 
 ### Fixed
