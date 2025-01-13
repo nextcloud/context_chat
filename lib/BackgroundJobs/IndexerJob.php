@@ -156,7 +156,7 @@ class IndexerJob extends TimedJob {
 			$query->select('*')
 				->from('jobs')
 				->where($query->expr()->gt('reserved_at', $query->createNamedParameter($this->timeFactory->getTime() - $this->getMaxIndexingTime(), IQueryBuilder::PARAM_INT)))
-				->where($query->expr()->gte('last_run', 'reserved_at')
+				->where($query->expr()->gte('last_run', 'reserved_at'))
 				->andWhere($query->expr()->eq('id', $query->createNamedParameter($job->getId(), IQueryBuilder::PARAM_INT)))
 				->setMaxResults(1);
 
