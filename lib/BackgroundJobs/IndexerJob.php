@@ -145,32 +145,22 @@ class IndexerJob extends TimedJob {
 	}
 
 	protected function hasEnoughRunningJobs(): bool {
-		if (!$this->jobList->hasReservedJob(static::class)) {
-			// short circuit to false if no jobs are running, yet
-			return false;
-		}
-		$count = 0;
-		foreach ($this->jobList->getJobsIterator(static::class, null, 0) as $job) {
-			// Check if job is running
-			$query = $this->db->getQueryBuilder();
-			$query->select('*')
-				->from('jobs')
-				->where($query->expr()->gt('reserved_at', $query->createNamedParameter($this->timeFactory->getTime() - $this->getMaxIndexingTime(), IQueryBuilder::PARAM_INT)))
-				->where($query->expr()->gte('last_run', 'reserved_at'))
-				->andWhere($query->expr()->eq('id', $query->createNamedParameter($job->getId(), IQueryBuilder::PARAM_INT)))
-				->setMaxResults(1);
+		// Cout reserved jobs of last period
+		$query = $this->db->getQueryBuilder();
+		$query->select($query->createFunction('COUNT(*)'))
+			->from('jobs')
+			->where($query->expr()->gt('reserved_at', $query->createNamedParameter($this->timeFactory->getTime() - $this->getMaxIndexingTime(), IQueryBuilder::PARAM_INT)))
+			->andWhere($query->expr()->eq('class', $query->createNamedParameter(static::class)));
 
-			try {
-				$result = $query->executeQuery();
-				if ($result->fetch() !== false) {
-					// count if it's running
-					$count++;
-				}
-				$result->closeCursor();
-			} catch (Exception $e) {
-				$this->logger->warning('Querying reserved jobs failed', ['exception' => $e]);
-			}
+		try {
+			$result = $query->executeQuery();
+			$count = (int)$result->fetchOne();
+			$result->closeCursor();
+		} catch (Exception $e) {
+			$this->logger->warning('Querying reserved jobs failed', ['exception' => $e]);
+			return true; // Kill this job if the query failed to be safe
 		}
+		
 		$maxCount = $this->appConfig->getAppValueInt('indexing_max_jobs_count', self::DEFAULT_MAX_JOBS_COUNT);
 		// Either there are already less than the maximum, or we roll the dice according to the proportion of allowed jobs vs currently running ones
 		// e.g. assume 8 jobs are allowed, currently there are 10 running, then we roll the dice and want to be higher than 0.8 to kill this job
