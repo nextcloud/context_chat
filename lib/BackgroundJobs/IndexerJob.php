@@ -173,8 +173,8 @@ class IndexerJob extends TimedJob {
 		}
 		$maxCount = $this->appConfig->getAppValueInt('indexing_max_jobs_count', self::DEFAULT_MAX_JOBS_COUNT);
 		// Either there are already less than the maximum, or we roll the dice according to the proportion of allowed jobs vs currently running ones
-		// e.g. assume 8 jobs are allowed, currently there are 10 running, then we roll the dice and want to be lower than 0.8
-		return $count <= $maxCount || $maxCount / $count > rand(0, 10000) / 10000);
+		// e.g. assume 8 jobs are allowed, currently there are 10 running, then we roll the dice and want to be higher than 0.8 to kill this job
+		return $count >= $maxCount && ($maxCount / $count < rand(0, 10000) / 10000);
 	}
 
 	/**
