@@ -41,11 +41,13 @@ use Psr\Log\LoggerInterface;
  *
  * auto_indexing: bool = true The job only runs if this is true
  * indexing_batch_size: int = 100 The number of files to index per run
+ * indexing_job_interval: int = 10*60 The interval at which the indexer jobs run
  * indexing_max_time: int = 30*60 The number of seconds to index files for per run, regardless of batch size
  * indexing_max_jobs_count: int = 3 The maximum number of Indexer jobs allowed to run at the same time
  */
 class IndexerJob extends TimedJob {
 
+	public const DEFAULT_JOB_INTERVAL = 10 * 60;
 	public const DEFAULT_MAX_INDEXING_TIME = 30 * 60;
 	public const DEFAULT_MAX_JOBS_COUNT = 10;
 
@@ -64,7 +66,7 @@ class IndexerJob extends TimedJob {
 		private ITimeFactory $timeFactory,
 	) {
 		parent::__construct($time);
-		$this->setInterval($this->getMaxIndexingTime());
+		$this->setInterval($this->getJobInterval());
 		$this->setTimeSensitivity(self::TIME_SENSITIVE);
 	}
 
@@ -86,6 +88,7 @@ class IndexerJob extends TimedJob {
 		}
 		$this->setInitialIndexCompletion();
 		if ($this->hasEnoughRunningJobs()) {
+			$this->logger->debug('Too many running jobs, skipping this run');
 			return;
 		}
 		$this->logger->debug('Index files of storage ' . $storageId);
@@ -144,35 +147,36 @@ class IndexerJob extends TimedJob {
 		return $this->appConfig->getAppValueInt('indexing_max_time', self::DEFAULT_MAX_INDEXING_TIME);
 	}
 
-	protected function hasEnoughRunningJobs(): bool {
-		// Sleep a bit randomly to avoid a scenario where all jobs are started at the same time and kill themselves directly
-		sleep(rand(1, 30));
-		if (!$this->jobList->hasReservedJob(static::class)) {
-			// short circuit to false if no jobs are running, yet
-			return false;
-		}
-		$count = 0;
-		foreach ($this->jobList->getJobsIterator(static::class, null, 0) as $job) {
-			// Check if job is running
-			$query = $this->db->getQueryBuilder();
-			$query->select('*')
-				->from('jobs')
-				->where($query->expr()->gt('reserved_at', $query->createNamedParameter($this->timeFactory->getTime() - 6 * 3600, IQueryBuilder::PARAM_INT)))
-				->andWhere($query->expr()->eq('id', $query->createNamedParameter($job->getId(), IQueryBuilder::PARAM_INT)))
-				->setMaxResults(1);
+	protected function getJobInterval(): int {
+		return $this->appConfig->getAppValueInt('indexing_job_interval', self::DEFAULT_JOB_INTERVAL);
+	}
 
-			try {
-				$result = $query->executeQuery();
-				if ($result->fetch() !== false) {
-					// count if it's running
-					$count++;
-				}
-				$result->closeCursor();
-			} catch (Exception $e) {
-				$this->logger->warning('Querying reserved jobs failed', ['exception' => $e]);
-			}
+	protected function hasEnoughRunningJobs(): bool {
+		// Cout reserved jobs of last period
+		$query = $this->db->getQueryBuilder();
+		$query->select($query->createFunction('COUNT(*)'))
+			->from('jobs')
+			->where($query->expr()->gt(
+				'reserved_at', $query->createNamedParameter(
+					$this->timeFactory->getTime() - $this->getMaxIndexingTime() - 5, IQueryBuilder::PARAM_INT,
+				)
+			))
+			->andWhere($query->expr()->eq('class', $query->createNamedParameter(static::class)));
+
+		try {
+			$result = $query->executeQuery();
+			$count = (int)$result->fetchOne();
+			$this->logger->debug('Found ' . $count . ' reserved jobs of class ' . static::class);
+			$result->closeCursor();
+		} catch (Exception $e) {
+			$this->logger->warning('Querying reserved jobs failed', ['exception' => $e]);
+			return true; // Kill this job if the query failed to be safe
 		}
-		return $count >= $this->appConfig->getAppValueInt('indexing_max_jobs_count', self::DEFAULT_MAX_JOBS_COUNT);
+
+		$maxCount = $this->appConfig->getAppValueInt('indexing_max_jobs_count', self::DEFAULT_MAX_JOBS_COUNT);
+		// Either there are already less than the maximum, or we roll the dice according to the proportion of allowed jobs vs currently running ones
+		// e.g. assume 8 jobs are allowed, currently there are 10 running, then we roll the dice and want to be higher than 0.8 to kill this job
+		return $count >= $maxCount && ($maxCount / $count < rand(0, 10000) / 10000);
 	}
 
 	/**
