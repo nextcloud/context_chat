@@ -170,7 +170,7 @@ jobs:
           pip install -r requirements.txt
           cp example.env .env
           echo "NEXTCLOUD_URL=http://localhost:8080" >> .env
-          python3 -u ./main.py > backend_logs 2>&1 &
+          python3 -u ./main.py > logs/backend_logs 2>&1 &
           echo $! > ../pid.txt          # Save the process ID (PID)
 
       - name: Register backend
@@ -244,7 +244,5 @@ jobs:
         if: always()
         run: |
           tail data/nextcloud.log
-          echo '------------------------- BACKEND LOGS -------------------------'
-          [ -f context_chat_backend/backend_logs ] && cat context_chat_backend/backend_logs || echo "No backend logs"
-          echo '------------------------- EMBEDDING SERVER LOGS -------------------------'
-          [ -f context_chat_backend/embedding_model.log ] && cat context_chat_backend/embedding_model.log || echo "No embedding backend logs"
+          echo '------------------------- LOGS -------------------------'
+          tail -v -n +1 context_chat_backend/logs/* || echo "No logs in logs directory"
