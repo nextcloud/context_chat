@@ -100,6 +100,7 @@ class IndexerJob extends TimedJob {
 			return;
 		}
 
+		$this->diagnosticService->sendJobStart(static::class, $this->getId());
 		$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
 
 		// Setup Filesystem for a users that can access this mount

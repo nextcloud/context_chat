@@ -42,6 +42,25 @@ class DiagnosticService {
 	 * @param int $id
 	 * @return void
 	 */
+	public function sendJobStart(string $class, int $id): void {
+		$key = $class . '-' . $id;
+		try {
+			$diagnostics = $this->getBackgroundJobDiagnostics();
+			if (!isset($diagnostics[$key])) {
+				$diagnostics[$key] = [];
+			}
+			$diagnostics[$key] = array_merge(['last_started' => time()], $diagnostics[$key]);
+			$this->setBackgroundJobDiagnostics($diagnostics);
+		} catch (\OCP\Exceptions\AppConfigTypeConflictException|\JsonException  $e) {
+			$this->logger->warning('Error during context chat diagnostic jobStart', ['exception' => $e]);
+		}
+	}
+
+	/**
+	 * @param string $class
+	 * @param int $id
+	 * @return void
+	 */
 	public function sendHeartbeat(string $class, int $id): void {
 		$key = $class . '-' . $id;
 		try {

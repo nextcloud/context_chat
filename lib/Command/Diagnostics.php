@@ -47,6 +47,9 @@ class Diagnostics extends Command {
 					if ($stat === 'last_seen') {
 						$output->write('last_seen=' . (new \DateTime('@' . $value))->format('Y-m-d H:i:s'));
 					}
+					if ($stat === 'last_started') {
+						$output->write('last_started=' . (new \DateTime('@' . $value))->format('Y-m-d H:i:s'));
+					}
 				}
 				$output->writeln('');
 			}

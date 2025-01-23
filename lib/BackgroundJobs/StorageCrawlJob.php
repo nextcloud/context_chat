@@ -50,6 +50,7 @@ class StorageCrawlJob extends QueuedJob {
 		// Remove current iteration
 		$this->jobList->remove(self::class, $argument);
 
+		$this->diagnosticService->sendJobStart(static::class, $this->getId());
 		$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
 
 		$i = 0;
