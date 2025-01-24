@@ -86,6 +86,7 @@ class IndexerJob extends TimedJob {
 		if ($this->appConfig->getAppValue('auto_indexing', 'true') === 'false') {
 			return;
 		}
+        $this->diagnosticService->sendJobTrigger(static::class, $this->getId());
 		$this->setInitialIndexCompletion();
 		if ($this->hasEnoughRunningJobs()) {
 			$this->logger->debug('Too many running jobs, skipping this run');
@@ -135,6 +136,7 @@ class IndexerJob extends TimedJob {
 			$this->logger->error('Cannot retrieve items from queue', ['exception' => $e]);
 			return;
 		}
+        $this->diagnosticService->sendJobEnd(static::class, $this->getId());
 	}
 
 	/**

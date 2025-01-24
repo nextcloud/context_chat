@@ -115,5 +115,6 @@ class ActionJob extends QueuedJob {
 		}
 
 		$this->jobList->add(static::class);
+        $this->diagnosticService->sendJobEnd(static::class, $this->getId());
 	}
 }

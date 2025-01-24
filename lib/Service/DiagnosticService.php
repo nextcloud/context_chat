@@ -37,6 +37,25 @@ class DiagnosticService {
 		$this->appConfig->setAppValueArray('background_jobs_diagnostics', $value, true);
 	}
 
+    /**
+     * @param string $class
+     * @param int $id
+     * @return void
+     */
+    public function sendJobTrigger(string $class, int $id): void {
+        $key = $class . '-' . $id;
+        try {
+            $diagnostics = $this->getBackgroundJobDiagnostics();
+            if (!isset($diagnostics[$key])) {
+                $diagnostics[$key] = [];
+            }
+            $diagnostics[$key] = array_merge(['last_triggered' => time()], $diagnostics[$key]);
+            $this->setBackgroundJobDiagnostics($diagnostics);
+        } catch (\OCP\Exceptions\AppConfigTypeConflictException|\JsonException  $e) {
+            $this->logger->warning('Error during context chat diagnostic jobStart', ['exception' => $e]);
+        }
+    }
+
 	/**
 	 * @param string $class
 	 * @param int $id
@@ -50,11 +69,35 @@ class DiagnosticService {
 				$diagnostics[$key] = [];
 			}
 			$diagnostics[$key] = array_merge(['last_started' => time()], $diagnostics[$key]);
+            if (isset($diagnostics[$key]['started_count'])) {
+                $diagnostics[$key]['started_count']++;
+            } else {
+                $diagnostics[$key]['started_count'] = 1;
+            }
 			$this->setBackgroundJobDiagnostics($diagnostics);
 		} catch (\OCP\Exceptions\AppConfigTypeConflictException|\JsonException  $e) {
 			$this->logger->warning('Error during context chat diagnostic jobStart', ['exception' => $e]);
 		}
 	}
+
+    /**
+     * @param string $class
+     * @param int $id
+     * @return void
+     */
+    public function sendJobEnd(string $class, int $id): void {
+        $key = $class . '-' . $id;
+        try {
+            $diagnostics = $this->getBackgroundJobDiagnostics();
+            if (!isset($diagnostics[$key])) {
+                $diagnostics[$key] = [];
+            }
+            $diagnostics[$key] = array_merge(['last_ended' => time()], $diagnostics[$key]);
+            $this->setBackgroundJobDiagnostics($diagnostics);
+        } catch (\OCP\Exceptions\AppConfigTypeConflictException|\JsonException  $e) {
+            $this->logger->warning('Error during context chat diagnostic jobStart', ['exception' => $e]);
+        }
+    }
 
 	/**
 	 * @param string $class
