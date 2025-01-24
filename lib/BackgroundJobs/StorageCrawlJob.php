@@ -81,6 +81,6 @@ class StorageCrawlJob extends QueuedJob {
 			// the last job to set this value will win
 			$this->appConfig->setValueInt(Application::APP_ID, 'last_indexed_file_id', $queueFile->getFileId());
 		}
-        $this->diagnosticService->sendJobEnd(static::class, $this->getId());
+		$this->diagnosticService->sendJobEnd(static::class, $this->getId());
 	}
 }
