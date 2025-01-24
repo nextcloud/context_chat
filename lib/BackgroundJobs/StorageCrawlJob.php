@@ -50,6 +50,7 @@ class StorageCrawlJob extends QueuedJob {
 		// Remove current iteration
 		$this->jobList->remove(self::class, $argument);
 
+		$this->diagnosticService->sendJobStart(static::class, $this->getId());
 		$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
 
 		$i = 0;
@@ -80,5 +81,6 @@ class StorageCrawlJob extends QueuedJob {
 			// the last job to set this value will win
 			$this->appConfig->setValueInt(Application::APP_ID, 'last_indexed_file_id', $queueFile->getFileId());
 		}
+		$this->diagnosticService->sendJobEnd(static::class, $this->getId());
 	}
 }

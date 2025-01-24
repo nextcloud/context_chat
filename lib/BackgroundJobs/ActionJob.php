@@ -33,6 +33,7 @@ class ActionJob extends QueuedJob {
 	}
 
 	protected function run($argument): void {
+		$this->diagnosticService->sendJobStart(static::class, $this->getId());
 		$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
 		$entities = $this->actionMapper->getFromQueue(static::BATCH_SIZE);
 
@@ -114,5 +115,6 @@ class ActionJob extends QueuedJob {
 		}
 
 		$this->jobList->add(static::class);
+		$this->diagnosticService->sendJobEnd(static::class, $this->getId());
 	}
 }
