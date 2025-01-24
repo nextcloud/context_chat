@@ -9,6 +9,7 @@ namespace OCA\ContextChat\Service;
 
 use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\Type\Source;
+use OCP\AppFramework\Services\IAppConfig;
 use OCP\Files\File;
 use OCP\Files\Folder;
 use OCP\Files\IRootFolder;
@@ -25,6 +26,7 @@ class ScanService {
 		private IConfig $config,
 		private LangRopeService $langRopeService,
 		private StorageService $storageService,
+		private IAppConfig $appConfig,
 	) {
 	}
 
@@ -51,13 +53,25 @@ class ScanService {
 	 * @return \Generator<Source>
 	 */
 	public function scanDirectory(array $mimeTypeFilter, Folder $directory): \Generator {
+		$maxSize = $this->appConfig->getAppValueInt('indexing_max_size', Application::CC_MAX_SIZE);
 		$sources = [];
 		$size = 0;
+
 		foreach ($directory->getDirectoryListing() as $node) {
 			if ($node instanceof File) {
-				$node_size = $node->getSize();
+				$nodeSize = $node->getSize();
 
-				if ($size + $node_size > Application::CC_MAX_SIZE || count($sources) >= Application::CC_MAX_FILES) {
+				if ($nodeSize > $maxSize) {
+					$this->logger->warning('[ScanService] File too large to index', [
+						'nodeSize' => $nodeSize,
+						'maxSize' => $maxSize,
+						'nodeId' => $node->getId(),
+						'path' => $node->getPath(),
+					]);
+					continue;
+				}
+
+				if ($size + $nodeSize > $maxSize || count($sources) >= Application::CC_MAX_FILES) {
 					$this->langRopeService->indexSources($sources);
 					$sources = [];
 					$size = 0;
@@ -69,7 +83,7 @@ class ScanService {
 				}
 
 				$sources[] = $source;
-				$size += $node_size;
+				$size += $nodeSize;
 
 				yield $source;
 				continue;

@@ -17,6 +17,7 @@ use OCA\ContextChat\Service\ProviderConfigService;
 use OCA\ContextChat\Service\ScanService;
 use OCA\ContextChat\Type\ScopeType;
 use OCA\ContextChat\Type\Source;
+use OCP\AppFramework\Services\IAppConfig;
 use OCP\Files\File;
 use OCP\Files\Folder;
 use OCP\Files\IRootFolder;
@@ -35,6 +36,7 @@ class ContextChatProvider implements ISynchronousProvider {
 		private LoggerInterface $logger,
 		private ScanService $scanService,
 		private MetadataService $metadataService,
+		private IAppConfig $appConfig,
 	) {
 	}
 
@@ -250,9 +252,19 @@ class ContextChatProvider implements ISynchronousProvider {
 		}
 
 		$indexedSources = [];
+		$maxSize = $this->appConfig->getAppValueInt('indexing_max_size', Application::CC_MAX_SIZE);
 		foreach ($filteredNodes as $node) {
 			try {
 				if ($node['node'] instanceof File) {
+					if ($node['node']->getSize() > $maxSize) {
+						$this->logger->warning('[ContextChatProvider] File too large to index', [
+							'nodeSize' => $node['node']->getSize(),
+							'maxSize' => $maxSize,
+							'nodeId' => $node['node']->getId(),
+							'path' => $node['node']->getPath(),
+						]);
+						continue;
+					}
 					$source = $this->scanService->getSourceFromFile(Application::MIMETYPES, $node['node']);
 					if ($source === null) {
 						continue;
