@@ -44,22 +44,22 @@ class Diagnostics extends Command {
 				$count++;
 				$output->write("\t$jobId\t");
 				foreach ($stats as $stat => $value) {
-                    if ($stat === 'last_triggered') {
-                        $output->write('last_triggered=' . (new \DateTime('@' . $value))->format('Y-m-d H:i:s'));
-                    }
-                    if ($stat === 'started_count') {
-                        $output->write('started_count=' . $value);
-                    }
-                    if ($stat === 'last_started') {
-                        $output->write('last_started=' . (new \DateTime('@' . $value))->format('Y-m-d H:i:s'));
-                    }
+					if ($stat === 'last_triggered') {
+						$output->write('last_triggered=' . (new \DateTime('@' . $value))->format('Y-m-d H:i:s'));
+					}
+					if ($stat === 'started_count') {
+						$output->write('started_count=' . $value);
+					}
+					if ($stat === 'last_started') {
+						$output->write('last_started=' . (new \DateTime('@' . $value))->format('Y-m-d H:i:s'));
+					}
 					if ($stat === 'last_seen') {
 						$output->write('last_seen=' . (new \DateTime('@' . $value))->format('Y-m-d H:i:s'));
 					}
 					if ($stat === 'last_ended') {
 						$output->write('last_ended=' . (new \DateTime('@' . $value))->format('Y-m-d H:i:s'));
 					}
-                    $output->write(' ');
+					$output->write(' ');
 				}
 				$output->writeln('');
 			}
