@@ -9,12 +9,14 @@ declare(strict_types=1);
 
 namespace OCA\ContextChat\BackgroundJobs;
 
+use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\Db\QueueContentItem;
 use OCA\ContextChat\Db\QueueContentItemMapper;
 use OCA\ContextChat\Exceptions\RetryIndexException;
 use OCA\ContextChat\Service\LangRopeService;
 use OCA\ContextChat\Service\ProviderConfigService;
 use OCA\ContextChat\Type\Source;
+use OCP\AppFramework\Services\IAppConfig;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\IJobList;
 use OCP\BackgroundJob\QueuedJob;
@@ -29,6 +31,7 @@ class SubmitContentJob extends QueuedJob {
 		private QueueContentItemMapper $mapper,
 		private IJobList $jobList,
 		private LoggerInterface $logger,
+		private IAppConfig $appConfig,
 	) {
 		parent::__construct($timeFactory);
 	}
@@ -39,12 +42,25 @@ class SubmitContentJob extends QueuedJob {
 	 */
 	protected function run($argument): void {
 		$entities = $this->mapper->getFromQueue(static::BATCH_SIZE);
+		$maxSize = $this->appConfig->getAppValueInt('indexing_max_size', Application::CC_MAX_SIZE);
 
 		if (empty($entities)) {
 			return;
 		}
 
-		$sources = array_map(function (QueueContentItem $item) {
+		$sources = array_map(function (QueueContentItem $item) use ($maxSize) {
+			$contentSize = mb_strlen($item->getContent(), '8bit');
+			if ($contentSize > $maxSize) {
+				$this->logger->warning('Content too large to index', [
+					'contentSize' => $contentSize,
+					'maxSize' => $maxSize,
+					'itemId' => $item->getItemId(),
+					'providerId' => $item->getProviderId(),
+					'appId' => $item->getAppId(),
+				]);
+				return null;
+			}
+
 			$providerKey = ProviderConfigService::getConfigKey($item->getAppId(), $item->getProviderId());
 			$sourceId = ProviderConfigService::getSourceId($item->getItemId(), $providerKey);
 			return new Source(
@@ -57,6 +73,7 @@ class SubmitContentJob extends QueuedJob {
 				$providerKey,
 			);
 		}, $entities);
+		$sources = array_filter($sources);
 
 		try {
 			$loadedSources = $this->service->indexSources($sources);

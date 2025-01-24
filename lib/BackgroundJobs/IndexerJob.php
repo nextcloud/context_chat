@@ -41,6 +41,7 @@ use Psr\Log\LoggerInterface;
  *
  * auto_indexing: bool = true The job only runs if this is true
  * indexing_batch_size: int = 100 The number of files to index per run
+ * indexing_max_size: int = 100*1024*1024 The maximum size of a file to index in bytes, also the maximum size of a batch
  * indexing_job_interval: int = 10*60 The interval at which the indexer jobs run
  * indexing_max_time: int = 30*60 The number of seconds to index files for per run, regardless of batch size
  * indexing_max_jobs_count: int = 3 The maximum number of Indexer jobs allowed to run at the same time
@@ -151,6 +152,10 @@ class IndexerJob extends TimedJob {
 		return $this->appConfig->getAppValueInt('indexing_job_interval', self::DEFAULT_JOB_INTERVAL);
 	}
 
+	protected function getMaxSize(): int {
+		return $this->appConfig->getAppValueInt('indexing_max_size', Application::CC_MAX_SIZE);
+	}
+
 	protected function hasEnoughRunningJobs(): bool {
 		// Cout reserved jobs of last period
 		$query = $this->db->getQueryBuilder();
@@ -186,6 +191,7 @@ class IndexerJob extends TimedJob {
 	 */
 	protected function index(array $files): void {
 		$maxTime = $this->getMaxIndexingTime();
+		$maxSize = $this->getMaxSize();
 		$startTime = time();
 		$sources = [];
 		$allSourceIds = [];
@@ -206,27 +212,38 @@ class IndexerJob extends TimedJob {
 				continue;
 			}
 
-			$file_size = $file->getSize();
-			if ($size + $file_size > Application::CC_MAX_SIZE || count($sources) >= Application::CC_MAX_FILES) {
-				try {
-					$loadedSources = array_merge($loadedSources, $this->langRopeService->indexSources($sources));
-					$sources = [];
-					$trackedQFiles = [];
-					$size = 0;
-				} catch (RetryIndexException $e) {
-					$this->logger->debug('At least one source is already being processed from another request, trying again soon', ['exception' => $e]);
-					$retryQFiles = array_merge($retryQFiles, $trackedQFiles);
-					$sources = [];
-					$trackedQFiles = [];
-					$size = 0;
+			try {
+				$fileSize = $file->getSize();
+
+				if ($fileSize > $maxSize) {
+					$this->logger->info('[IndexerJob] File is too large to index', [
+						'size' => $fileSize,
+						'maxSize' => $maxSize,
+						'nodeId' => $file->getId(),
+						'path' => $file->getPath(),
+					]);
 					continue;
 				}
-			}
 
-			$userIds = $this->storageService->getUsersForFileId($queueFile->getFileId());
-			$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
+				if ($size + $fileSize > $maxSize || count($sources) >= Application::CC_MAX_FILES) {
+					try {
+						$loadedSources = array_merge($loadedSources, $this->langRopeService->indexSources($sources));
+						$sources = [];
+						$trackedQFiles = [];
+						$size = 0;
+					} catch (RetryIndexException $e) {
+						$this->logger->debug('At least one source is already being processed from another request, trying again soon', ['exception' => $e]);
+						$retryQFiles = array_merge($retryQFiles, $trackedQFiles);
+						$sources = [];
+						$trackedQFiles = [];
+						$size = 0;
+						continue;
+					}
+				}
 
-			try {
+				$userIds = $this->storageService->getUsersForFileId($queueFile->getFileId());
+				$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
+
 				try {
 					$fileHandle = $file->fopen('r');
 				} catch (NotPermittedException $e) {
