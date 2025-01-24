@@ -7,6 +7,7 @@
 
 namespace OCA\ContextChat\Command;
 
+use OCA\ContextChat\BackgroundJobs\ActionJob;
 use OCA\ContextChat\BackgroundJobs\DeleteJob;
 use OCA\ContextChat\BackgroundJobs\IndexerJob;
 use OCA\ContextChat\BackgroundJobs\StorageCrawlJob;
@@ -31,7 +32,7 @@ class Diagnostics extends Command {
 	protected function execute(InputInterface $input, OutputInterface $output) {
 		foreach ([
 			IndexerJob::class,
-			DeleteJob::class,
+			ActionJob::class,
 			StorageCrawlJob::class
 		] as $jobCategory) {
 			$output->writeln($jobCategory);
