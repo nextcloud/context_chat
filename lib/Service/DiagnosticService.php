@@ -43,6 +43,7 @@ class DiagnosticService {
 	 * @return void
 	 */
 	public function sendJobTrigger(string $class, int $id): void {
+        $this->logger->info('CONTEXT_CHAT_DIAGNOSTICS: ' . $class . ' ' . $id . ' triggered');
 		$key = $class . '-' . $id;
 		try {
 			$diagnostics = $this->getBackgroundJobDiagnostics();
@@ -62,6 +63,7 @@ class DiagnosticService {
 	 * @return void
 	 */
 	public function sendJobStart(string $class, int $id): void {
+        $this->logger->info('CONTEXT_CHAT_DIAGNOSTICS: ' . $class . ' ' . $id . ' started');
 		$key = $class . '-' . $id;
 		try {
 			$diagnostics = $this->getBackgroundJobDiagnostics();
@@ -86,6 +88,7 @@ class DiagnosticService {
 	 * @return void
 	 */
 	public function sendJobEnd(string $class, int $id): void {
+        $this->logger->info('CONTEXT_CHAT_DIAGNOSTICS: ' . $class . ' ' . $id . ' ended');
 		$key = $class . '-' . $id;
 		try {
 			$diagnostics = $this->getBackgroundJobDiagnostics();
@@ -105,6 +108,7 @@ class DiagnosticService {
 	 * @return void
 	 */
 	public function sendHeartbeat(string $class, int $id): void {
+        $this->logger->info('CONTEXT_CHAT_DIAGNOSTICS: ' . $class . ' ' . $id . ' running');
 		$key = $class . '-' . $id;
 		try {
 			$diagnostics = $this->getBackgroundJobDiagnostics();
