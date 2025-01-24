@@ -54,7 +54,7 @@ class Diagnostics extends Command {
 						$output->write('last_ended=' . (new \DateTime('@' . $value))->format('Y-m-d H:i:s'));
 					}
 					if ($stat === 'started_count') {
-						$output->write('started_count=' .  $value);
+						$output->write('started_count=' . $value);
 					}
 					if ($stat === 'last_triggered') {
 						$output->write('last_triggered=' . (new \DateTime('@' . $value))->format('Y-m-d H:i:s'));
