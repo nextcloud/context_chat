@@ -10,6 +10,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [4.0.4] - 2025-01-28
+
+### Fixed
+- hard limit max file size that can be indexed (#99) @kyteinsky
+
+### Added
+- add job start times to diagnostics (#98) @marcelklehr
+
+
 ## [4.0.3] - 2025-01-17
 
 ### Fixed
