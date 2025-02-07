@@ -132,7 +132,7 @@ class IndexerJob extends TimedJob {
 			if (count($files) === 0) {
 				$this->logger->debug('Removing ' . static::class . ' with argument ' . var_export($argument, true) . 'from oc_jobs');
 				$this->jobList->remove(static::class, $argument);
-                $this->setInitialIndexCompletion();
+				$this->setInitialIndexCompletion();
 			}
 		} catch (Exception $e) {
 			$this->logger->error('Cannot retrieve items from queue', ['exception' => $e]);
@@ -300,29 +300,29 @@ class IndexerJob extends TimedJob {
 			foreach ($retryQFiles as $queueFile) {
 				$this->queue->insertIntoQueue($queueFile);
 			}
-            $this->diagnosticService->sendIndexedFiles(count($files) - count($retryQFiles));
+			$this->diagnosticService->sendIndexedFiles(count($files) - count($retryQFiles));
 		} catch (Exception $e) {
 			$this->logger->error('Could not remove indexed files from queue', ['exception' => $e]);
 		}
 	}
 
 	private function setInitialIndexCompletion(): void {
-        try {
-            $queuedFilesCount = $this->queue->count();
-        } catch (Exception $e) {
-            $this->logger->warning('Could not count indexed files', ['exception' => $e]);
-            return;
-        }
-        $countByClass = array_filter($this->jobList->countByClass(), fn($row) => $row['class'] == StorageCrawlJob::class);
-        $crawlJobCount = count($countByClass) > 0 ? $countByClass[0]['count'] : 0;
+		try {
+			$queuedFilesCount = $this->queue->count();
+		} catch (Exception $e) {
+			$this->logger->warning('Could not count indexed files', ['exception' => $e]);
+			return;
+		}
+		$countByClass = array_filter($this->jobList->countByClass(), fn ($row) => $row['class'] == StorageCrawlJob::class);
+		$crawlJobCount = count($countByClass) > 0 ? $countByClass[0]['count'] : 0;
 
-        // if any storage crawler jobs are still running or there are still files in the queue, we are still crawling
-        if ($crawlJobCount > 0 || $queuedFilesCount > 0 ) {
-            $this->appConfig->setAppValueInt('last_indexed_time', 0, false);
-            return;
-        }
+		// if any storage crawler jobs are still running or there are still files in the queue, we are still crawling
+		if ($crawlJobCount > 0 || $queuedFilesCount > 0) {
+			$this->appConfig->setAppValueInt('last_indexed_time', 0, false);
+			return;
+		}
 
-        $this->logger->info('Initial index completion detected, setting last indexed time');
+		$this->logger->info('Initial index completion detected, setting last indexed time');
 		$this->appConfig->setAppValueInt('last_indexed_time', $this->timeFactory->getTime(), false);
 	}
 }

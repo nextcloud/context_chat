@@ -123,13 +123,13 @@ class DiagnosticService {
 		}
 	}
 
-    /**
-     * @param int $count
-     * @return void
-     */
-    public function sendIndexedFiles(int $count): void {
-        $this->logger->info('CONTEXT_CHAT_DIAGNOSTICS: Indexed ' . $count . ' files');
-        // We use numericToNumber to fall back to float in case int is too small
-        $this->appConfig->setAppValueString('indexed_files_count', (string)Util::numericToNumber($count + Util::numericToNumber($this->appConfig->getAppValueString('indexed_files_count', 0, false))), false);
-    }
+	/**
+	 * @param int $count
+	 * @return void
+	 */
+	public function sendIndexedFiles(int $count): void {
+		$this->logger->info('CONTEXT_CHAT_DIAGNOSTICS: Indexed ' . $count . ' files');
+		// We use numericToNumber to fall back to float in case int is too small
+		$this->appConfig->setAppValueString('indexed_files_count', (string)Util::numericToNumber($count + Util::numericToNumber($this->appConfig->getAppValueString('indexed_files_count', 0, false))), false);
+	}
 }

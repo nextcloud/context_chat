@@ -25,7 +25,7 @@ class SchedulerJob extends QueuedJob {
 		private LoggerInterface $logger,
 		private IJobList $jobList,
 		private StorageService $storageService,
-        private IAppConfig $appConfig,
+		private IAppConfig $appConfig,
 	) {
 		parent::__construct($timeFactory);
 	}
@@ -34,7 +34,7 @@ class SchedulerJob extends QueuedJob {
 	 * @throws Exception
 	 */
 	protected function run($argument): void {
-        $this->appConfig->setAppValueString('indexed_files_count', (string)0);
+		$this->appConfig->setAppValueString('indexed_files_count', (string)0);
 		foreach ($this->storageService->getMounts() as $mount) {
 			$this->logger->debug('Scheduling StorageCrawlJob storage_id=' . $mount['storage_id'] . ' root_id=' . $mount['root_id' ]);
 			$this->jobList->add(StorageCrawlJob::class, [

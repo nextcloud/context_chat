@@ -50,20 +50,20 @@ class StorageService {
 	) {
 	}
 
-    /**
-     * @throws Exception
-     */
-    public function countFiles(): int {
-        $mimeTypes = array_map(fn ($mimeType) => $this->mimeTypes->getId($mimeType), Application::MIMETYPES);
-        $qb = $this->getCacheQueryBuilder();
-        $qb->select('COUNT(*)')
-            ->from('filecache', 'filecache')
-            ->where($qb->expr()->in('mimetype', $qb->createNamedParameter($mimeTypes, IQueryBuilder::PARAM_INT_ARRAY)));
-        $result = $qb->executeQuery();
-        $count = $result->fetchOne();
-        $result->closeCursor();
-        return $count;
-    }
+	/**
+	 * @throws Exception
+	 */
+	public function countFiles(): int {
+		$mimeTypes = array_map(fn ($mimeType) => $this->mimeTypes->getId($mimeType), Application::MIMETYPES);
+		$qb = $this->getCacheQueryBuilder();
+		$qb->select('COUNT(*)')
+			->from('filecache', 'filecache')
+			->where($qb->expr()->in('mimetype', $qb->createNamedParameter($mimeTypes, IQueryBuilder::PARAM_INT_ARRAY)));
+		$result = $qb->executeQuery();
+		$count = $result->fetchOne();
+		$result->closeCursor();
+		return $count;
+	}
 
 	/**
 	 * @return \Generator<array{root_id: int, override_root: int, storage_id: int}>

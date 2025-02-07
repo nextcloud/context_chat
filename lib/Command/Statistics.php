@@ -24,7 +24,7 @@ class Statistics extends Command {
 		private IAppConfig $appConfig,
 		private ActionService $actionService,
 		private QueueService $queueService,
-        private StorageService $storageService,
+		private StorageService $storageService,
 	) {
 		parent::__construct();
 	}
@@ -41,21 +41,21 @@ class Statistics extends Command {
 		} else {
 			$installedTime = $this->appConfig->getAppValueInt('installed_time', 0);
 			$lastIndexedTime = $this->appConfig->getAppValueInt('last_indexed_time', 0);
-            $indexTime = $lastIndexedTime - $installedTime;
+			$indexTime = $lastIndexedTime - $installedTime;
 
-            $output->writeln('Installed time: ' . (new \DateTime('@' . $installedTime))->format('Y-m-d H:i') . ' UTC');
-            $output->writeln('Index complete time: ' . (new \DateTime('@' . $lastIndexedTime))->format('Y-m-d H:i') . ' UTC');
-            $output->writeln('Total time taken for complete index: ' . gmdate('H:i', $indexTime) . ' (hh:mm)');
-        }
+			$output->writeln('Installed time: ' . (new \DateTime('@' . $installedTime))->format('Y-m-d H:i') . ' UTC');
+			$output->writeln('Index complete time: ' . (new \DateTime('@' . $lastIndexedTime))->format('Y-m-d H:i') . ' UTC');
+			$output->writeln('Total time taken for complete index: ' . gmdate('H:i', $indexTime) . ' (hh:mm)');
+		}
 
-        $eligibleFilesCount = $this->storageService->countFiles();
-        $output->writeln('Total eligible files: ' . $eligibleFilesCount);
+		$eligibleFilesCount = $this->storageService->countFiles();
+		$output->writeln('Total eligible files: ' . $eligibleFilesCount);
 
-        $queueCount = $this->queueService->count();
-        $output->writeln('Files in indexing queue: ' . $queueCount);
+		$queueCount = $this->queueService->count();
+		$output->writeln('Files in indexing queue: ' . $queueCount);
 
-        $indexFilesCount = Util::numericToNumber($this->appConfig->getAppValueString('indexed_files_count', '0'));
-        $output->writeln('Files indexed: ' . $indexFilesCount);
+		$indexFilesCount = Util::numericToNumber($this->appConfig->getAppValueString('indexed_files_count', '0'));
+		$output->writeln('Files indexed: ' . $indexFilesCount);
 
 		$actionsCount = $this->actionService->count();
 		$output->writeln('Actions in queue: ' . $actionsCount);
