@@ -418,6 +418,8 @@ jobs:
       - name: Run indexer cron
         run: |
           ./occ files:scan admin
+          # Run cron in speed mode: Set interval to 0 minutes
+          ./occ config:app:set --value 0 --type integer context_chat indexing_job_interval
           for i in {1..100}; do 
             php cron.php
             ./occ context_chat:stats
