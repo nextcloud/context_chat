@@ -40,7 +40,7 @@ use Psr\Log\LoggerInterface;
  * Makes use of the following app config settings:
  *
  * auto_indexing: bool = true The job only runs if this is true
- * indexing_batch_size: int = 100 The number of files to index per run
+ * indexing_batch_size: int = 1500 The number of files to index per run
  * indexing_max_size: int = 100*1024*1024 The maximum size of a file to index in bytes, also the maximum size of a batch
  * indexing_job_interval: int = 10*60 The interval at which the indexer jobs run
  * indexing_max_time: int = 30*60 The number of seconds to index files for per run, regardless of batch size
@@ -50,7 +50,11 @@ class IndexerJob extends TimedJob {
 
 	public const DEFAULT_JOB_INTERVAL = 10 * 60;
 	public const DEFAULT_MAX_INDEXING_TIME = 30 * 60;
-	public const DEFAULT_MAX_JOBS_COUNT = 10;
+	public const DEFAULT_MAX_JOBS_COUNT = 3;
+
+	// Assuming a backend capacity of 50 files per minute we can send 1500 files in half an hour
+	// Specifying a higher number here will still be overruled by the max indexing time
+	public const DEFAULT_BATCH_SIZE = 5000;
 
 	public function __construct(
 		ITimeFactory $time,
@@ -145,7 +149,7 @@ class IndexerJob extends TimedJob {
 	 * @return int
 	 */
 	protected function getBatchSize(): int {
-		return $this->appConfig->getAppValueInt('indexing_batch_size', 100);
+		return $this->appConfig->getAppValueInt('indexing_batch_size', self::DEFAULT_BATCH_SIZE);
 	}
 
 	protected function getMaxIndexingTime(): int {
