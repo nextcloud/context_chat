@@ -45,7 +45,7 @@ class Statistics extends Command {
 
 			$output->writeln('Installed time: ' . (new \DateTime('@' . $installedTime))->format('Y-m-d H:i') . ' UTC');
 			$output->writeln('Index complete time: ' . (new \DateTime('@' . $lastIndexedTime))->format('Y-m-d H:i') . ' UTC');
-			$output->writeln('Total time taken for complete index: ' . gmdate('H:i', $indexTime) . ' (hh:mm)');
+			$output->writeln('Total time taken for complete index: ' . floor($indexTime / 60 * 60 * 24) . ' days ' . gmdate('H:i', $indexTime) . ' (hh:mm)');
 		}
 
 		$eligibleFilesCount = $this->storageService->countFiles();
