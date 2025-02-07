@@ -197,6 +197,10 @@ jobs:
           ./occ context_chat:scan admin -m text/markdown &
           ./occ context_chat:scan admin -m text/x-rst
 
+      - name: Check stats
+        run: |
+          ./occ context_chat:stats
+
       - name: Check python memory usage
         run: |
           ps -p $(cat pid.txt) -o pid,cmd,%mem,rss --sort=-%mem
