@@ -235,7 +235,9 @@ class IndexerJob extends TimedJob {
 
 				if ($size + $fileSize > $maxSize || count($sources) >= Application::CC_MAX_FILES) {
 					try {
-						$loadedSources = array_merge($loadedSources, $this->langRopeService->indexSources($sources));
+                        $currentLoadedSources = $this->langRopeService->indexSources($sources);
+                        $this->diagnosticService->sendIndexedFiles(count($currentLoadedSources));
+						$loadedSources = array_merge($loadedSources, $currentLoadedSources);
 						$sources = [];
 						$trackedQFiles = [];
 						$size = 0;
@@ -286,7 +288,9 @@ class IndexerJob extends TimedJob {
 
 		if (count($sources) > 0) {
 			try {
-				$loadedSources = array_merge($loadedSources, $this->langRopeService->indexSources($sources));
+                $currentLoadedSources = $this->langRopeService->indexSources($sources);
+                $this->diagnosticService->sendIndexedFiles(count($currentLoadedSources));
+                $loadedSources = array_merge($loadedSources, $currentLoadedSources);
 			} catch (RetryIndexException $e) {
 				$this->logger->debug('At least one source is already being processed from another request, trying again soon', ['exception' => $e]);
 				return;
@@ -304,7 +308,6 @@ class IndexerJob extends TimedJob {
 			foreach ($retryQFiles as $queueFile) {
 				$this->queue->insertIntoQueue($queueFile);
 			}
-			$this->diagnosticService->sendIndexedFiles(count($files) - count($retryQFiles));
 		} catch (Exception $e) {
 			$this->logger->error('Could not remove indexed files from queue', ['exception' => $e]);
 		}
