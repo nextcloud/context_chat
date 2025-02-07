@@ -300,6 +300,7 @@ class IndexerJob extends TimedJob {
 			foreach ($retryQFiles as $queueFile) {
 				$this->queue->insertIntoQueue($queueFile);
 			}
+            $this->diagnosticService->sendIndexedFiles(count($files) - count($retryQFiles));
 		} catch (Exception $e) {
 			$this->logger->error('Could not remove indexed files from queue', ['exception' => $e]);
 		}
