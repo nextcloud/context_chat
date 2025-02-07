@@ -61,7 +61,10 @@ class StorageService {
 			->where($qb->expr()->in('mimetype', $qb->createNamedParameter($mimeTypes, IQueryBuilder::PARAM_INT_ARRAY)));
 		$result = $qb->executeQuery();
 		$count = $result->fetchOne();
-		$result->closeCursor();
+        $result->closeCursor();
+        if ($count === false) {
+            return 0;
+        }
 		return $count;
 	}
 
