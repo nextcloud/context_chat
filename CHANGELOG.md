@@ -10,6 +10,20 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [4.0.5] - 2025-02-08
+
+### Fixed
+* fix(ActionJob): Only warn when sending actions to backend fails (@marcelklehr)
+* fix(Statistics): Add days to indexing time display (@marcelklehr)
+* fix(IndexerJob): Make default batch size much larger than CC_MAX_FILES (@marcelklehr)
+* fix(IndexerJob#setInitialIndexCompletion): Correct conditions for whether indexing is complete (@marcelklehr)
+
+### Added
+* enh(Stats command): Show indexed files and total eligible files (@marcelklehr)
+* enh: Count indexed files (@marcelklehr)
+
+
+
 ## [4.0.4] - 2025-01-28
 
 ### Fixed
