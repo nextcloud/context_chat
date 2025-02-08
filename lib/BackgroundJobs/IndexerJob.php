@@ -40,7 +40,7 @@ use Psr\Log\LoggerInterface;
  * Makes use of the following app config settings:
  *
  * auto_indexing: bool = true The job only runs if this is true
- * indexing_batch_size: int = 100 The number of files to index per run
+ * indexing_batch_size: int = 1500 The number of files to index per run
  * indexing_max_size: int = 100*1024*1024 The maximum size of a file to index in bytes, also the maximum size of a batch
  * indexing_job_interval: int = 10*60 The interval at which the indexer jobs run
  * indexing_max_time: int = 30*60 The number of seconds to index files for per run, regardless of batch size
@@ -50,7 +50,11 @@ class IndexerJob extends TimedJob {
 
 	public const DEFAULT_JOB_INTERVAL = 10 * 60;
 	public const DEFAULT_MAX_INDEXING_TIME = 30 * 60;
-	public const DEFAULT_MAX_JOBS_COUNT = 10;
+	public const DEFAULT_MAX_JOBS_COUNT = 3;
+
+	// Assuming a backend capacity of 50 files per minute we can send 1500 files in half an hour
+	// Specifying a higher number here will still be overruled by the max indexing time
+	public const DEFAULT_BATCH_SIZE = 5000;
 
 	public function __construct(
 		ITimeFactory $time,
@@ -132,6 +136,7 @@ class IndexerJob extends TimedJob {
 			if (count($files) === 0) {
 				$this->logger->debug('Removing ' . static::class . ' with argument ' . var_export($argument, true) . 'from oc_jobs');
 				$this->jobList->remove(static::class, $argument);
+				$this->setInitialIndexCompletion();
 			}
 		} catch (Exception $e) {
 			$this->logger->error('Cannot retrieve items from queue', ['exception' => $e]);
@@ -144,7 +149,7 @@ class IndexerJob extends TimedJob {
 	 * @return int
 	 */
 	protected function getBatchSize(): int {
-		return $this->appConfig->getAppValueInt('indexing_batch_size', 100);
+		return $this->appConfig->getAppValueInt('indexing_batch_size', self::DEFAULT_BATCH_SIZE);
 	}
 
 	protected function getMaxIndexingTime(): int {
@@ -230,7 +235,9 @@ class IndexerJob extends TimedJob {
 
 				if ($size + $fileSize > $maxSize || count($sources) >= Application::CC_MAX_FILES) {
 					try {
-						$loadedSources = array_merge($loadedSources, $this->langRopeService->indexSources($sources));
+						$currentLoadedSources = $this->langRopeService->indexSources($sources);
+						$this->diagnosticService->sendIndexedFiles(count($currentLoadedSources));
+						$loadedSources = array_merge($loadedSources, $currentLoadedSources);
 						$sources = [];
 						$trackedQFiles = [];
 						$size = 0;
@@ -281,7 +288,9 @@ class IndexerJob extends TimedJob {
 
 		if (count($sources) > 0) {
 			try {
-				$loadedSources = array_merge($loadedSources, $this->langRopeService->indexSources($sources));
+				$currentLoadedSources = $this->langRopeService->indexSources($sources);
+				$this->diagnosticService->sendIndexedFiles(count($currentLoadedSources));
+				$loadedSources = array_merge($loadedSources, $currentLoadedSources);
 			} catch (RetryIndexException $e) {
 				$this->logger->debug('At least one source is already being processed from another request, trying again soon', ['exception' => $e]);
 				return;
@@ -305,22 +314,18 @@ class IndexerJob extends TimedJob {
 	}
 
 	private function setInitialIndexCompletion(): void {
-		// if  last indexed time is already set, we don't need to do anything
-		if ($this->appConfig->getAppValueInt('last_indexed_time', 0, false) !== 0) {
+		try {
+			$queuedFilesCount = $this->queue->count();
+		} catch (Exception $e) {
+			$this->logger->warning('Could not count indexed files', ['exception' => $e]);
 			return;
 		}
+		$countByClass = array_filter($this->jobList->countByClass(), fn ($row) => $row['class'] == StorageCrawlJob::class);
+		$crawlJobCount = count($countByClass) > 0 ? $countByClass[0]['count'] : 0;
 
-		// if any storage crawler jobs are running, we don't need to do anything
-		if ($this->jobList->hasReservedJob(StorageCrawlJob::class)) {
-			return;
-		}
-
-		// if the last indexed file id is in the queue, we don't need to do anything
-		$lastIndexedFileId = $this->appConfig->getAppValueInt('last_indexed_file_id', 0, false);
-		if ($lastIndexedFileId === 0) {
-			return;
-		}
-		if ($this->queue->existsQueueFileId($lastIndexedFileId)) {
+		// if any storage crawler jobs are still running or there are still files in the queue, we are still crawling
+		if ($crawlJobCount > 0 || $queuedFilesCount > 0) {
+			$this->appConfig->setAppValueInt('last_indexed_time', 0, false);
 			return;
 		}
 

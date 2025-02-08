@@ -11,7 +11,9 @@ namespace OCA\ContextChat\Command;
 
 use OCA\ContextChat\Service\ActionService;
 use OCA\ContextChat\Service\QueueService;
+use OCA\ContextChat\Service\StorageService;
 use OCP\AppFramework\Services\IAppConfig;
+use OCP\Util;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -22,6 +24,7 @@ class Statistics extends Command {
 		private IAppConfig $appConfig,
 		private ActionService $actionService,
 		private QueueService $queueService,
+		private StorageService $storageService,
 	) {
 		parent::__construct();
 	}
@@ -42,11 +45,17 @@ class Statistics extends Command {
 
 			$output->writeln('Installed time: ' . (new \DateTime('@' . $installedTime))->format('Y-m-d H:i') . ' UTC');
 			$output->writeln('Index complete time: ' . (new \DateTime('@' . $lastIndexedTime))->format('Y-m-d H:i') . ' UTC');
-			$output->writeln('Total time taken for a complete index: ' . gmdate('H:i', $indexTime) . ' (hh:mm)');
+			$output->writeln('Total time taken for complete index: ' . floor($indexTime / 60 * 60 * 24) . ' days ' . gmdate('H:i', $indexTime) . ' (hh:mm)');
 		}
+
+		$eligibleFilesCount = $this->storageService->countFiles();
+		$output->writeln('Total eligible files: ' . $eligibleFilesCount);
 
 		$queueCount = $this->queueService->count();
 		$output->writeln('Files in indexing queue: ' . $queueCount);
+
+		$indexFilesCount = Util::numericToNumber($this->appConfig->getAppValueString('indexed_files_count', '0'));
+		$output->writeln('Files indexed: ' . $indexFilesCount);
 
 		$actionsCount = $this->actionService->count();
 		$output->writeln('Actions in queue: ' . $actionsCount);

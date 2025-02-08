@@ -9,6 +9,7 @@ namespace OCA\ContextChat\Service;
 
 use OCP\AppFramework\Services\IAppConfig;
 use OCP\Exceptions\AppConfigTypeConflictException;
+use OCP\Util;
 use Psr\Log\LoggerInterface;
 
 class DiagnosticService {
@@ -120,5 +121,15 @@ class DiagnosticService {
 		} catch (\OCP\Exceptions\AppConfigTypeConflictException|\JsonException  $e) {
 			$this->logger->warning('Error during context chat diagnostic heartbeat', ['exception' => $e]);
 		}
+	}
+
+	/**
+	 * @param int $count
+	 * @return void
+	 */
+	public function sendIndexedFiles(int $count): void {
+		$this->logger->info('CONTEXT_CHAT_DIAGNOSTICS: Indexed ' . $count . ' files');
+		// We use numericToNumber to fall back to float in case int is too small
+		$this->appConfig->setAppValueString('indexed_files_count', (string)Util::numericToNumber($count + Util::numericToNumber($this->appConfig->getAppValueString('indexed_files_count', '0', false))), false);
 	}
 }

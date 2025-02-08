@@ -180,6 +180,7 @@ class LangRopeService {
 	/**
 	 * @param string[] $sourceIds
 	 * @return void
+	 * @throws \RuntimeException
 	 */
 	public function deleteSources(array $sourceIds): void {
 		$params = [
@@ -191,6 +192,7 @@ class LangRopeService {
 	/**
 	 * @param string $providerKey
 	 * @return void
+	 * @throws \RuntimeException
 	 */
 	public function deleteProvider(string $providerKey): void {
 		$params = [
@@ -202,6 +204,7 @@ class LangRopeService {
 	/**
 	 * @param string $userId
 	 * @return void
+	 * @throws \RuntimeException
 	 */
 	public function deleteUser(string $userId): void {
 		$params = [
@@ -215,6 +218,7 @@ class LangRopeService {
 	 * @param string[] $userIds
 	 * @param string $sourceId
 	 * @return void
+	 * @throws \RuntimeException
 	 */
 	public function updateAccess(string $op, array $userIds, string $sourceId): void {
 		$params = [
@@ -230,6 +234,7 @@ class LangRopeService {
 	 * @param string[] $userIds
 	 * @param string $providerId
 	 * @return void
+	 * @throws \RuntimeException
 	 */
 	public function updateAccessProvider(string $op, array $userIds, string $providerId): void {
 		$params = [
@@ -244,6 +249,7 @@ class LangRopeService {
 	 * @param string[] $userIds
 	 * @param string $sourceId
 	 * @return void
+	 * @throws \RuntimeException
 	 */
 	public function updateAccessDeclarative(array $userIds, string $sourceId): void {
 		$params = [
