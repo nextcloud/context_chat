@@ -238,7 +238,7 @@ class IndexerJob extends TimedJob {
 						$loadSourcesResult = $this->langRopeService->indexSources($sources);
 						$this->diagnosticService->sendIndexedFiles(count($loadSourcesResult['loaded_sources']));
 						$loadedSources = array_merge($loadedSources, $loadSourcesResult['loaded_sources']);
-						$retryQFiles = array_merge($retryQFiles, array_map(fn ($sourceId) => $trackedQFiles[$sourceId], $loadSourcesResult['loaded_sources']));
+						$retryQFiles = array_merge($retryQFiles, array_map(fn ($sourceId) => $trackedQFiles[$sourceId], $loadSourcesResult['sources_to_retry']));
 						$sources = [];
 						$trackedQFiles = [];
 						$size = 0;
@@ -292,7 +292,7 @@ class IndexerJob extends TimedJob {
 				$loadSourcesResult = $this->langRopeService->indexSources($sources);
 				$this->diagnosticService->sendIndexedFiles(count($loadSourcesResult['loaded_sources']));
 				$loadedSources = array_merge($loadedSources, $loadSourcesResult['loaded_sources']);
-				$retryQFiles = array_merge($retryQFiles, array_map(fn ($sourceId) => $trackedQFiles[$sourceId], $loadSourcesResult['loaded_sources']));
+				$retryQFiles = array_merge($retryQFiles, array_map(fn ($sourceId) => $trackedQFiles[$sourceId], $loadSourcesResult['sources_to_retry']));
 			} catch (RetryIndexException $e) {
 				$this->logger->debug('At least one source is already being processed from another request, trying again soon', ['exception' => $e]);
 				return;

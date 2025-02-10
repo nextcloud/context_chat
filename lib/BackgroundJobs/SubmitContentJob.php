@@ -79,7 +79,8 @@ class SubmitContentJob extends QueuedJob {
 			$loadSourcesResult = $this->service->indexSources($sources);
 			$this->logger->info('Indexed sources for providers', [
 				'count' => count($loadSourcesResult['loaded_sources']),
-				'sources' => $loadSourcesResult['loaded_sources'],
+				'loaded_sources' => $loadSourcesResult['loaded_sources'],
+				'sources_to_retry' => $loadSourcesResult['sources_to_retry'],
 			]);
 		} catch (RetryIndexException $e) {
 			$this->logger->debug('At least one source is already being processed from another request, trying again soon', ['exception' => $e]);
@@ -90,7 +91,7 @@ class SubmitContentJob extends QueuedJob {
 		foreach ($entities as $entity) {
 			$providerKey = ProviderConfigService::getConfigKey($entity->getAppId(), $entity->getProviderId());
 			$sourceId = ProviderConfigService::getSourceId($entity->getItemId(), $providerKey);
-			if (!in_array($sourceId, $loadSourcesResult['not_loaded_sources'])) {
+			if (!in_array($sourceId, $loadSourcesResult['sources_to_retry'])) {
 				$this->mapper->removeFromQueue($entity);
 			}
 		}

@@ -29,9 +29,4 @@
       <code><![CDATA[Command]]></code>
     </UndefinedClass>
   </file>
-  <file src="lib/Service/LangRopeService.php">
-    <InvalidReturnStatement>
-      <code><![CDATA[[]]]></code>
-    </InvalidReturnStatement>
-  </file>
 </files>
