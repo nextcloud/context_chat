@@ -261,7 +261,7 @@ class LangRopeService {
 
 	/**
 	 * @param Source[] $sources
-	 * @return array<string>
+	 * @return array{loaded_sources: array<string>, not_loaded_sources: array<string>}
 	 * @throws RuntimeException
 	 */
 	public function indexSources(array $sources): array {
@@ -284,11 +284,7 @@ class LangRopeService {
 			];
 		}, $sources);
 
-		$response = $this->requestToExApp('/loadSources', 'PUT', $params, 'multipart/form-data');
-		if (!isset($response['loaded_sources'])) {
-			return [];
-		}
-		return $response['loaded_sources'];
+		return $this->requestToExApp('/loadSources', 'PUT', $params, 'multipart/form-data');
 	}
 
 	/**
