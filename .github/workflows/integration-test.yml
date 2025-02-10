@@ -421,7 +421,10 @@ jobs:
           # Run cron in speed mode: Set interval to 0 minutes
           ./occ config:app:set --value 0 --type integer context_chat indexing_job_interval
           for i in {1..100}; do 
-            php cron.php
+            php cron.php &
+            php cron.php &
+            php cron.php &
+            wait
             ./occ context_chat:stats
           done
 
