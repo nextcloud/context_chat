@@ -261,12 +261,13 @@ class LangRopeService {
 
 	/**
 	 * @param Source[] $sources
-	 * @return array<string>
+	 * @return array{loaded_sources: array<string>, sources_to_retry: array<string>}
 	 * @throws RuntimeException
 	 */
 	public function indexSources(array $sources): array {
 		if (count($sources) === 0) {
-			return [];
+			return ['loaded_sources' => [], 'sources_to_retry' => []];
+			;
 		}
 
 		$params = array_map(function (Source $source) {
@@ -286,9 +287,16 @@ class LangRopeService {
 
 		$response = $this->requestToExApp('/loadSources', 'PUT', $params, 'multipart/form-data');
 		if (!isset($response['loaded_sources'])) {
-			return [];
+			return ['loaded_sources' => [], 'sources_to_retry' => []];
 		}
-		return $response['loaded_sources'];
+		if (isset($response['sources_to_retry'])) {
+			if (!is_array($response['sources_to_retry'])) {
+				throw new RuntimeException('Error during request to Context Chat Backend (ExApp): Expected array value for sources_to_retry');
+			}
+		} else {
+			return ['loaded_sources' => $response['loaded_sources'], 'sources_to_retry' => []];
+		}
+		return ['loaded_sources' => $response['loaded_sources'], 'sources_to_retry' => $response['sources_to_retry']];
 	}
 
 	/**

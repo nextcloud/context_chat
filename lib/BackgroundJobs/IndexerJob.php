@@ -235,15 +235,16 @@ class IndexerJob extends TimedJob {
 
 				if ($size + $fileSize > $maxSize || count($sources) >= Application::CC_MAX_FILES) {
 					try {
-						$currentLoadedSources = $this->langRopeService->indexSources($sources);
-						$this->diagnosticService->sendIndexedFiles(count($currentLoadedSources));
-						$loadedSources = array_merge($loadedSources, $currentLoadedSources);
+						$loadSourcesResult = $this->langRopeService->indexSources($sources);
+						$this->diagnosticService->sendIndexedFiles(count($loadSourcesResult['loaded_sources']));
+						$loadedSources = array_merge($loadedSources, $loadSourcesResult['loaded_sources']);
+						$retryQFiles = array_merge($retryQFiles, array_map(fn ($sourceId) => $trackedQFiles[$sourceId], $loadSourcesResult['sources_to_retry']));
 						$sources = [];
 						$trackedQFiles = [];
 						$size = 0;
 					} catch (RetryIndexException $e) {
 						$this->logger->debug('At least one source is already being processed from another request, trying again soon', ['exception' => $e]);
-						$retryQFiles = array_merge($retryQFiles, $trackedQFiles);
+						$retryQFiles = array_merge($retryQFiles, array_values($trackedQFiles));
 						$sources = [];
 						$trackedQFiles = [];
 						$size = 0;
@@ -278,7 +279,7 @@ class IndexerJob extends TimedJob {
 					$file->getMimeType(),
 					ProviderConfigService::getDefaultProviderKey(),
 				);
-				$trackedQFiles[] = $queueFile;
+				$trackedQFiles[ProviderConfigService::getSourceId($file->getId())] = $queueFile;
 				$allSourceIds[] = ProviderConfigService::getSourceId($file->getId());
 			} catch (InvalidPathException|NotFoundException $e) {
 				$this->logger->error('Could not find file ' . $file->getPath(), ['exception' => $e]);
@@ -288,9 +289,10 @@ class IndexerJob extends TimedJob {
 
 		if (count($sources) > 0) {
 			try {
-				$currentLoadedSources = $this->langRopeService->indexSources($sources);
-				$this->diagnosticService->sendIndexedFiles(count($currentLoadedSources));
-				$loadedSources = array_merge($loadedSources, $currentLoadedSources);
+				$loadSourcesResult = $this->langRopeService->indexSources($sources);
+				$this->diagnosticService->sendIndexedFiles(count($loadSourcesResult['loaded_sources']));
+				$loadedSources = array_merge($loadedSources, $loadSourcesResult['loaded_sources']);
+				$retryQFiles = array_merge($retryQFiles, array_map(fn ($sourceId) => $trackedQFiles[$sourceId], $loadSourcesResult['sources_to_retry']));
 			} catch (RetryIndexException $e) {
 				$this->logger->debug('At least one source is already being processed from another request, trying again soon', ['exception' => $e]);
 				return;
