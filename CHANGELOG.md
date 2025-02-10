@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [4.0.6] - 2025-02-10
+
+### Fixed
+
+* enh: Retry failed sources individually (@marcelklehr)
+
 ## [4.0.5] - 2025-02-08
 
 ### Fixed
