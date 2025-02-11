@@ -316,6 +316,9 @@ class IndexerJob extends TimedJob {
 	}
 
 	private function setInitialIndexCompletion(): void {
+		if ($this->appConfig->getAppValueInt('last_indexed_time', 0) !== 0) {
+			return;
+		}
 		try {
 			$queuedFilesCount = $this->queue->count();
 		} catch (Exception $e) {
@@ -327,7 +330,6 @@ class IndexerJob extends TimedJob {
 
 		// if any storage crawler jobs are still running or there are still files in the queue, we are still crawling
 		if ($crawlJobCount > 0 || $queuedFilesCount > 0) {
-			$this->appConfig->setAppValueInt('last_indexed_time', 0, false);
 			return;
 		}
 

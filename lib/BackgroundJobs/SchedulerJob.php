@@ -35,6 +35,7 @@ class SchedulerJob extends QueuedJob {
 	 */
 	protected function run($argument): void {
 		$this->appConfig->setAppValueString('indexed_files_count', (string)0);
+		$this->appConfig->setAppValueInt('last_indexed_time', 0);
 		foreach ($this->storageService->getMounts() as $mount) {
 			$this->logger->debug('Scheduling StorageCrawlJob storage_id=' . $mount['storage_id'] . ' root_id=' . $mount['root_id' ]);
 			$this->jobList->add(StorageCrawlJob::class, [
