@@ -325,7 +325,7 @@ class IndexerJob extends TimedJob {
 			$this->logger->warning('Could not count indexed files', ['exception' => $e]);
 			return;
 		}
-		$countByClass = array_filter($this->jobList->countByClass(), fn ($row) => $row['class'] == StorageCrawlJob::class);
+		$countByClass = array_values(array_filter($this->jobList->countByClass(), fn ($row) => $row['class'] == StorageCrawlJob::class));
 		$crawlJobCount = count($countByClass) > 0 ? $countByClass[0]['count'] : 0;
 
 		// if any storage crawler jobs are still running or there are still files in the queue, we are still crawling
