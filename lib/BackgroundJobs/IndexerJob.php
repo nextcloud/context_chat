@@ -301,8 +301,8 @@ class IndexerJob extends TimedJob {
 
 		$emptyInvalidSources = array_diff($allSourceIds, $loadedSources);
 		if (count($emptyInvalidSources) > 0) {
-			$this->logger->info('Invalid or empty sources that were not indexed (n=' . count($emptyInvalidSources). ')', ['sourceIds' => $emptyInvalidSources]);
-			$this->logger->info('Invalid or empty files that were not indexed: ' . json_encode(array_map(fn($sourceId) => $this->rootFolder->getFirstNodeById(intval(explode(' ', $sourceId)[1]))->getPath(), $emptyInvalidSources)));
+			$this->logger->info('Invalid or empty sources that were not indexed (n=' . count($emptyInvalidSources) . ')', ['sourceIds' => $emptyInvalidSources]);
+			$this->logger->info('Invalid or empty files that were not indexed: ' . json_encode(array_map(fn ($sourceId) => $this->rootFolder->getFirstNodeById(intval(explode(' ', $sourceId)[1]))->getPath(), $emptyInvalidSources)));
 		}
 
 		try {
