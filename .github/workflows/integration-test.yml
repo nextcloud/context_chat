@@ -142,6 +142,12 @@ jobs:
           repository: nextcloud/documentation
           path: data/admin/files/documentation
 
+      - name: Checkout pdfs
+        uses: actions/checkout@v4
+        with:
+          repository: papers-we-love/papers-we-love
+          path: data/admin/files/papers
+
       - name: Prepare docs
         run: |
           cd data/admin/files
@@ -375,6 +381,12 @@ jobs:
         with:
           repository: nextcloud/documentation
           path: data/admin/files/documentation
+
+      - name: Checkout pdfs
+        uses: actions/checkout@v4
+        with:
+          repository: papers-we-love/papers-we-love
+          path: data/admin/files/papers
 
       - name: Prepare docs
         run: |
