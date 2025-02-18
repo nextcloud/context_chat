@@ -178,6 +178,15 @@ class LangRopeService {
 	}
 
 	/**
+	 * @return array<array-key, int>
+	 * @throws \RuntimeException
+	 */
+	public function getIndexedDocumentsCounts(): array {
+		$response = $this->requestToExApp('/countIndexedDocuments', 'POST');
+		return $response;
+	}
+
+	/**
 	 * @param string[] $sourceIds
 	 * @return void
 	 * @throws \RuntimeException
@@ -267,7 +276,6 @@ class LangRopeService {
 	public function indexSources(array $sources): array {
 		if (count($sources) === 0) {
 			return ['loaded_sources' => [], 'sources_to_retry' => []];
-			;
 		}
 
 		$params = array_map(function (Source $source) {
