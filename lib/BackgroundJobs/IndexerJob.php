@@ -125,7 +125,9 @@ class IndexerJob extends TimedJob {
 		try {
 			// If there is at least one file left in the queue, reschedule this job
 			$files = $this->queue->getFromQueue($storageId, $rootId, 1);
-			if (count($files) === 0) {
+			$indexerJobCount = $this->getJobCount(IndexerJob::class);
+			$crawlJobCount = $this->getJobCount(StorageCrawlJob::class);
+			if (count($files) === 0 && ($indexerJobCount > 1 || $crawlJobCount === 0)) {
 				$this->logger->debug('Removing ' . static::class . ' with argument ' . var_export($argument, true) . 'from oc_jobs');
 				$this->jobList->remove(static::class, $argument);
 				$this->setInitialIndexCompletion();
@@ -137,9 +139,6 @@ class IndexerJob extends TimedJob {
 		$this->diagnosticService->sendJobEnd(static::class, $this->getId());
 	}
 
-	/**
-	 * @return int
-	 */
 	protected function getBatchSize(): int {
 		return $this->appConfig->getAppValueInt('indexing_batch_size', self::DEFAULT_BATCH_SIZE);
 	}
@@ -290,8 +289,7 @@ class IndexerJob extends TimedJob {
 			$this->logger->warning('Could not count indexed files', ['exception' => $e]);
 			return;
 		}
-		$countByClass = array_values(array_filter($this->jobList->countByClass(), fn ($row) => $row['class'] == StorageCrawlJob::class));
-		$crawlJobCount = count($countByClass) > 0 ? $countByClass[0]['count'] : 0;
+		$crawlJobCount = $this->getJobCount(StorageCrawlJob::class);
 
 		// if any storage crawler jobs are still running or there are still files in the queue, we are still crawling
 		if ($crawlJobCount > 0 || $queuedFilesCount > 0) {
@@ -300,5 +298,14 @@ class IndexerJob extends TimedJob {
 
 		$this->logger->info('Initial index completion detected, setting last indexed time');
 		$this->appConfig->setAppValueInt('last_indexed_time', $this->timeFactory->getTime(), false);
+	}
+
+	/**
+	 * @return int|mixed
+	 */
+	public function getJobCount($jobClass): mixed {
+		$countByClass = array_values(array_filter($this->jobList->countByClass(), fn ($row) => $row['class'] == $jobClass));
+		$jobCount = count($countByClass) > 0 ? $countByClass[0]['count'] : 0;
+		return $jobCount;
 	}
 }
