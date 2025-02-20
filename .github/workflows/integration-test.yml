@@ -201,7 +201,9 @@ jobs:
         run: |
           ./occ files:scan admin
           ./occ context_chat:scan admin -m text/markdown &
-          ./occ context_chat:scan admin -m text/x-rst
+          ./occ context_chat:scan admin -m text/x-rst &
+          ./occ context_chat:scan admin -m application/pdf &
+          wait
 
       - name: Check stats
         run: |
