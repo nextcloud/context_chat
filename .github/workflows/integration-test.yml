@@ -446,7 +446,6 @@ jobs:
           ./occ background-job:list
           ./occ context_chat:stats | grep -q "Index complete time" || echo "Indexing did not complete"
           ./occ context_chat:stats | awk '
-          cat stats.txt | awk '
               /Total eligible files/ {
                  total = $NF + 0  # force conversion to number
               }
