@@ -40,11 +40,11 @@ use Psr\Log\LoggerInterface;
  * Makes use of the following app config settings:
  *
  * auto_indexing: bool = true The job only runs if this is true
- * indexing_batch_size: int = 1500 The number of files to index per run
- * indexing_max_size: int = 100*1024*1024 The maximum size of a file to index in bytes, also the maximum size of a batch
- * indexing_job_interval: int = 10*60 The interval at which the indexer jobs run
- * indexing_max_time: int = 30*60 The number of seconds to index files for per run, regardless of batch size
- * indexing_max_jobs_count: int = 3 The maximum number of Indexer jobs allowed to run at the same time
+ * indexing_batch_size: int  The number of files to index per run
+ * indexing_max_size: int The maximum size of a file to index in bytes, also the maximum size of a batch
+ * indexing_job_interval: int The interval at which the indexer jobs run
+ * indexing_max_time: int The number of seconds to index files for per run, regardless of batch size
+ * indexing_max_jobs_count: int The maximum number of Indexer jobs allowed to run at the same time
  */
 class IndexerJob extends TimedJob {
 
@@ -72,7 +72,7 @@ class IndexerJob extends TimedJob {
 	) {
 		parent::__construct($time);
 		$this->setInterval($this->getJobInterval());
-		$this->setTimeSensitivity(self::TIME_SENSITIVE);
+		$this->setTimeSensitivity(self::TIME_INSENSITIVE);
 	}
 
 	/**
