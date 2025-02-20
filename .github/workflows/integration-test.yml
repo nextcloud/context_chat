@@ -439,6 +439,22 @@ jobs:
             wait
             ./occ context_chat:stats
           done
+          ./occ context_chat:stats | grep -q "Index complete time" || echo "Indexing did not complete"
+          ./occ context_chat:stats | awk -F': ' '
+              /Total eligible files/ {total=$2}
+              /files__default/ {indexed=$3}
+              END {
+                  low = total * 0.9;
+                  high = total * 1.1;
+                  if (indexed >= low && indexed <= high) {
+                      print "✅ Indexed files (" indexed ") are within 10% of eligible files (" total ").";
+                      exit 0;
+                  } else {
+                      print "❌ Indexed files (" indexed ") are OUTSIDE the 10% range of eligible files (" total ").";
+                      exit 1;
+                  }
+              }
+          '
 
       - name: Run the prompts
         run: |
