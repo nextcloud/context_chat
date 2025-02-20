@@ -50,7 +50,7 @@ class IndexerJob extends TimedJob {
 
 	public const DEFAULT_JOB_INTERVAL = 10 * 60;
 	public const DEFAULT_MAX_INDEXING_TIME = 30 * 60;
-	public const DEFAULT_MAX_JOBS_COUNT = 3;
+	public const DEFAULT_MAX_JOBS_COUNT = 1;
 
 	// Assuming a backend capacity of 50 files per minute we can send 1500 files in half an hour
 	// Specifying a higher number here will still be overruled by the max indexing time
