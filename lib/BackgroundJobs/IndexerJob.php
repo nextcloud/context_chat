@@ -44,13 +44,11 @@ use Psr\Log\LoggerInterface;
  * indexing_max_size: int The maximum size of a file to index in bytes, also the maximum size of a batch
  * indexing_job_interval: int The interval at which the indexer jobs run
  * indexing_max_time: int The number of seconds to index files for per run, regardless of batch size
- * indexing_max_jobs_count: int The maximum number of Indexer jobs allowed to run at the same time
  */
 class IndexerJob extends TimedJob {
 
-	public const DEFAULT_JOB_INTERVAL = 10 * 60;
+	public const DEFAULT_JOB_INTERVAL = 30 * 60;
 	public const DEFAULT_MAX_INDEXING_TIME = 30 * 60;
-	public const DEFAULT_MAX_JOBS_COUNT = 1;
 
 	// Assuming a backend capacity of 50 files per minute we can send 1500 files in half an hour
 	// Specifying a higher number here will still be overruled by the max indexing time
@@ -67,11 +65,11 @@ class IndexerJob extends TimedJob {
 		private IRootFolder $rootFolder,
 		private IAppConfig $appConfig,
 		private DiagnosticService $diagnosticService,
-		private IDBConnection $db,
 		private ITimeFactory $timeFactory,
 	) {
 		parent::__construct($time);
 		$this->setInterval($this->getJobInterval());
+		$this->setAllowParallelRuns(false);
 		$this->setTimeSensitivity(self::TIME_INSENSITIVE);
 	}
 
@@ -93,10 +91,6 @@ class IndexerJob extends TimedJob {
 		}
 		$this->diagnosticService->sendJobTrigger(static::class, $this->getId());
 		$this->setInitialIndexCompletion();
-		if ($this->hasEnoughRunningJobs()) {
-			$this->logger->debug('Too many running jobs, skipping this run');
-			return;
-		}
 		$this->logger->debug('Index files of storage ' . $storageId);
 		try {
 			$this->logger->debug('fetching ' . $this->getBatchSize() . ' files from queue');
@@ -162,34 +156,6 @@ class IndexerJob extends TimedJob {
 
 	protected function getMaxSize(): int {
 		return $this->appConfig->getAppValueInt('indexing_max_size', Application::CC_MAX_SIZE);
-	}
-
-	protected function hasEnoughRunningJobs(): bool {
-		// Cout reserved jobs of last period
-		$query = $this->db->getQueryBuilder();
-		$query->select($query->createFunction('COUNT(*)'))
-			->from('jobs')
-			->where($query->expr()->gt(
-				'reserved_at', $query->createNamedParameter(
-					$this->timeFactory->getTime() - $this->getMaxIndexingTime() - 5, IQueryBuilder::PARAM_INT,
-				)
-			))
-			->andWhere($query->expr()->eq('class', $query->createNamedParameter(static::class)));
-
-		try {
-			$result = $query->executeQuery();
-			$count = (int)$result->fetchOne();
-			$this->logger->debug('Found ' . $count . ' reserved jobs of class ' . static::class);
-			$result->closeCursor();
-		} catch (Exception $e) {
-			$this->logger->warning('Querying reserved jobs failed', ['exception' => $e]);
-			return true; // Kill this job if the query failed to be safe
-		}
-
-		$maxCount = $this->appConfig->getAppValueInt('indexing_max_jobs_count', self::DEFAULT_MAX_JOBS_COUNT);
-		// Either there are already less than the maximum, or we roll the dice according to the proportion of allowed jobs vs currently running ones
-		// e.g. assume 8 jobs are allowed, currently there are 10 running, then we roll the dice and want to be higher than 0.8 to kill this job
-		return $count >= $maxCount && ($maxCount / $count < rand(0, 10000) / 10000);
 	}
 
 	/**
