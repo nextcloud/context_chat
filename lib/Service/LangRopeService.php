@@ -183,6 +183,9 @@ class LangRopeService {
 	 */
 	public function getIndexedDocumentsCounts(): array {
 		$response = $this->requestToExApp('/countIndexedDocuments', 'POST');
+		if (!isset($response['files__default'])) {
+			return [];
+		}
 		return $response;
 	}
 
