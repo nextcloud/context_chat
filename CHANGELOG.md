@@ -10,6 +10,24 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [4.1.0] - 2025-02-21
+
+### New
+
+enh: Support nc 32
+enh(Stats command): Fetch index counts from backend
+
+### Fixed
+
+fix(IndexerJob): Always keep at least one IndexerJob scheduled to wait for end of indexing
+fix(IndexerJob): Do not run multiple jobs in parallel
+fix(Statistics): Add missing parentheses
+enh(IndexerJob): make it time insensitive
+fix(IndexerJob): Count invalid sources and log paths
+fix: Decrease /loadSources files count
+fix: Avoid UndefinedArrayKey error
+fix: Don't override last_indexed_time on updates after indexing is complete
+
 ## [4.0.6] - 2025-02-10
 
 ### Fixed
