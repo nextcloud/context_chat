@@ -142,6 +142,12 @@ jobs:
           repository: nextcloud/documentation
           path: data/admin/files/documentation
 
+      - name: Checkout pdfs
+        uses: actions/checkout@v4
+        with:
+          repository: papers-we-love/papers-we-love
+          path: data/admin/files/papers
+
       - name: Prepare docs
         run: |
           cd data/admin/files
@@ -195,7 +201,9 @@ jobs:
         run: |
           ./occ files:scan admin
           ./occ context_chat:scan admin -m text/markdown &
-          ./occ context_chat:scan admin -m text/x-rst
+          ./occ context_chat:scan admin -m text/x-rst &
+          ./occ context_chat:scan admin -m application/pdf &
+          wait
 
       - name: Check stats
         run: |
@@ -376,6 +384,12 @@ jobs:
           repository: nextcloud/documentation
           path: data/admin/files/documentation
 
+      - name: Checkout pdfs
+        uses: actions/checkout@v4
+        with:
+          repository: papers-we-love/papers-we-love
+          path: data/admin/files/papers
+
       - name: Prepare docs
         run: |
           cd data/admin/files
@@ -419,14 +433,39 @@ jobs:
         run: |
           ./occ files:scan admin
           # Run cron in speed mode: Set interval to 0 minutes
-          ./occ config:app:set --value 0 --type integer context_chat indexing_job_interval
+          ./occ config:app:set --value 30 --type integer context_chat indexing_job_interval # 30 seconds
           for i in {1..100}; do 
-            php cron.php &
-            php cron.php &
-            php cron.php &
+            php cron.php -v &
             wait
             ./occ context_chat:stats
           done
+
+      - name: Check context chat state
+        run: |
+          ./occ context_chat:stats
+          ./occ background-job:list
+          ./occ context_chat:stats | grep -q "Index complete time" || echo "Indexing did not complete"
+          ./occ context_chat:stats | awk '
+              /Total eligible files/ {
+                 total = $NF + 0  # force conversion to number
+              }
+              /files__default/ {
+                  indexed = $NF;
+                  sub(/,$/, "", indexed)  # remove trailing comma
+                  indexed = indexed + 0    # force conversion to number
+              }
+              END {
+                  low = total * 0.9;
+                  high = total * 1.1;
+                  if (indexed >= low && indexed <= high) {
+                      print "✅ Indexed files (" indexed ") are within 10% of eligible files (" total ").";
+                      exit 0;
+                  } else {
+                      print "❌ Indexed files (" indexed ") are OUTSIDE the 10% range of eligible files (" total ").";
+                      exit 1;
+                  }
+              }
+          '
 
       - name: Run the prompts
         run: |

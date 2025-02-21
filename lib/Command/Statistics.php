@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace OCA\ContextChat\Command;
 
 use OCA\ContextChat\Service\ActionService;
+use OCA\ContextChat\Service\LangRopeService;
 use OCA\ContextChat\Service\QueueService;
 use OCA\ContextChat\Service\StorageService;
 use OCP\AppFramework\Services\IAppConfig;
@@ -25,6 +26,7 @@ class Statistics extends Command {
 		private ActionService $actionService,
 		private QueueService $queueService,
 		private StorageService $storageService,
+		private LangRopeService $langRopeService,
 	) {
 		parent::__construct();
 	}
@@ -45,7 +47,7 @@ class Statistics extends Command {
 
 			$output->writeln('Installed time: ' . (new \DateTime('@' . $installedTime))->format('Y-m-d H:i') . ' UTC');
 			$output->writeln('Index complete time: ' . (new \DateTime('@' . $lastIndexedTime))->format('Y-m-d H:i') . ' UTC');
-			$output->writeln('Total time taken for complete index: ' . floor($indexTime / 60 * 60 * 24) . ' days ' . gmdate('H:i', $indexTime) . ' (hh:mm)');
+			$output->writeln('Total time taken for complete index: ' . floor($indexTime / (60 * 60 * 24)) . ' days ' . gmdate('H:i', $indexTime) . ' (hh:mm)');
 		}
 
 		$eligibleFilesCount = $this->storageService->countFiles();
@@ -55,7 +57,10 @@ class Statistics extends Command {
 		$output->writeln('Files in indexing queue: ' . $queueCount);
 
 		$indexFilesCount = Util::numericToNumber($this->appConfig->getAppValueString('indexed_files_count', '0'));
-		$output->writeln('Files indexed: ' . $indexFilesCount);
+		$output->writeln('Files successfully sent to backend: ' . $indexFilesCount);
+
+		$indexedDocumentsCount = $this->langRopeService->getIndexedDocumentsCounts();
+		$output->writeln('Indexed documents: ' . var_export($indexedDocumentsCount, true));
 
 		$actionsCount = $this->actionService->count();
 		$output->writeln('Actions in queue: ' . $actionsCount);
