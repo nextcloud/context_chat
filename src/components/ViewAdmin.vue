@@ -1,8 +1,7 @@
 <!--
-  - Copyright (c) 2021. The Recognize contributors.
-  -
-  - This file is licensed under the Affero General Public License version 3 or later. See the COPYING file.
-  -->
+SPDX-FileCopyrightText: 2025 Nextcloud GmbH and Nextcloud contributors
+SPDX-License-Identifier: AGPL-3.0-or-later
+-->
 
 <template>
 	<div id="context_chat">
