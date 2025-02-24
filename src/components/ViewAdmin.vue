@@ -13,30 +13,30 @@
 			<NcNoteCard v-else type="warning">
 				{{ t('context_chat', 'The initial indexing is still running.') }}
 			</NcNoteCard>
-      <NcNoteCard type="warning" v-if="stats.initial_indexing_complete && stats.eligible_files_count > stats.vectordb_document_counts['files__default'] * 1.2">
-        {{ t('context_chat', 'Less files were indexed than expected. Only {percent}% files out of {eligibleCount} are in the VectorDB.', {percent: Math.round((stats.vectordb_document_counts['files__default'] / stats.eligible_files_count) * 100), eligibleCount: stats.eligible_files_count}) }}
-      </NcNoteCard>
-      <NcNoteCard type="info">
-        {{ t('context_chat', 'Eligible files for indexing: {count}', {count: stats.eligible_files_count}) }}
-      </NcNoteCard>
-      <NcNoteCard type="info">
-        {{ t('context_chat', 'Queued files for indexing: {count}', {count: stats.queued_files_count}) }}
-      </NcNoteCard>
-      <NcNoteCard type="info" v-for="(count, providerId) in stats.queued_documents_counts">
-        {{ t('context_chat', 'Queued documents from provider {providerId} for indexing: {count}', {count, providerId}) }}
-      </NcNoteCard>
-      <NcNoteCard type="info" v-for="(count, providerId) in stats.vectordb_document_counts">
-        {{ t('context_chat', 'Documents in VectorDB from provider {providerId} for indexing: {count}', {count, providerId}) }}
-      </NcNoteCard>
-      <NcNoteCard type="info">
-        {{ t('context_chat', 'Queued content update actions: {count}', {count: stats.queued_actions_count}) }}
-      </NcNoteCard>
+			<NcNoteCard v-if="stats.initial_indexing_complete && stats.eligible_files_count > stats.vectordb_document_counts['files__default'] * 1.2" type="warning">
+				{{ t('context_chat', 'Less files were indexed than expected. Only {percent}% files out of {eligibleCount} are in the VectorDB.', {percent: Math.round((stats.vectordb_document_counts['files__default'] / stats.eligible_files_count) * 100), eligibleCount: stats.eligible_files_count}) }}
+			</NcNoteCard>
+			<NcNoteCard type="info">
+				{{ t('context_chat', 'Eligible files for indexing: {count}', {count: stats.eligible_files_count}) }}
+			</NcNoteCard>
+			<NcNoteCard type="info">
+				{{ t('context_chat', 'Queued files for indexing: {count}', {count: stats.queued_files_count}) }}
+			</NcNoteCard>
+			<NcNoteCard v-for="(count, providerId) in stats.queued_documents_counts" :key="providerId" type="info">
+				{{ t('context_chat', 'Queued documents from provider {providerId} for indexing: {count}', {count, providerId}) }}
+			</NcNoteCard>
+			<NcNoteCard v-for="(count, providerId) in stats.vectordb_document_counts" :key="providerId" type="info">
+				{{ t('context_chat', 'Documents in VectorDB from provider {providerId} for indexing: {count}', {count, providerId}) }}
+			</NcNoteCard>
+			<NcNoteCard type="info">
+				{{ t('context_chat', 'Queued content update actions: {count}', {count: stats.queued_actions_count}) }}
+			</NcNoteCard>
 		</NcSettingsSection>
 	</div>
 </template>
 
 <script>
-import { NcNoteCard, NcSettingsSection, NcCheckboxRadioSwitch, NcTextField } from '@nextcloud/vue'
+import { NcNoteCard, NcSettingsSection } from '@nextcloud/vue'
 import { loadState } from '@nextcloud/initial-state'
 import humanizeDuration from 'humanize-duration'
 
@@ -44,11 +44,11 @@ const MAX_RELATIVE_DATE = 1000 * 60 * 60 * 24 * 7 // one week
 
 export default {
 	name: 'ViewAdmin',
-	components: { NcSettingsSection, NcNoteCard, NcCheckboxRadioSwitch, NcTextField },
+	components: { NcSettingsSection, NcNoteCard },
 
 	data() {
 		return {
-		  stats: {}
+		  stats: {},
 		}
 	},
 
@@ -62,8 +62,8 @@ export default {
 		this.stats = loadState('context_chat', 'stats')
 	},
 
-  methods: {
-    showDate(timestamp) {
+	methods: {
+		showDate(timestamp) {
 			if (!timestamp) {
 				return this.t('context_chat', 'never')
 			}
