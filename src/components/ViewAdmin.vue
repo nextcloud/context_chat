@@ -38,6 +38,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 			<NcNoteCard type="info">
 				{{ t('context_chat', 'Queued content update actions: {count}', {count: stats.queued_actions_count}) }}
 			</NcNoteCard>
+			<p><a href="https://docs.nextcloud.com/server/latest/admin_manual/ai/app_context_chat.html">{{ t('context_chat', 'Official documentation') }}</a></p>
 		</NcSettingsSection>
 	</div>
 </template>
