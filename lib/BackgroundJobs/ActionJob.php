@@ -115,12 +115,12 @@ class ActionJob extends QueuedJob {
 			}
 		} catch (\Throwable $e) {
 			// schedule in 5mins
-			$this->jobList->add(static::class, $this->time->getTime() + 5 * 60);
+			$this->jobList->scheduleAfter(static::class, $this->time->getTime() + 5 * 60);
 			throw $e;
 		}
 
 		// schedule in 5mins
-		$this->jobList->add(static::class, $this->time->getTime() + 5 * 60);
+		$this->jobList->scheduleAfter(static::class, $this->time->getTime() + 5 * 60);
 		$this->diagnosticService->sendJobEnd(static::class, $this->getId());
 	}
 }
