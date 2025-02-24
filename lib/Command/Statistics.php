@@ -28,7 +28,7 @@ class Statistics extends Command {
 		private QueueService $queueService,
 		private StorageService $storageService,
 		private LangRopeService $langRopeService,
-        private QueueContentItemMapper $contentQueue,
+		private QueueContentItemMapper $contentQueue,
 	) {
 		parent::__construct();
 	}
@@ -58,8 +58,8 @@ class Statistics extends Command {
 		$queueCount = $this->queueService->count();
 		$output->writeln('Files in indexing queue: ' . $queueCount);
 
-        $queuedDocumentsCount = $this->contentQueue->count();
-        $output->writeln('Queued documents (without files):' . $queuedDocumentsCount);
+		$queuedDocumentsCount = $this->contentQueue->count();
+		$output->writeln('Queued documents (without files):' . $queuedDocumentsCount);
 
 		$indexFilesCount = Util::numericToNumber($this->appConfig->getAppValueString('indexed_files_count', '0'));
 		$output->writeln('Files successfully sent to backend: ' . $indexFilesCount);

@@ -51,20 +51,20 @@ class QueueContentItemMapper extends QBMapper {
 			->executeStatement();
 	}
 
-    /**
-     * @throws \OCP\DB\Exception
-     * @return array<string, int>
-     */
-    public function count() : array {
-        $qb = $this->db->getQueryBuilder();
-        $result = $qb->select($qb->func()->count('id', 'count'), 'app_id', 'provider_id')
-            ->from($this->getTableName())
-            ->groupBy('app_id', 'provider_id')
-            ->executeQuery();
-        $stats = [];
-        while (($row = $result->fetch()) !== false) {
-            $stats[$row['app_id'] . '__' . $row['provider_id']] = $row['count'];
-        }
-        return $stats;
-    }
+	/**
+	 * @throws \OCP\DB\Exception
+	 * @return array<string, int>
+	 */
+	public function count() : array {
+		$qb = $this->db->getQueryBuilder();
+		$result = $qb->select($qb->func()->count('id', 'count'), 'app_id', 'provider_id')
+			->from($this->getTableName())
+			->groupBy('app_id', 'provider_id')
+			->executeQuery();
+		$stats = [];
+		while (($row = $result->fetch()) !== false) {
+			$stats[$row['app_id'] . '__' . $row['provider_id']] = $row['count'];
+		}
+		return $stats;
+	}
 }

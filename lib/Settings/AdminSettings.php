@@ -19,43 +19,43 @@ use OCP\Util;
 
 class AdminSettings implements ISettings {
 	public function __construct(
-        private IInitialState $initialState,
-        private IAppConfig $appConfig,
-        private ActionService $actionService,
-        private QueueService $queueService,
-        private StorageService $storageService,
-        private LangRopeService $langRopeService,
-        private QueueContentItemMapper $contentQueue,
-    ) {
+		private IInitialState $initialState,
+		private IAppConfig $appConfig,
+		private ActionService $actionService,
+		private QueueService $queueService,
+		private StorageService $storageService,
+		private LangRopeService $langRopeService,
+		private QueueContentItemMapper $contentQueue,
+	) {
 	}
 
 	/**
 	 * @return TemplateResponse
 	 */
 	public function getForm(): TemplateResponse {
-        $stats = [];
+		$stats = [];
 
-        $stats['installed_at'] = $this->appConfig->getAppValueInt('installed_time', 0);
-        if ($this->appConfig->getAppValueInt('last_indexed_time', 0) === 0) {
-            $stats['initial_indexing_complete'] = false;
-        } else {
-            $stats['initial_indexing_complete'] = true;
-            $stats['intial_indexing_completed_at'] = $this->appConfig->getAppValueInt('last_indexed_time', 0);
-        }
+		$stats['installed_at'] = $this->appConfig->getAppValueInt('installed_time', 0);
+		if ($this->appConfig->getAppValueInt('last_indexed_time', 0) === 0) {
+			$stats['initial_indexing_complete'] = false;
+		} else {
+			$stats['initial_indexing_complete'] = true;
+			$stats['intial_indexing_completed_at'] = $this->appConfig->getAppValueInt('last_indexed_time', 0);
+		}
 
-        $stats['eligible_files_count'] = $this->storageService->countFiles();
-        $stats['queued_files_count'] = $this->queueService->count();
-        $stats['indexed_files_count'] = Util::numericToNumber($this->appConfig->getAppValueString('indexed_files_count', '0'));
-        $stats['queued_actions_count'] = $this->actionService->count();
+		$stats['eligible_files_count'] = $this->storageService->countFiles();
+		$stats['queued_files_count'] = $this->queueService->count();
+		$stats['indexed_files_count'] = Util::numericToNumber($this->appConfig->getAppValueString('indexed_files_count', '0'));
+		$stats['queued_actions_count'] = $this->actionService->count();
 		try {
 			$stats['vectordb_document_counts'] = $this->langRopeService->getIndexedDocumentsCounts();
 			$stats['backend_available'] = true;
 		} catch (\RuntimeException $e) {
 			$stats['backend_available'] = false;
 		}
-        $stats['queued_documents_counts'] = $this->contentQueue->count();
+		$stats['queued_documents_counts'] = $this->contentQueue->count();
 
-		$this->initialState->provideInitialState('stats',$stats);
+		$this->initialState->provideInitialState('stats', $stats);
 
 		return new TemplateResponse('context_chat', 'admin');
 	}
