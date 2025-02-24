@@ -47,7 +47,12 @@ class AdminSettings implements ISettings {
         $stats['queued_files_count'] = $this->queueService->count();
         $stats['indexed_files_count'] = Util::numericToNumber($this->appConfig->getAppValueString('indexed_files_count', '0'));
         $stats['queued_actions_count'] = $this->actionService->count();
-        $stats['vectordb_document_counts'] = $this->langRopeService->getIndexedDocumentsCounts();
+		try {
+			$stats['vectordb_document_counts'] = $this->langRopeService->getIndexedDocumentsCounts();
+			$stats['backend_available'] = true;
+		} catch (\RuntimeException $e) {
+			$stats['backend_available'] = false;
+		}
         $stats['queued_documents_counts'] = $this->contentQueue->count();
 
 		$this->initialState->provideInitialState('stats',$stats);

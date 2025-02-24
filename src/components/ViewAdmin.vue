@@ -13,6 +13,12 @@
 			<NcNoteCard v-else type="warning">
 				{{ t('context_chat', 'The initial indexing is still running.') }}
 			</NcNoteCard>
+			<NcNoteCard v-if="stats.backend_available" show-alert type="success">
+				{{ t('context_chat', 'The Context Chat Backend app is installed and responsive.') }}
+			</NcNoteCard>
+			<NcNoteCard v-else type="warning">
+				{{ t('context_chat', 'The Context Chat Backend app is not installed or not responsing.') }}
+			</NcNoteCard>
 			<NcNoteCard v-if="stats.initial_indexing_complete && stats.eligible_files_count > stats.vectordb_document_counts['files__default'] * 1.2" type="warning">
 				{{ t('context_chat', 'Less files were indexed than expected. Only {percent}% files out of {eligibleCount} are in the VectorDB.', {percent: Math.round((stats.vectordb_document_counts['files__default'] / stats.eligible_files_count) * 100), eligibleCount: stats.eligible_files_count}) }}
 			</NcNoteCard>
@@ -25,9 +31,11 @@
 			<NcNoteCard v-for="(count, providerId) in stats.queued_documents_counts" :key="providerId" type="info">
 				{{ t('context_chat', 'Queued documents from provider {providerId} for indexing: {count}', {count, providerId}) }}
 			</NcNoteCard>
-			<NcNoteCard v-for="(count, providerId) in stats.vectordb_document_counts" :key="providerId" type="info">
-				{{ t('context_chat', 'Documents in VectorDB from provider {providerId} for indexing: {count}', {count, providerId}) }}
-			</NcNoteCard>
+			<template v-if="stats.backend_available">
+				<NcNoteCard v-for="(count, providerId) in stats.vectordb_document_counts" :key="providerId" type="info">
+					{{ t('context_chat', 'Documents in VectorDB from provider {providerId} for indexing: {count}', {count, providerId}) }}
+				</NcNoteCard>
+			</template>
 			<NcNoteCard type="info">
 				{{ t('context_chat', 'Queued content update actions: {count}', {count: stats.queued_actions_count}) }}
 			</NcNoteCard>
