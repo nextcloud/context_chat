@@ -33,7 +33,7 @@
 			</NcNoteCard>
 			<template v-if="stats.vectordb_document_counts">
 				<NcNoteCard v-for="(count, providerId) in stats.vectordb_document_counts" :key="providerId" type="info">
-					{{ t('context_chat', 'Documents in VectorDB from provider {providerId} for indexing: {count}', {count, providerId}) }}
+					{{ t('context_chat', 'Documents in VectorDB from provider {providerId}: {count}', {count, providerId}) }}
 				</NcNoteCard>
 			</template>
 			<NcNoteCard type="info">

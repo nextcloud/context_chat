@@ -57,13 +57,13 @@ class QueueContentItemMapper extends QBMapper {
      */
     public function count() : array {
         $qb = $this->db->getQueryBuilder();
-        $result = $qb->select($qb->func()->count('id', 'count'), 'provider_id')
+        $result = $qb->select($qb->func()->count('id', 'count'), 'app_id', 'provider_id')
             ->from($this->getTableName())
-            ->groupBy('provider_id')
+            ->groupBy('app_id', 'provider_id')
             ->executeQuery();
         $stats = [];
         while (($row = $result->fetch()) !== false) {
-            $stats[$row['provider_id']] = $row['count'];
+            $stats[$row['app_id'] . '__' . $row['provider_id']] = $row['count'];
         }
         return $stats;
     }
