@@ -84,7 +84,8 @@ class SubmitContentJob extends QueuedJob {
 			]);
 		} catch (RetryIndexException $e) {
 			$this->logger->debug('At least one source is already being processed from another request, trying again soon', ['exception' => $e]);
-			$this->jobList->add(static::class);
+            // schedule in 5mins
+			$this->jobList->scheduleAfter(static::class, $this->time->getTime() + 5 * 60);
 			return;
 		}
 
@@ -96,6 +97,7 @@ class SubmitContentJob extends QueuedJob {
 			}
 		}
 
-		$this->jobList->add(static::class);
+        // schedule in 5mins
+        $this->jobList->scheduleAfter(static::class, $this->time->getTime() + 5 * 60);
 	}
 }
