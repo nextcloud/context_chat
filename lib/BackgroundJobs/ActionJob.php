@@ -114,12 +114,12 @@ class ActionJob extends QueuedJob {
 				$this->actionMapper->removeFromQueue($entity);
 			}
 		} catch (\Throwable $e) {
-            // schedule in 5mins
-            $this->jobList->add(static::class, $this->time->getTime() + 5 * 60);
+			// schedule in 5mins
+			$this->jobList->add(static::class, $this->time->getTime() + 5 * 60);
 			throw $e;
 		}
 
-        // schedule in 5mins
+		// schedule in 5mins
 		$this->jobList->add(static::class, $this->time->getTime() + 5 * 60);
 		$this->diagnosticService->sendJobEnd(static::class, $this->getId());
 	}
