@@ -50,4 +50,21 @@ class QueueContentItemMapper extends QBMapper {
 			->where($qb->expr()->eq('id', $qb->createPositionalParameter($item->getId())))
 			->executeStatement();
 	}
+
+    /**
+     * @throws \OCP\DB\Exception
+     * @return array<string, int>
+     */
+    public function count() : array {
+        $qb = $this->db->getQueryBuilder();
+        $result = $qb->select($qb->func()->count('id', 'count'), 'provider_id')
+            ->from($this->getTableName())
+            ->groupBy('provider_id')
+            ->executeQuery();
+        $stats = [];
+        while (($row = $result->fetchOne()) !== false) {
+            $stats[$row['provider_id']] = $row['count'];
+        }
+        return $stats;
+    }
 }
