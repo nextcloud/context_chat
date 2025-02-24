@@ -31,7 +31,7 @@
 			<NcNoteCard v-for="(count, providerId) in stats.queued_documents_counts" :key="providerId" type="info">
 				{{ t('context_chat', 'Queued documents from provider {providerId} for indexing: {count}', {count, providerId}) }}
 			</NcNoteCard>
-			<template v-if="stats.backend_available">
+			<template v-if="stats.vectordb_document_counts">
 				<NcNoteCard v-for="(count, providerId) in stats.vectordb_document_counts" :key="providerId" type="info">
 					{{ t('context_chat', 'Documents in VectorDB from provider {providerId} for indexing: {count}', {count, providerId}) }}
 				</NcNoteCard>

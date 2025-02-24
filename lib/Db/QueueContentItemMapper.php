@@ -62,7 +62,7 @@ class QueueContentItemMapper extends QBMapper {
             ->groupBy('provider_id')
             ->executeQuery();
         $stats = [];
-        while (($row = $result->fetchOne()) !== false) {
+        while (($row = $result->fetch()) !== false) {
             $stats[$row['provider_id']] = $row['count'];
         }
         return $stats;
