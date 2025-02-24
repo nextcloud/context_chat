@@ -59,7 +59,7 @@ class Statistics extends Command {
 		$output->writeln('Files in indexing queue: ' . $queueCount);
 
 		$queuedDocumentsCount = $this->contentQueue->count();
-		$output->writeln('Queued documents (without files):' . $queuedDocumentsCount);
+		$output->writeln('Queued documents (without files):' . var_export($queuedDocumentsCount, true));
 
 		$indexFilesCount = Util::numericToNumber($this->appConfig->getAppValueString('indexed_files_count', '0'));
 		$output->writeln('Files successfully sent to backend: ' . $indexFilesCount);
