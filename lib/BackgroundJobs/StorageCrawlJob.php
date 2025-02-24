@@ -70,8 +70,8 @@ class StorageCrawlJob extends QueuedJob {
 		}
 
 		if ($i > 0) {
-			// Schedule next iteration
-			$this->jobList->add(self::class, [
+			// Schedule next iteration after 5 minutes
+			$this->jobList->scheduleAfter(self::class, $this->time->getTime() + 5 * 60, [
 				'storage_id' => $storageId,
 				'root_id' => $rootId,
 				'override_root' => $overrideRoot,
