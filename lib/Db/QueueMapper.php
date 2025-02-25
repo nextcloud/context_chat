@@ -52,13 +52,17 @@ class QueueMapper extends QBMapper {
 	 * @return void
 	 * @throws \OCP\DB\Exception
 	 */
-	public function removeFromQueue(array $files) : void {
+	public function removeFromQueue(array $files): void {
 		$fileIds = array_map(fn (QueueFile $file) => $file->getId(), $files);
-		$qb = $this->db->getQueryBuilder();
-		$qb->delete($this->getTableName())
-			->where($qb->expr()->in('id', $qb->createPositionalParameter($fileIds, IQueryBuilder::PARAM_INT_ARRAY)))
-			->executeStatement();
+		$chunkSize = 1000; // Maximum number of items in an "IN" expression
+		foreach (array_chunk($fileIds, $chunkSize) as $chunk) {
+			$qb = $this->db->getQueryBuilder();
+			$qb->delete($this->getTableName())
+				->where($qb->expr()->in('id', $qb->createPositionalParameter($chunk, IQueryBuilder::PARAM_INT_ARRAY)))
+				->executeStatement();
+		}
 	}
+
 
 	/**
 	 * @param QueueFile $file
