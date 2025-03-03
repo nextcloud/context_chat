@@ -96,6 +96,10 @@ class ActionService {
 	 * @return void
 	 */
 	public function updateAccess(string $op, array $userIds, string $sourceId): void {
+		if (count($userIds) === 0) {
+			$this->logger->warning('userIds array is empty, ignoring this update', ['sourceId' => $sourceId]);
+			return;
+		}
 		$payload = json_encode(['op' => $op, 'userIds' => $userIds, 'sourceId' => $sourceId]);
 		if ($payload === false) {
 			$this->logger->warning('Failed to json_encode access update for source', ['op' => $op, 'sourceId' => $sourceId]);
@@ -111,6 +115,10 @@ class ActionService {
 	 * @return void
 	 */
 	public function updateAccessProvider(string $op, array $userIds, string $providerId): void {
+		if (count($userIds) === 0) {
+			$this->logger->warning('userIds array is empty, ignoring this update', ['sourceId' => $providerId]);
+			return;
+		}
 		$payload = json_encode(['op' => $op, 'userIds' => $userIds, 'providerId' => $providerId]);
 		if ($payload === false) {
 			$this->logger->warning('Failed to json_encode access update for provider', ['op' => $op, 'providerId' => $providerId]);
@@ -125,6 +133,10 @@ class ActionService {
 	 * @return void
 	 */
 	public function updateAccessDeclSource(array $userIds, string $sourceId): void {
+		if (count($userIds) === 0) {
+			$this->logger->warning('userIds array is empty, ignoring this update', ['sourceId' => $sourceId]);
+			return;
+		}
 		$payload = json_encode(['userIds' => $userIds, 'sourceId' => $sourceId]);
 		if ($payload === false) {
 			$this->logger->warning('Failed to json_encode access update declarative for source', ['sourceId' => $sourceId]);
