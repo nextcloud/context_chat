@@ -104,14 +104,11 @@ class ActionJob extends QueuedJob {
 						default:
 							$this->logger->warning('Unknown action type', ['type' => $entity->getType()]);
 					}
-				} catch (\RuntimeException $exception) {
-					$this->logger->warning('Failed to send action: ' . $exception->getMessage(), ['exception' => $exception]);
+					$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
+					$this->actionMapper->removeFromQueue($entity);
+				} catch (\RuntimeException $e) {
+					$this->logger->warning('Error performing action "' . $entity->getType() . '": ' . $e->getMessage(), ['exception' => $e]);
 				}
-			}
-
-			foreach ($entities as $entity) {
-				$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
-				$this->actionMapper->removeFromQueue($entity);
 			}
 		} catch (\Throwable $e) {
 			// schedule in 5mins
