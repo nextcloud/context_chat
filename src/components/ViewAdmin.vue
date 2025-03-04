@@ -21,23 +21,26 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 			<NcNoteCard v-if="stats.initial_indexing_complete && stats.eligible_files_count > stats.vectordb_document_counts['files__default'] * 1.2" type="warning">
 				{{ t('context_chat', 'Less files were indexed than expected. Only {percent}% files out of {eligibleCount} are in the VectorDB.', {percent: Math.round((stats.vectordb_document_counts['files__default'] / stats.eligible_files_count) * 100), eligibleCount: stats.eligible_files_count}) }}
 			</NcNoteCard>
-			<NcNoteCard type="info">
-				{{ t('context_chat', 'Eligible files for indexing: {count}', {count: stats.eligible_files_count}) }}
-			</NcNoteCard>
-			<NcNoteCard type="info">
-				{{ t('context_chat', 'Queued files for indexing: {count}', {count: stats.queued_files_count}) }}
-			</NcNoteCard>
-			<NcNoteCard v-for="(count, providerId) in stats.queued_documents_counts" :key="providerId" type="info">
-				{{ t('context_chat', 'Queued documents from provider {providerId} for indexing: {count}', {count, providerId}) }}
-			</NcNoteCard>
-			<template v-if="stats.vectordb_document_counts">
-				<NcNoteCard v-for="(count, providerId) in stats.vectordb_document_counts" :key="providerId" type="info">
-					{{ t('context_chat', 'Documents in VectorDB from provider {providerId}: {count}', {count, providerId}) }}
-				</NcNoteCard>
-			</template>
-			<NcNoteCard type="info">
-				{{ t('context_chat', 'Queued content update actions: {count}', {count: stats.queued_actions_count}) }}
-			</NcNoteCard>
+
+			<ul>
+				<li>
+					{{ t('context_chat', 'Eligible files for indexing: {count}', {count: stats.eligible_files_count}) }}
+				</li>
+				<li>
+					{{ t('context_chat', 'Queued files for indexing: {count}', {count: stats.queued_files_count}) }}
+				</li>
+				<li v-for="(count, providerId) in stats.queued_documents_counts" :key="providerId">
+					{{ t('context_chat', 'Queued documents from provider {providerId} for indexing: {count}', {count, providerId}) }}
+				</li>
+				<template v-if="stats.vectordb_document_counts">
+					<li v-for="(count, providerId) in stats.vectordb_document_counts" :key="providerId">
+						{{ t('context_chat', 'Documents in VectorDB from provider {providerId}: {count}', {count, providerId}) }}
+					</li>
+				</template>
+				<li>
+					{{ t('context_chat', 'Queued content update actions: {count}', {count: stats.queued_actions_count}) }}
+				</li>
+			</ul>
 			<p><a href="https://docs.nextcloud.com/server/latest/admin_manual/ai/app_context_chat.html">{{ t('context_chat', 'Official documentation') }}</a></p>
 		</NcSettingsSection>
 	</div>

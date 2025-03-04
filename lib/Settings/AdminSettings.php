@@ -14,8 +14,10 @@ use OCA\ContextChat\Service\StorageService;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\AppFramework\Services\IAppConfig;
 use OCP\AppFramework\Services\IInitialState;
+use OCP\DB\Exception;
 use OCP\Settings\ISettings;
 use OCP\Util;
+use Psr\Log\LoggerInterface;
 
 class AdminSettings implements ISettings {
 	public function __construct(
@@ -26,6 +28,7 @@ class AdminSettings implements ISettings {
 		private StorageService $storageService,
 		private LangRopeService $langRopeService,
 		private QueueContentItemMapper $contentQueue,
+		private LoggerInterface $logger,
 	) {
 	}
 
@@ -43,17 +46,37 @@ class AdminSettings implements ISettings {
 			$stats['intial_indexing_completed_at'] = $this->appConfig->getAppValueInt('last_indexed_time', 0);
 		}
 
-		$stats['eligible_files_count'] = $this->storageService->countFiles();
-		$stats['queued_files_count'] = $this->queueService->count();
+		try {
+			$stats['eligible_files_count'] = $this->storageService->countFiles();
+		} catch (Exception $e) {
+			$this->logger->error($e->getMessage(), ['exception' => $e]);
+			$stats['eligible_files_count'] = 0;
+		}
+		try {
+			$stats['queued_files_count'] = $this->queueService->count();
+		} catch (Exception $e) {
+			$this->logger->error($e->getMessage(), ['exception' => $e]);
+			$stats['queued_files_count'] = 0;
+		}
 		$stats['indexed_files_count'] = Util::numericToNumber($this->appConfig->getAppValueString('indexed_files_count', '0'));
-		$stats['queued_actions_count'] = $this->actionService->count();
+		try {
+			$stats['queued_actions_count'] = $this->actionService->count();
+		} catch (Exception $e) {
+			$this->logger->error($e->getMessage(), ['exception' => $e]);
+			$stats['queued_actions_count'] = 0;
+		}
 		try {
 			$stats['vectordb_document_counts'] = $this->langRopeService->getIndexedDocumentsCounts();
 			$stats['backend_available'] = true;
 		} catch (\RuntimeException $e) {
 			$stats['backend_available'] = false;
 		}
-		$stats['queued_documents_counts'] = $this->contentQueue->count();
+		try {
+			$stats['queued_documents_counts'] = $this->contentQueue->count();
+		} catch (Exception $e) {
+			$this->logger->error($e->getMessage(), ['exception' => $e]);
+			$stats['queued_documents_counts'] = 0;
+		}
 
 		$this->initialState->provideInitialState('stats', $stats);
 

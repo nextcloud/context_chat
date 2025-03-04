@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace OCA\ContextChat\Db;
 
+use OCA\ContextChat\Service\ProviderConfigService;
 use OCP\AppFramework\Db\QBMapper;
 use OCP\IDBConnection;
 
@@ -63,7 +64,8 @@ class QueueContentItemMapper extends QBMapper {
 			->executeQuery();
 		$stats = [];
 		while (($row = $result->fetch()) !== false) {
-			$stats[$row['app_id'] . '__' . $row['provider_id']] = $row['count'];
+			$provider = ProviderConfigService::getConfigKey($row['app_id'], $row['provider_id']);
+			$stats[$provider] = $row['count'];
 		}
 		return $stats;
 	}
