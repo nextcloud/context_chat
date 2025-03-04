@@ -21,26 +21,30 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 			<NcNoteCard v-if="stats.initial_indexing_complete && stats.eligible_files_count > stats.vectordb_document_counts['files__default'] * 1.2" type="warning">
 				{{ t('context_chat', 'Less files were indexed than expected. Only {percent}% files out of {eligibleCount} are in the VectorDB.', {percent: Math.round((stats.vectordb_document_counts['files__default'] / stats.eligible_files_count) * 100), eligibleCount: stats.eligible_files_count}) }}
 			</NcNoteCard>
-
-			<ul>
-				<li>
-					{{ t('context_chat', 'Eligible files for indexing: {count}', {count: stats.eligible_files_count}) }}
-				</li>
-				<li>
-					{{ t('context_chat', 'Queued files for indexing: {count}', {count: stats.queued_files_count}) }}
-				</li>
-				<li v-for="(count, providerId) in stats.queued_documents_counts" :key="providerId">
-					{{ t('context_chat', 'Queued documents from provider {providerId} for indexing: {count}', {count, providerId}) }}
-				</li>
-				<template v-if="stats.vectordb_document_counts">
-					<li v-for="(count, providerId) in stats.vectordb_document_counts" :key="providerId">
-						{{ t('context_chat', 'Documents in VectorDB from provider {providerId}: {count}', {count, providerId}) }}
-					</li>
-				</template>
-				<li>
-					{{ t('context_chat', 'Queued content update actions: {count}', {count: stats.queued_actions_count}) }}
-				</li>
-			</ul>
+			<p>{{ t('context_chat', 'Eligible files for indexing: {count}', {count: stats.eligible_files_count}) }}</p>
+			<table>
+				<thead>
+					<tr>
+						<th>{{ t('context_chat', 'Content provider') }}</th>
+						<th>{{ t('context_chat', 'Queued documents') }}</th>
+						<th>{{ t('context_chat', 'Documents in vector database') }}</th>
+					</tr>
+				</thead>
+				<tr v-for="(count, providerId) in stats.queued_documents_counts" :key="providerId">
+					<td>{{ providerId }}</td>
+					<td>{{ count }}</td>
+					<td v-if="stats.vectordb_document_counts">
+						{{ stats.vectordb_document_counts[providerId] }}
+						<template v-if="providerId === 'files__default'">
+							{{ t('context_chat', '(out of {count} sent)', {count: stats.indexed_files_count}) }}
+						</template>
+					</td>
+					<td v-else>
+						{{ t('context_chat', 'Not available') }}
+					</td>
+				</tr>
+			</table>
+			<p>{{ t('context_chat', 'Queued content update actions: {count}', {count: stats.queued_actions_count}) }}</p>
 			<p><a href="https://docs.nextcloud.com/server/latest/admin_manual/ai/app_context_chat.html">{{ t('context_chat', 'Official documentation') }}</a></p>
 		</NcSettingsSection>
 	</div>
@@ -104,11 +108,21 @@ figure[class^='icon-'] {
 	position: relative;
 }
 
-#context_chat .loading,
-#context_chat .success {
-	position: fixed;
-	top: 70px;
-	right: 20px;
+#context_chat table {
+	border-collapse: collapse;
+	width: 100%;
+	border: 1px solid #ccc; /* Adds a border around the table */
+}
+
+#context_chat th,
+#context_chat td {
+	border: 1px solid #ccc; /* Adds borders to table cells */
+	padding: 8px; /* Adds padding inside the cells */
+	text-align: left; /* Aligns text to the left */
+}
+
+#context_chat th {
+	background-color: #f4f4f4; /* Adds a background color to the table headers */
 }
 
 #context_chat a:link, #context_chat a:visited, #context_chat a:hover {

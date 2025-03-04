@@ -9,6 +9,7 @@ namespace OCA\ContextChat\Settings;
 use OCA\ContextChat\Db\QueueContentItemMapper;
 use OCA\ContextChat\Service\ActionService;
 use OCA\ContextChat\Service\LangRopeService;
+use OCA\ContextChat\Service\ProviderConfigService;
 use OCA\ContextChat\Service\QueueService;
 use OCA\ContextChat\Service\StorageService;
 use OCP\AppFramework\Http\TemplateResponse;
@@ -52,12 +53,6 @@ class AdminSettings implements ISettings {
 			$this->logger->error($e->getMessage(), ['exception' => $e]);
 			$stats['eligible_files_count'] = 0;
 		}
-		try {
-			$stats['queued_files_count'] = $this->queueService->count();
-		} catch (Exception $e) {
-			$this->logger->error($e->getMessage(), ['exception' => $e]);
-			$stats['queued_files_count'] = 0;
-		}
 		$stats['indexed_files_count'] = Util::numericToNumber($this->appConfig->getAppValueString('indexed_files_count', '0'));
 		try {
 			$stats['queued_actions_count'] = $this->actionService->count();
@@ -72,10 +67,17 @@ class AdminSettings implements ISettings {
 			$stats['backend_available'] = false;
 		}
 		try {
-			$stats['queued_documents_counts'] = $this->contentQueue->count();
+			$queued_files_count = $this->queueService->count();
 		} catch (Exception $e) {
 			$this->logger->error($e->getMessage(), ['exception' => $e]);
-			$stats['queued_documents_counts'] = 0;
+			$queued_files_count = 0;
+		}
+		try {
+			$stats['queued_documents_counts'] = $this->contentQueue->count();
+			$stats['queued_documents_counts'][ProviderConfigService::getDefaultProviderKey()] = $queued_files_count;
+		} catch (Exception $e) {
+			$this->logger->error($e->getMessage(), ['exception' => $e]);
+			$stats['queued_documents_counts'] = [];
 		}
 
 		$this->initialState->provideInitialState('stats', $stats);
