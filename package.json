@@ -36,7 +36,9 @@
 		"npm": "^10"
 	},
 	"dependencies": {
-		"@nextcloud/vue": "^7.12.5",
+		"@nextcloud/initial-state": "^2.2.0",
+		"@nextcloud/vue": "8.x",
+		"humanize-duration": "^3.32.1",
 		"vue": "^2.7.12"
 	},
 	"devDependencies": {

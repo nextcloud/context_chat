@@ -20,6 +20,7 @@ webpackConfig.stats = {
 
 // const appId = 'context_chat'
 webpackConfig.entry = {
+	'admin': './src/admin.js',
 }
 
 webpackConfig.plugins.push(
