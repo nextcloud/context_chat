@@ -54,18 +54,68 @@ class StorageService {
 	 * @throws Exception
 	 */
 	public function countFiles(): int {
-		$mimeTypes = array_map(fn ($mimeType) => $this->mimeTypes->getId($mimeType), Application::MIMETYPES);
+		$totalCount = 0;
+		foreach ($this->getMounts() as $mount) {
+			$totalCount += $this->countFilesInMount($mount['storage_id'], $mount['root_id']);
+		}
+		return $totalCount;
+	}
+
+	/**
+	 * @param int $storageId
+	 * @param int $rootId
+	 * @return int
+	 */
+	public function countFilesInMount(int $storageId, int $rootId): int {
 		$qb = $this->getCacheQueryBuilder();
-		$qb->select($qb->func()->count('*'))
-			->from('filecache', 'filecache')
-			->where($qb->expr()->in('mimetype', $qb->createNamedParameter($mimeTypes, IQueryBuilder::PARAM_INT_ARRAY)));
-		$result = $qb->executeQuery();
-		$count = $result->fetchOne();
-		$result->closeCursor();
-		if ($count === false) {
+		try {
+			$qb->selectFileCache();
+			$qb->andWhere($qb->expr()->eq('filecache.fileid', $qb->createNamedParameter($rootId, IQueryBuilder::PARAM_INT)));
+			$result = $qb->executeQuery();
+			/** @var array{path:string}|false $root */
+			$root = $result->fetch();
+			$result->closeCursor();
+		} catch (Exception $e) {
+			$this->logger->error('Could not fetch storage root', ['exception' => $e]);
 			return 0;
 		}
-		return $count;
+
+		if ($root === false) {
+			$this->logger->error('Could not fetch storage root');
+			return 0;
+		}
+
+		$mimeTypes = array_map(fn ($mimeType) => $this->mimeTypes->getId($mimeType), Application::MIMETYPES);
+
+		$qb = $this->getCacheQueryBuilder();
+
+		try {
+			$path = $root['path'] === '' ? '' : $root['path'] . '/';
+
+			$qb->select($qb->func()->count('*'))
+				->from('filecache', 'filecache');
+			$qb->andWhere($qb->expr()->eq('filecache.storage', $qb->createNamedParameter($storageId, IQueryBuilder::PARAM_INT)));
+			$qb->innerJoin('filecache', 'filecache', 'p', $qb->expr()->eq('filecache.parent', 'p.fileid'));
+			$qb
+				->andWhere($qb->expr()->like('filecache.path', $qb->createNamedParameter($path . '%')))
+				->andWhere($qb->expr()->eq('filecache.storage', $qb->createNamedParameter($storageId)))
+				->andWhere($qb->expr()->in('filecache.mimetype', $qb->createNamedParameter($mimeTypes, IQueryBuilder::PARAM_INT_ARRAY)))
+				->andWhere($qb->expr()->lte('filecache.size', $qb->createNamedParameter(Application::CC_MAX_SIZE, IQueryBuilder::PARAM_INT)))
+				->andWhere($qb->expr()->gt('filecache.size', $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT)))
+				->andWhere($qb->expr()->eq('p.encrypted', $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT)));
+			$result = $qb->executeQuery();
+		} catch (Exception $e) {
+			$this->logger->error('Could not count files in mount: storage=' . $storageId . ' root=' . $rootId, ['exception' => $e]);
+			return 0;
+		}
+
+		$countInMount = $result->fetchOne();
+		$result->closeCursor();
+		if ($countInMount === false) {
+			$this->logger->warning('Could not count files in mount: storage=' . $storageId . ' root=' . $rootId);
+			return 0;
+		}
+		return $countInMount;
 	}
 
 	/**
@@ -116,7 +166,6 @@ class StorageService {
 	/**
 	 * @param int $storageId
 	 * @param int $rootId
-	 * @param array $models
 	 * @param int $lastFileId
 	 * @param int $maxResults
 	 * @return \Generator<int,int,mixed,void>
@@ -124,9 +173,9 @@ class StorageService {
 	public function getFilesInMount(int $storageId, int $rootId, int $lastFileId = 0, int $maxResults = 100): \Generator {
 		$qb = $this->getCacheQueryBuilder();
 		try {
-			$result = $qb->selectFileCache()
-				->andWhere($qb->expr()->eq('filecache.fileid', $qb->createNamedParameter($rootId, IQueryBuilder::PARAM_INT)))
-				->executeQuery();
+			$qb->selectFileCache();
+			$qb->andWhere($qb->expr()->eq('filecache.fileid', $qb->createNamedParameter($rootId, IQueryBuilder::PARAM_INT)));
+			$result = $qb->executeQuery();
 			/** @var array{path:string}|false $root */
 			$root = $result->fetch();
 			$result->closeCursor();
@@ -147,12 +196,15 @@ class StorageService {
 		try {
 			$path = $root['path'] === '' ? '' : $root['path'] . '/';
 
-			$qb->selectFileCache()
-				->whereStorageId($storageId)
+			$qb->selectFileCache();
+			$qb->whereStorageId($storageId);
+			$qb->innerJoin('filecache', 'filecache', 'p', $qb->expr()->eq('filecache.parent', 'p.id'));
+			$qb
 				->andWhere($qb->expr()->like('path', $qb->createNamedParameter($path . '%')))
 				->andWhere($qb->expr()->eq('storage', $qb->createNamedParameter($storageId)))
 				->andWhere($qb->expr()->gt('filecache.fileid', $qb->createNamedParameter($lastFileId)))
-				->andWhere($qb->expr()->in('mimetype', $qb->createNamedParameter($mimeTypes, IQueryBuilder::PARAM_INT_ARRAY)));
+				->andWhere($qb->expr()->in('mimetype', $qb->createNamedParameter($mimeTypes, IQueryBuilder::PARAM_INT_ARRAY)))
+				->andWhere($qb->expr()->eq('p.encrypted', $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT)));
 
 			if ($maxResults !== 0) {
 				$qb->setMaxResults($maxResults);
