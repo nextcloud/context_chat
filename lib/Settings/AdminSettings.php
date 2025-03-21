@@ -65,6 +65,7 @@ class AdminSettings implements ISettings {
 			$stats['backend_available'] = true;
 		} catch (\RuntimeException $e) {
 			$stats['backend_available'] = false;
+			$stats['vectordb_document_counts'] = [ ProviderConfigService::getDefaultProviderKey() => 0 ];
 		}
 		try {
 			$queued_files_count = $this->queueService->count();

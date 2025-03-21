@@ -21,7 +21,6 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 			<NcNoteCard v-if="stats.initial_indexing_complete && stats.eligible_files_count > stats.vectordb_document_counts['files__default'] * 1.2" type="warning">
 				{{ t('context_chat', 'Less files were indexed than expected. Only {percent}% files out of {eligibleCount} are in the VectorDB.', {percent: Math.round((stats.vectordb_document_counts['files__default'] / stats.eligible_files_count) * 100), eligibleCount: stats.eligible_files_count}) }}
 			</NcNoteCard>
-			<p>{{ t('context_chat', 'Eligible files for indexing: {count}', {count: stats.eligible_files_count}) }}</p>
 			<table>
 				<thead>
 					<tr>
@@ -44,6 +43,8 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 					</td>
 				</tr>
 			</table>
+			<p>&nbsp;</p>
+			<p>{{ t('context_chat', 'Eligible files for indexing: {count}', {count: stats.eligible_files_count}) }}</p>
 			<p>{{ t('context_chat', 'Queued content update actions: {count}', {count: stats.queued_actions_count}) }}</p>
 			<p><a href="https://docs.nextcloud.com/server/latest/admin_manual/ai/app_context_chat.html">{{ t('context_chat', 'Official documentation') }}</a></p>
 		</NcSettingsSection>
