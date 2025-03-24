@@ -112,18 +112,18 @@ figure[class^='icon-'] {
 #context_chat table {
 	border-collapse: collapse;
 	width: 100%;
-	border: 1px solid #ccc; /* Adds a border around the table */
+	border: 1px solid #ccc;
 }
 
 #context_chat th,
 #context_chat td {
-	border: 1px solid #ccc; /* Adds borders to table cells */
-	padding: 8px; /* Adds padding inside the cells */
-	text-align: left; /* Aligns text to the left */
+	border: 1px solid #ccc;
+	padding: 8px;
+	text-align: left;
 }
 
 #context_chat th {
-	background-color: #f4f4f4; /* Adds a background color to the table headers */
+	background-color: var(--color-background-dark);
 }
 
 #context_chat a:link, #context_chat a:visited, #context_chat a:hover {
