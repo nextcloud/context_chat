@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace OCA\ContextChat\Db;
 
+use OCA\ContextChat\Service\ProviderConfigService;
 use OCP\AppFramework\Db\QBMapper;
 use OCP\IDBConnection;
 
@@ -49,5 +50,23 @@ class QueueContentItemMapper extends QBMapper {
 		$qb->delete($this->getTableName())
 			->where($qb->expr()->eq('id', $qb->createPositionalParameter($item->getId())))
 			->executeStatement();
+	}
+
+	/**
+	 * @throws \OCP\DB\Exception
+	 * @return array<string, int>
+	 */
+	public function count() : array {
+		$qb = $this->db->getQueryBuilder();
+		$result = $qb->select($qb->func()->count('id', 'count'), 'app_id', 'provider_id')
+			->from($this->getTableName())
+			->groupBy('app_id', 'provider_id')
+			->executeQuery();
+		$stats = [];
+		while (($row = $result->fetch()) !== false) {
+			$provider = ProviderConfigService::getConfigKey($row['app_id'], $row['provider_id']);
+			$stats[$provider] = $row['count'];
+		}
+		return $stats;
 	}
 }
