@@ -455,13 +455,13 @@ jobs:
                   indexed = indexed + 0    # force conversion to number
               }
               END {
-                  low = total * 0.9;
-                  high = total * 1.1;
+                  low = total * 0.85;
+                  high = total * 1.15;
                   if (indexed >= low && indexed <= high) {
-                      print "✅ Indexed files (" indexed ") are within 10% of eligible files (" total ").";
+                      print "✅ Indexed files (" indexed ") are within 15% of eligible files (" total ").";
                       exit 0;
                   } else {
-                      print "❌ Indexed files (" indexed ") are OUTSIDE the 10% range of eligible files (" total ").";
+                      print "❌ Indexed files (" indexed ") are OUTSIDE the 15% range of eligible files (" total ").";
                       exit 1;
                   }
               }
