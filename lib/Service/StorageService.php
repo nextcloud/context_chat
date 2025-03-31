@@ -141,8 +141,9 @@ class StorageService {
 				// Only crawl files, not cache or trashbin
 				$qb = $this->getCacheQueryBuilder();
 				try {
+					$qb->selectFileCache();
 					/** @var array|false $root */
-					$root = $qb->selectFileCache()
+					$root = $qb
 						->andWhere($qb->expr()->eq('filecache.storage', $qb->createNamedParameter($storageId, IQueryBuilder::PARAM_INT)))
 						->andWhere($qb->expr()->eq('filecache.path', $qb->createNamedParameter('files')))
 						->executeQuery()->fetch();
@@ -196,14 +197,14 @@ class StorageService {
 		try {
 			$path = $root['path'] === '' ? '' : $root['path'] . '/';
 
-			$qb->selectFileCache();
-			$qb->whereStorageId($storageId);
-			$qb->innerJoin('filecache', 'filecache', 'p', $qb->expr()->eq('filecache.parent', 'p.id'));
+			$qb->select('*')
+				->from('filecache', 'filecache');
+			$qb->innerJoin('filecache', 'filecache', 'p', $qb->expr()->eq('filecache.parent', 'p.fileid'));
 			$qb
-				->andWhere($qb->expr()->like('path', $qb->createNamedParameter($path . '%')))
-				->andWhere($qb->expr()->eq('storage', $qb->createNamedParameter($storageId)))
+				->andWhere($qb->expr()->like('filecache.path', $qb->createNamedParameter($path . '%')))
+				->andWhere($qb->expr()->eq('filecache.storage', $qb->createNamedParameter($storageId)))
 				->andWhere($qb->expr()->gt('filecache.fileid', $qb->createNamedParameter($lastFileId)))
-				->andWhere($qb->expr()->in('mimetype', $qb->createNamedParameter($mimeTypes, IQueryBuilder::PARAM_INT_ARRAY)))
+				->andWhere($qb->expr()->in('filecache.mimetype', $qb->createNamedParameter($mimeTypes, IQueryBuilder::PARAM_INT_ARRAY)))
 				->andWhere($qb->expr()->eq('p.encrypted', $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT)));
 
 			if ($maxResults !== 0) {
