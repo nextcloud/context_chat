@@ -10,6 +10,24 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [4.2.0] - 2025-04-03
+
+### Added
+
+* Add an Admin settings UI to display stats (#113) @marcelklehr
+
+### Fixed
+
+* fix(Queued jobs): run successor jobs only after a 5min break (#111) @marcelklehr
+* fix(ActionJob): Use IJobList#scheduleAfter instead of IJobList#add (#112) @marcelklehr
+* fix: Use chunked DELETE for QueueService#removeFromQueue (#114) @marcelklehr
+* fix: only remove successful or non-5xx actions from db (#116) @marcelklehr
+* fix(ActionService): Don't schedule updates with empty userIds array (#117) @marcelklehr
+* fix(IndexerJob): Add try catch (#118) @marcelklehr
+* fix(StorageService#countFiles): Only count files with the correct size and only in eligible mounts (#119) @marcelklehr
+* fix(StorageService): Fix file cache queries (#120) @marcelklehr
+
+
 ## [4.1.0] - 2025-02-21
 
 ### New
