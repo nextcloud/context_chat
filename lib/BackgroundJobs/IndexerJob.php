@@ -18,6 +18,7 @@ use OCA\ContextChat\Service\ProviderConfigService;
 use OCA\ContextChat\Service\QueueService;
 use OCA\ContextChat\Service\StorageService;
 use OCA\ContextChat\Type\Source;
+use OCP\App\IAppManager;
 use OCP\AppFramework\Services\IAppConfig;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\IJobList;
@@ -64,6 +65,7 @@ class IndexerJob extends TimedJob {
 		private IAppConfig $appConfig,
 		private DiagnosticService $diagnosticService,
 		private ITimeFactory $timeFactory,
+		private IAppManager $appManager,
 	) {
 		parent::__construct($time);
 		$this->setInterval($this->getJobInterval());
@@ -79,6 +81,11 @@ class IndexerJob extends TimedJob {
 	 * @throws \Throwable
 	 */
 	public function run($argument): void {
+		if (!$this->appManager->isInstalled('app_api')) {
+			$this->logger->warning('IndexerJob is skipped as app_api is disabled');
+			return;
+		}
+
 		/**
 		 * @var int $storageId
 		 */
