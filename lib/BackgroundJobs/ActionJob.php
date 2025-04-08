@@ -13,6 +13,7 @@ use OCA\ContextChat\Db\QueueActionMapper;
 use OCA\ContextChat\Service\DiagnosticService;
 use OCA\ContextChat\Service\LangRopeService;
 use OCA\ContextChat\Type\ActionType;
+use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\IJobList;
 use OCP\BackgroundJob\QueuedJob;
@@ -28,11 +29,17 @@ class ActionJob extends QueuedJob {
 		private IJobList $jobList,
 		private LoggerInterface $logger,
 		private DiagnosticService $diagnosticService,
+		private IAppManager $appManager,
 	) {
 		parent::__construct($timeFactory);
 	}
 
 	protected function run($argument): void {
+		if (!$this->appManager->isInstalled('app_api')) {
+			$this->logger->warning('ActionJob is skipped as app_api is disabled');
+			return;
+		}
+
 		$this->diagnosticService->sendJobStart(static::class, $this->getId());
 		$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
 		$entities = $this->actionMapper->getFromQueue(static::BATCH_SIZE);
