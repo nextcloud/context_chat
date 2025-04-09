@@ -34,7 +34,6 @@ Refer to the [Context Chat Backend's readme](https://github.com/nextcloud/contex
     <category>integration</category>
     <website>https://github.com/nextcloud/context_chat</website>
     <bugs>https://github.com/nextcloud/context_chat/issues</bugs>
-    <screenshot>https://raw.githubusercontent.com/nextcloud/context_chat/main/img/Logo.png</screenshot>
     <screenshot>https://raw.githubusercontent.com/nextcloud/context_chat/main/screenshots/context_chat_1.png</screenshot>
     <screenshot>https://raw.githubusercontent.com/nextcloud/context_chat/main/screenshots/context_chat_2.png</screenshot>
     <screenshot>https://raw.githubusercontent.com/nextcloud/context_chat/main/screenshots/context_chat_4.png</screenshot>
