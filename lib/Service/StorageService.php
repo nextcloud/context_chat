@@ -156,10 +156,11 @@ class StorageService {
 					/** @var array|false $root */
 					$root = $qb
 						->andWhere($qb->expr()->eq('filecache.storage', $qb->createNamedParameter($storageId, IQueryBuilder::PARAM_INT)))
-						->andWhere($qb->expr()->eq('filecache.path', $qb->createNamedParameter('files')))
+						->andWhere($qb->expr()->eq('filecache.name', $qb->createNamedParameter('files')))
+						->andWhere($qb->expr()->eq('filecache.parent', $qb->createNamedParameter($rootId, IQueryBuilder::PARAM_INT)))
 						->executeQuery()->fetch();
 					if ($root !== false) {
-						$overrideRoot = intval($root['fileid']);
+						$overrideRoot = (int)$root['fileid'];
 					}
 				} catch (Exception $e) {
 					$this->logger->error('Could not fetch home storage files root for storage ' . $storageId, ['exception' => $e]);
