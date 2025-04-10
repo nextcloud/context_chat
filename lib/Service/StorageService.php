@@ -94,15 +94,24 @@ class StorageService {
 
 			$qb->select($qb->func()->count('*'))
 				->from('filecache', 'filecache');
+
+			// End to end encrypted files are descendants of a folder with encrypted=1
+			// Use a subquery to check the `encrypted` status of the parent folder
+			$subQuery = $this->getCacheQueryBuilder()->select('p.encrypted')
+				->from('filecache', 'p')
+				->andWhere($qb->expr()->eq('p.fileid', 'filecache.parent'))
+				->getSQL();
+
+			$qb->andWhere(
+				$qb->expr()->eq($qb->createFunction(sprintf('(%s)', $subQuery)), $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT))
+			);
 			$qb->andWhere($qb->expr()->eq('filecache.storage', $qb->createNamedParameter($storageId, IQueryBuilder::PARAM_INT)));
-			$qb->innerJoin('filecache', 'filecache', 'p', $qb->expr()->eq('filecache.parent', 'p.fileid'));
 			$qb
 				->andWhere($qb->expr()->like('filecache.path', $qb->createNamedParameter($path . '%')))
 				->andWhere($qb->expr()->eq('filecache.storage', $qb->createNamedParameter($storageId)))
 				->andWhere($qb->expr()->in('filecache.mimetype', $qb->createNamedParameter($mimeTypes, IQueryBuilder::PARAM_INT_ARRAY)))
 				->andWhere($qb->expr()->lte('filecache.size', $qb->createNamedParameter(Application::CC_MAX_SIZE, IQueryBuilder::PARAM_INT)))
-				->andWhere($qb->expr()->gt('filecache.size', $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT)))
-				->andWhere($qb->expr()->eq('p.encrypted', $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT)));
+				->andWhere($qb->expr()->gt('filecache.size', $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT)));
 			$result = $qb->executeQuery();
 		} catch (Exception $e) {
 			$this->logger->error('Could not count files in mount: storage=' . $storageId . ' root=' . $rootId, ['exception' => $e]);
@@ -147,10 +156,11 @@ class StorageService {
 					/** @var array|false $root */
 					$root = $qb
 						->andWhere($qb->expr()->eq('filecache.storage', $qb->createNamedParameter($storageId, IQueryBuilder::PARAM_INT)))
-						->andWhere($qb->expr()->eq('filecache.path', $qb->createNamedParameter('files')))
+						->andWhere($qb->expr()->eq('filecache.name', $qb->createNamedParameter('files')))
+						->andWhere($qb->expr()->eq('filecache.parent', $qb->createNamedParameter($rootId, IQueryBuilder::PARAM_INT)))
 						->executeQuery()->fetch();
 					if ($root !== false) {
-						$overrideRoot = intval($root['fileid']);
+						$overrideRoot = (int)$root['fileid'];
 					}
 				} catch (Exception $e) {
 					$this->logger->error('Could not fetch home storage files root for storage ' . $storageId, ['exception' => $e]);
@@ -201,13 +211,21 @@ class StorageService {
 
 			$qb->select('*')
 				->from('filecache', 'filecache');
-			$qb->innerJoin('filecache', 'filecache', 'p', $qb->expr()->eq('filecache.parent', 'p.fileid'));
+			// End to end encrypted files are descendants of a folder with encrypted=1
+			// Use a subquery to check the `encrypted` status of the parent folder
+			$subQuery = $this->getCacheQueryBuilder()->select('p.encrypted')
+				->from('filecache', 'p')
+				->andWhere($qb->expr()->eq('p.fileid', 'filecache.parent'))
+				->getSQL();
+
+			$qb->andWhere(
+				$qb->expr()->eq($qb->createFunction(sprintf('(%s)', $subQuery)), $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT))
+			);
 			$qb
 				->andWhere($qb->expr()->like('filecache.path', $qb->createNamedParameter($path . '%')))
 				->andWhere($qb->expr()->eq('filecache.storage', $qb->createNamedParameter($storageId)))
 				->andWhere($qb->expr()->gt('filecache.fileid', $qb->createNamedParameter($lastFileId)))
-				->andWhere($qb->expr()->in('filecache.mimetype', $qb->createNamedParameter($mimeTypes, IQueryBuilder::PARAM_INT_ARRAY)))
-				->andWhere($qb->expr()->eq('p.encrypted', $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT)));
+				->andWhere($qb->expr()->in('filecache.mimetype', $qb->createNamedParameter($mimeTypes, IQueryBuilder::PARAM_INT_ARRAY)));
 
 			if ($maxResults !== 0) {
 				$qb->setMaxResults($maxResults);
@@ -242,9 +260,9 @@ class StorageService {
 
 	/**
 	 * @param Node $node
-	 * @return array<File>
+	 * @return \Generator
 	 */
-	public function getAllFilesInFolder(Node $node): array {
+	public function getAllFilesInFolder(Node $node): \Generator {
 		if (!$node instanceof Folder) {
 			return [];
 		}
@@ -260,10 +278,8 @@ class StorageService {
 			if (!$node instanceof File) {
 				continue;
 			}
-			$files[] = $node;
+			yield $node;
 		}
-
-		return $files;
 	}
 
 	private function getCacheQueryBuilder(): CacheQueryBuilder {
