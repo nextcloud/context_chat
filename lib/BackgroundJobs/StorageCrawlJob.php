@@ -24,9 +24,9 @@ use Psr\Log\LoggerInterface;
 
 class StorageCrawlJob extends QueuedJob {
 	public const BATCH_SIZE = 2000;
-    const DEFAULT_JOB_INTERVAL = 5 * 60;
+	public const DEFAULT_JOB_INTERVAL = 5 * 60;
 
-    public function __construct(
+	public function __construct(
 		ITimeFactory $timeFactory,
 		private LoggerInterface $logger,
 		private QueueService $queue,
@@ -85,7 +85,7 @@ class StorageCrawlJob extends QueuedJob {
 		$this->diagnosticService->sendJobEnd(static::class, $this->getId());
 	}
 
-    protected function getJobInterval(): int {
-        return $this->appConfig->getValueInt(Application::APP_ID, 'crawl_job_interval', self::DEFAULT_JOB_INTERVAL);
-    }
+	protected function getJobInterval(): int {
+		return $this->appConfig->getValueInt(Application::APP_ID, 'crawl_job_interval', self::DEFAULT_JOB_INTERVAL);
+	}
 }
