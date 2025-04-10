@@ -259,9 +259,9 @@ class StorageService {
 
 	/**
 	 * @param Node $node
-	 * @return array<File>
+	 * @return \Generator
 	 */
-	public function getAllFilesInFolder(Node $node): array {
+	public function getAllFilesInFolder(Node $node): \Generator {
 		if (!$node instanceof Folder) {
 			return [];
 		}
@@ -277,10 +277,8 @@ class StorageService {
 			if (!$node instanceof File) {
 				continue;
 			}
-			$files[] = $node;
+			yield $node;
 		}
-
-		return $files;
 	}
 
 	private function getCacheQueryBuilder(): CacheQueryBuilder {
