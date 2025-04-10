@@ -434,6 +434,7 @@ jobs:
           ./occ files:scan admin
           # Run cron in speed mode: Set interval to 0 minutes
           ./occ config:app:set --value 30 --type integer context_chat indexing_job_interval # 30 seconds
+          ./occ config:app:set --value 10 --type integer context_chat crawl_job_interval # 10 seconds
           for i in {1..100}; do 
             php cron.php -v &
             wait
