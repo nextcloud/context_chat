@@ -95,16 +95,16 @@ class StorageService {
 			$qb->select($qb->func()->count('*'))
 				->from('filecache', 'filecache');
 
-            // End to end encrypted files are descendants of a folder with encrypted=1
-            // Use a subquery to check the `encrypted` status of the parent folder
-            $subQuery = $this->getCacheQueryBuilder()->select('p.encrypted')
-                ->from('filecache', 'p')
-                ->andWhere($qb->expr()->eq('p.fileid', 'filecache.parent'))
-                ->getSQL();
+			// End to end encrypted files are descendants of a folder with encrypted=1
+			// Use a subquery to check the `encrypted` status of the parent folder
+			$subQuery = $this->getCacheQueryBuilder()->select('p.encrypted')
+				->from('filecache', 'p')
+				->andWhere($qb->expr()->eq('p.fileid', 'filecache.parent'))
+				->getSQL();
 
-            $qb->andWhere(
-                $qb->expr()->eq($qb->createFunction(sprintf('(%s)', $subQuery)), $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT))
-            );
+			$qb->andWhere(
+				$qb->expr()->eq($qb->createFunction(sprintf('(%s)', $subQuery)), $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT))
+			);
 			$qb->andWhere($qb->expr()->eq('filecache.storage', $qb->createNamedParameter($storageId, IQueryBuilder::PARAM_INT)));
 			$qb
 				->andWhere($qb->expr()->like('filecache.path', $qb->createNamedParameter($path . '%')))
@@ -211,16 +211,16 @@ class StorageService {
 
 			$qb->select('*')
 				->from('filecache', 'filecache');
-            // End to end encrypted files are descendants of a folder with encrypted=1
-            // Use a subquery to check the `encrypted` status of the parent folder
-            $subQuery = $this->getCacheQueryBuilder()->select('p.encrypted')
-                ->from('filecache', 'p')
-                ->andWhere($qb->expr()->eq('p.fileid', 'filecache.parent'))
-                ->getSQL();
+			// End to end encrypted files are descendants of a folder with encrypted=1
+			// Use a subquery to check the `encrypted` status of the parent folder
+			$subQuery = $this->getCacheQueryBuilder()->select('p.encrypted')
+				->from('filecache', 'p')
+				->andWhere($qb->expr()->eq('p.fileid', 'filecache.parent'))
+				->getSQL();
 
-            $qb->andWhere(
-                $qb->expr()->eq($qb->createFunction(sprintf('(%s)', $subQuery)), $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT))
-            );
+			$qb->andWhere(
+				$qb->expr()->eq($qb->createFunction(sprintf('(%s)', $subQuery)), $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT))
+			);
 			$qb
 				->andWhere($qb->expr()->like('filecache.path', $qb->createNamedParameter($path . '%')))
 				->andWhere($qb->expr()->eq('filecache.storage', $qb->createNamedParameter($storageId)))
