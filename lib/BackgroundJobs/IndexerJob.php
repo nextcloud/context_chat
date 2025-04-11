@@ -11,7 +11,6 @@ namespace OCA\ContextChat\BackgroundJobs;
 
 use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\Db\QueueFile;
-use OCA\ContextChat\Exceptions\RetryIndexException;
 use OCA\ContextChat\Logger;
 use OCA\ContextChat\Service\DiagnosticService;
 use OCA\ContextChat\Service\LangRopeService;
@@ -183,7 +182,7 @@ class IndexerJob extends TimedJob {
 		$trackedQFiles = [];
 		$size = 0;
 
-		foreach ($files as $queueFile) {
+		foreach ($files as $i => $queueFile) {
 			$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
 			if ($startTime + $maxTime < time()) {
 				break;
@@ -209,28 +208,6 @@ class IndexerJob extends TimedJob {
 					continue;
 				}
 
-				if ($size + $fileSize > $maxSize || count($sources) >= Application::CC_MAX_FILES) {
-					try {
-						$loadSourcesResult = $this->langRopeService->indexSources($sources);
-						$this->diagnosticService->sendIndexedFiles(count($loadSourcesResult['loaded_sources']));
-						$loadedSources = array_merge($loadedSources, $loadSourcesResult['loaded_sources']);
-						$retryQFiles = array_merge($retryQFiles, array_map(fn ($sourceId) => $trackedQFiles[$sourceId], $loadSourcesResult['sources_to_retry']));
-						$sources = [];
-						$trackedQFiles = [];
-						$size = 0;
-					} catch (RetryIndexException $e) {
-						$this->contextChatLogger->info('[IndexerJob] At least one source is already being processed from another request, trying again soon', ['exception' => $e, 'storageId' => $this->storageId, 'rootId' => $this->rootId]);
-						$retryQFiles = array_merge($retryQFiles, array_values($trackedQFiles));
-						$sources = [];
-						$trackedQFiles = [];
-						$size = 0;
-						continue;
-					}
-				}
-
-				$userIds = $this->storageService->getUsersForFileId($queueFile->getFileId());
-				$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
-
 				try {
 					$fileHandle = $file->fopen('r');
 				} catch (NotPermittedException $e) {
@@ -246,6 +223,9 @@ class IndexerJob extends TimedJob {
 					continue;
 				}
 
+
+				$size += $fileSize;
+				$userIds = $this->storageService->getUsersForFileId($queueFile->getFileId());
 				$sources[] = new Source(
 					$userIds,
 					ProviderConfigService::getSourceId($file->getId()),
@@ -257,24 +237,26 @@ class IndexerJob extends TimedJob {
 				);
 				$trackedQFiles[ProviderConfigService::getSourceId($file->getId())] = $queueFile;
 				$allSourceIds[] = ProviderConfigService::getSourceId($file->getId());
+
+				// Either the buffer is full, or we're at the last item
+				if ($size > $maxSize || count($sources) >= Application::CC_MAX_FILES || $i === count($files) - 1) {
+					$loadSourcesResult = $this->langRopeService->indexSources($sources);
+					// track files
+					$this->diagnosticService->sendIndexedFiles(count($loadSourcesResult['loaded_sources']));
+					$loadedSources = array_merge($loadedSources, $loadSourcesResult['loaded_sources']);
+					$sourcesToRetry = array_merge($sourcesToRetry, $loadSourcesResult['sources_to_retry']);
+					$retryQFiles = array_merge($retryQFiles, array_map(fn ($sourceId) => $trackedQFiles[$sourceId], $loadSourcesResult['sources_to_retry']));
+					$this->contextChatLogger->debug('[IndexerJob] Indexed ' . count($loadSourcesResult['loaded_sources']) . ' files: ' . json_encode($this->exportFileSources($loadSourcesResult['loaded_sources']), \JSON_THROW_ON_ERROR | \JSON_OBJECT_AS_ARRAY), ['storageId' => $this->storageId, 'rootId' => $this->rootId]);
+					$this->contextChatLogger->debug('[IndexerJob] ' . count($loadSourcesResult['sources_to_retry']) . ' files to retry: ' . json_encode($this->exportFileSources($loadSourcesResult['sources_to_retry']), \JSON_THROW_ON_ERROR | \JSON_OBJECT_AS_ARRAY), ['storageId' => $this->storageId, 'rootId' => $this->rootId]);
+
+					// reset buffer
+					$sources = [];
+					$trackedQFiles = [];
+					$size = 0;
+				}
 			} catch (InvalidPathException|NotFoundException $e) {
 				$this->contextChatLogger->error('[IndexerJob] Could not find file ' . $file->getPath(), ['exception' => $e, 'storageId' => $this->storageId, 'rootId' => $this->rootId]);
 				continue;
-			}
-		}
-
-		if (count($sources) > 0) {
-			try {
-				$loadSourcesResult = $this->langRopeService->indexSources($sources);
-				$this->diagnosticService->sendIndexedFiles(count($loadSourcesResult['loaded_sources']));
-				$loadedSources = array_merge($loadedSources, $loadSourcesResult['loaded_sources']);
-				$sourcesToRetry = array_merge($sourcesToRetry, $loadSourcesResult['sources_to_retry']);
-				$retryQFiles = array_merge($retryQFiles, array_map(fn ($sourceId) => $trackedQFiles[$sourceId], $loadSourcesResult['sources_to_retry']));
-				$this->contextChatLogger->debug('[IndexerJob] Indexed ' . count($loadSourcesResult['loaded_sources']) . ' files: ' . json_encode($this->exportFileSources($loadSourcesResult['loaded_sources']), \JSON_THROW_ON_ERROR | \JSON_OBJECT_AS_ARRAY), ['storageId' => $this->storageId, 'rootId' => $this->rootId]);
-				$this->contextChatLogger->debug('[IndexerJob] ' . count($loadSourcesResult['sources_to_retry']) . ' files to retry: ' . json_encode($this->exportFileSources($loadSourcesResult['sources_to_retry']), \JSON_THROW_ON_ERROR | \JSON_OBJECT_AS_ARRAY), ['storageId' => $this->storageId, 'rootId' => $this->rootId]);
-			} catch (RetryIndexException $e) {
-				$this->contextChatLogger->debug('[IndexerJob] At least one source is already being processed from another request, trying again soon', ['exception' => $e, 'storageId' => $this->storageId, 'rootId' => $this->rootId]);
-				return;
 			}
 		}
 
