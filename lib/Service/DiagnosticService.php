@@ -52,7 +52,6 @@ class DiagnosticService {
 	 * @return void
 	 */
 	public function sendHeartbeat(string $class, int $id): void {
-		$this->contextChatLogger->info('Background jobs: ' . $class . ' ' . $id . ' running');
 	}
 
 	/**
