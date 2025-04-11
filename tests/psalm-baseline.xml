@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-  - SPDX-FileCopyrightText: 2023 Nextcloud GmbH and Nextcloud contributors
-  - SPDX-License-Identifier: AGPL-3.0-or-later
--->
 <files psalm-version="5.26.1@d747f6500b38ac4f7dfc5edbcae6e4b637d7add0">
   <file src="lib/BackgroundJobs/IndexerJob.php">
     <UndefinedClass>
       <code><![CDATA[\OC_Util]]></code>
+    </UndefinedClass>
+  </file>
+  <file src="lib/BackgroundJobs/RotateLogsJob.php">
+    <UndefinedClass>
+      <code><![CDATA[\OC]]></code>
     </UndefinedClass>
   </file>
   <file src="lib/Command/Diagnostics.php">
@@ -27,6 +28,11 @@
   <file src="lib/Command/Statistics.php">
     <UndefinedClass>
       <code><![CDATA[Command]]></code>
+    </UndefinedClass>
+  </file>
+  <file src="lib/Logger.php">
+    <UndefinedClass>
+      <code><![CDATA[\OC]]></code>
     </UndefinedClass>
   </file>
 </files>
