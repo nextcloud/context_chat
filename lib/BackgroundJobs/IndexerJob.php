@@ -138,7 +138,7 @@ class IndexerJob extends TimedJob {
 				$this->jobList->remove(static::class, $argument);
 				$this->setInitialIndexCompletion();
 			} elseif (count($files) === 0) {
-				$this->contextChatLogger->debug('[IndexerJob] No files processed, we keep the job around to wait for potential StorageCrawlJob instances to finish');
+				$this->contextChatLogger->debug('[IndexerJob] No files left in queue, but we keep the job around to wait for potential StorageCrawlJob instances to finish');
 
 			}
 		} catch (Exception $e) {
@@ -246,8 +246,10 @@ class IndexerJob extends TimedJob {
 					$loadedSources = array_merge($loadedSources, $loadSourcesResult['loaded_sources']);
 					$sourcesToRetry = array_merge($sourcesToRetry, $loadSourcesResult['sources_to_retry']);
 					$retryQFiles = array_merge($retryQFiles, array_map(fn ($sourceId) => $trackedQFiles[$sourceId], $loadSourcesResult['sources_to_retry']));
+					$failedSources = array_diff(array_map(fn (Source $source) => $source->reference, $sources), $loadSourcesResult['loaded_sources'], $loadSourcesResult['sources_to_retry']);
 					$this->contextChatLogger->debug('[IndexerJob] Indexed ' . count($loadSourcesResult['loaded_sources']) . ' files: ' . json_encode($this->exportFileSources($loadSourcesResult['loaded_sources']), \JSON_THROW_ON_ERROR | \JSON_OBJECT_AS_ARRAY), ['storageId' => $this->storageId, 'rootId' => $this->rootId]);
 					$this->contextChatLogger->debug('[IndexerJob] ' . count($loadSourcesResult['sources_to_retry']) . ' files to retry: ' . json_encode($this->exportFileSources($loadSourcesResult['sources_to_retry']), \JSON_THROW_ON_ERROR | \JSON_OBJECT_AS_ARRAY), ['storageId' => $this->storageId, 'rootId' => $this->rootId]);
+					$this->contextChatLogger->debug('[IndexerJob] ' . count($failedSources) . ' files failed: ' . json_encode($this->exportFileSources($failedSources), \JSON_THROW_ON_ERROR | \JSON_OBJECT_AS_ARRAY), ['storageId' => $this->storageId, 'rootId' => $this->rootId]);
 
 					// reset buffer
 					$sources = [];
@@ -260,7 +262,7 @@ class IndexerJob extends TimedJob {
 			}
 		}
 
-		$emptyInvalidSources = array_values(array_diff(array_diff($allSourceIds, $loadedSources), $sourcesToRetry));
+		$emptyInvalidSources = array_values(array_diff($allSourceIds, $loadedSources, $sourcesToRetry));
 		if (count($emptyInvalidSources) > 0) {
 			$this->contextChatLogger->info('[IndexerJob] Invalid or empty files that were not indexed (n=' . count($emptyInvalidSources) . '): ' .
 				json_encode($this->exportFileSources($emptyInvalidSources), \JSON_THROW_ON_ERROR | \JSON_OBJECT_AS_ARRAY),
