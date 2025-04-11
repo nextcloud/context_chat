@@ -48,32 +48,32 @@ class Logger {
 	}
 
 	public function error($message, array $context = []): void {
-		$this->parentLogger->error($message, $context);
+		$this->parentLogger->critical($message, $context);
 		$this->ncLogger->error($message, $context);
 	}
 
 	public function warning($message, array $context = []): void {
-		$this->parentLogger->warning($message, $context);
+		$this->parentLogger->critical($message, $context);
 		$this->ncLogger->warning($message, $context);
 	}
 
 	public function notice($message, array $context = []): void {
-		$this->parentLogger->notice($message, $context);
+		$this->parentLogger->critical($message, $context);
 		$this->ncLogger->notice($message, $context);
 	}
 
 	public function info($message, array $context = []): void {
-		$this->parentLogger->info($message, $context);
+		$this->parentLogger->critical($message, $context);
 		$this->ncLogger->info($message, $context);
 	}
 
 	public function debug($message, array $context = []): void {
-		$this->parentLogger->debug($message, $context);
+		$this->parentLogger->critical($message, $context);
 		$this->ncLogger->debug($message, $context);
 	}
 
 	public function log($level, $message, array $context = []): void {
-		$this->parentLogger->log($level, $message, $context);
+		$this->parentLogger->critical($message, $context);
 		$this->ncLogger->log($level, $message, $context);
 	}
 }
