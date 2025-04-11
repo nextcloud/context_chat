@@ -252,11 +252,19 @@ jobs:
             echo "Memory usage during prompt is stable. No memory leak detected."
           fi
 
-      - name: Show logs
+      - name: Show nextcloud logs
         if: always()
         run: |
           cat data/nextcloud.log
-          echo '--------------------------------------------------'
+
+      - name: Show context chat logs
+        if: always()
+        run: |
+          cat data/context_chat.log
+
+      - name: Show backend logs
+        if: always()
+        run: |
           cat context_chat_backend/backend_logs || echo "No backend logs"
           echo '--------------------------------------------------'
           tail -v -n +1 context_chat_backend/persistent_storage/logs/* || echo "No logs in logs directory"
@@ -475,11 +483,19 @@ jobs:
           ./occ context_chat:prompt admin "Which factors are taken into account for the Ethical AI Rating?"
           ./occ context_chat:prompt admin "Welche Faktoren beeinflussen das Ethical AI Rating?"
 
-      - name: Show logs
+      - name: Show nextcloud logs
         if: always()
         run: |
           cat data/nextcloud.log
-          echo '--------------------------------------------------'
+
+      - name: Show context chat logs
+        if: always()
+        run: |
+          cat data/context_chat.log
+
+      - name: Show backend logs
+        if: always()
+        run: |
           cat context_chat_backend/backend_logs || echo "No backend logs"
           echo '--------------------------------------------------'
           tail -v -n +1 context_chat_backend/persistent_storage/logs/* || echo "No logs in logs directory"
