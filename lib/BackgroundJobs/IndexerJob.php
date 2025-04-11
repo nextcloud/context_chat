@@ -118,7 +118,7 @@ class IndexerJob extends TimedJob {
 		}
 
 		try {
-			$this->contextChatLogger->debug('[IndexerJob] Running indexing');
+			$this->contextChatLogger->debug('[IndexerJob] Running indexing', ['storageId' => $this->storageId, 'rootId' => $this->rootId]);
 			$this->index($files);
 		} catch (\RuntimeException $e) {
 			$this->contextChatLogger->warning('[IndexerJob] Temporary problem with indexing', ['exception' => $e, 'storageId' => $this->storageId, 'rootId' => $this->rootId]);
@@ -138,7 +138,10 @@ class IndexerJob extends TimedJob {
 				$this->contextChatLogger->info('[IndexerJob]  Removing ' . static::class . ' with argument ' . var_export($argument, true) . 'from oc_jobs');
 				$this->jobList->remove(static::class, $argument);
 				$this->setInitialIndexCompletion();
-			}
+			} elseif (count($files) === 0) {
+                $this->contextChatLogger->debug('[IndexerJob] No files processed, we keep the job around to wait for potential StorageCrawlJob instances to finish');
+
+            }
 		} catch (Exception $e) {
 			$this->contextChatLogger->error('[IndexerJob] Cannot retrieve items from queue', ['exception' => $e, 'storageId' => $this->storageId, 'rootId' => $this->rootId]);
 			return;
@@ -267,33 +270,25 @@ class IndexerJob extends TimedJob {
 				$loadedSources = array_merge($loadedSources, $loadSourcesResult['loaded_sources']);
 				$sourcesToRetry = array_merge($sourcesToRetry, $loadSourcesResult['sources_to_retry']);
 				$retryQFiles = array_merge($retryQFiles, array_map(fn ($sourceId) => $trackedQFiles[$sourceId], $loadSourcesResult['sources_to_retry']));
+                $this->contextChatLogger->debug('[IndexerJob] Indexed ' . count($loadSourcesResult['loaded_sources']) . ' files: ' . json_encode($this->exportFileSources($loadSourcesResult['loaded_sources']), \JSON_THROW_ON_ERROR|\JSON_OBJECT_AS_ARRAY), ['storageId' => $this->storageId, 'rootId' => $this->rootId]);
+                $this->contextChatLogger->debug('[IndexerJob] ' . count($loadSourcesResult['sources_to_retry']) . ' files to retry: ' . json_encode($this->exportFileSources($loadSourcesResult['sources_to_retry']), \JSON_THROW_ON_ERROR|\JSON_OBJECT_AS_ARRAY), ['storageId' => $this->storageId, 'rootId' => $this->rootId]);
 			} catch (RetryIndexException $e) {
 				$this->contextChatLogger->debug('[IndexerJob] At least one source is already being processed from another request, trying again soon', ['exception' => $e, 'storageId' => $this->storageId, 'rootId' => $this->rootId]);
 				return;
 			}
 		}
 
-		$emptyInvalidSources = array_diff(array_diff($allSourceIds, $loadedSources), $sourcesToRetry);
+		$emptyInvalidSources = array_values(array_diff(array_diff($allSourceIds, $loadedSources), $sourcesToRetry));
 		if (count($emptyInvalidSources) > 0) {
-			$this->contextChatLogger->info('[IndexerJob] Invalid or empty files that were not indexed (n=' . count($emptyInvalidSources) . '): ' . json_encode(array_map(function ($sourceId) {
-				$id = (int)(explode(' ', $sourceId)[1]);
-				$node = $this->rootFolder->getFirstNodeById($id);
-				if ($node === null) {
-					return $id . ': <not found>';
-				}
-				return $id . ':' . $node->getPath();
-			}, $emptyInvalidSources), \JSON_THROW_ON_ERROR|\JSON_OBJECT_AS_ARRAY), ['storageId' => $this->storageId, 'rootId' => $this->rootId]);
+			$this->contextChatLogger->info('[IndexerJob] Invalid or empty files that were not indexed (n=' . count($emptyInvalidSources) . '): ' .
+                json_encode($this->exportFileSources($emptyInvalidSources), \JSON_THROW_ON_ERROR|\JSON_OBJECT_AS_ARRAY),
+                ['storageId' => $this->storageId, 'rootId' => $this->rootId]);
 		}
 
         if (count($sourcesToRetry) > 0) {
-            $this->contextChatLogger->info('[IndexerJob] Files that were not indexed but will be retried (n=' . count($emptyInvalidSources) . '): ' . json_encode(array_map(function ($sourceId) {
-                    $id = (int)(explode(' ', $sourceId)[1]);
-                    $node = $this->rootFolder->getFirstNodeById($id);
-                    if ($node === null) {
-                        return $id . ': <not found>';
-                    }
-                    return $id . ':' . $node->getPath();
-                }, $emptyInvalidSources), \JSON_THROW_ON_ERROR|\JSON_OBJECT_AS_ARRAY), ['storageId' => $this->storageId, 'rootId' => $this->rootId]);
+            $this->contextChatLogger->info('[IndexerJob] Files that were not indexed but will be retried (n=' . count($sourcesToRetry) . '): '
+                . json_encode($this->exportFileSources($sourcesToRetry), \JSON_THROW_ON_ERROR|\JSON_OBJECT_AS_ARRAY),
+                ['storageId' => $this->storageId, 'rootId' => $this->rootId]);
         }
 
 		try {
@@ -303,7 +298,8 @@ class IndexerJob extends TimedJob {
 				$this->queue->insertIntoQueue($queueFile);
 			}
 		} catch (Exception $e) {
-			$this->logger->error('[IndexerJob] Could not prepare file queue for next iteration', ['exception' => $e, 'storageId' => $this->storageId, 'rootId' => $this->rootId]);
+			$this->logger->error('[IndexerJob] Could not prepare file queue for next iteration',
+                ['exception' => $e, 'storageId' => $this->storageId, 'rootId' => $this->rootId]);
 		}
 	}
 
@@ -336,4 +332,15 @@ class IndexerJob extends TimedJob {
 		$jobCount = count($countByClass) > 0 ? $countByClass[0]['count'] : 0;
 		return $jobCount;
 	}
+
+    private function exportFileSources(array $sources): array {
+        return array_map(function ($sourceId) {
+            $id = (int)(explode(' ', $sourceId)[1]);
+            $node = $this->rootFolder->getFirstNodeById($id);
+            if ($node === null) {
+                return $id . ': <not found>';
+            }
+            return $id . ':' . $node->getPath();
+        }, $sources);
+    }
 }
