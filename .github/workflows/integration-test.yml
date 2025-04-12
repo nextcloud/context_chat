@@ -383,34 +383,8 @@ jobs:
           ./occ maintenance:install --verbose --database=${{ matrix.databases }} --database-name=nextcloud --database-host=127.0.0.1 --database-port=$PGSQL_PORT --database-user=root --database-pass=rootpassword --admin-user admin --admin-pass password
           composer run serve &
 
-      - name: Enable context_chat, app_api and testing
-        run: ./occ app:enable -vvv -f ${{ env.APP_NAME }} app_api testing
-
-      - name: Checkout documentation
-        uses: actions/checkout@v4
-        with:
-          repository: nextcloud/documentation
-          path: data/admin/files/documentation
-
-      - name: Checkout pdfs
-        uses: actions/checkout@v4
-        with:
-          repository: papers-we-love/papers-we-love
-          path: data/admin/files/papers
-
-      - name: Prepare docs
-        run: |
-          cd data/admin/files
-          mv documentation/admin_manual .
-          cp -R documentation/developer_manual .
-          cd developer_manual
-          find . -type f -name "*.rst" -exec bash -c 'mv "$0" "${0%.rst}.md"' {} \;
-          cd ..
-          cp -R documentation/developer_manual ./developer_manual2
-          cd developer_manual2
-          find . -type f -name "*.rst" -exec bash -c 'mv "$0" "${0%.rst}.txt"' {} \;
-          cd ..
-          rm -rf documentation
+      - name: Enable app_api and testing
+        run: ./occ app:enable -vvv -f app_api testing
 
       - name: Setup python 3.11
         uses: actions/setup-python@v5
@@ -437,9 +411,42 @@ jobs:
           ./occ app_api:daemon:register --net host manual_install "Manual Install" manual-install http localhost http://localhost:8080
           timeout 120 ./occ app_api:app:register context_chat_backend manual_install --json-info "{\"appid\":\"context_chat_backend\",\"name\":\"Context Chat Backend\",\"daemon_config_name\":\"manual_install\",\"version\":\"${{ fromJson(steps.appinfo.outputs.result).version }}\",\"secret\":\"12345\",\"port\":10034,\"scopes\":[],\"system_app\":0}" --force-scopes --wait-finish
 
+      - name: Checkout documentation
+        uses: actions/checkout@v4
+        with:
+          repository: nextcloud/documentation
+          path: data/admin/files/documentation
+
+      - name: Checkout pdfs
+        uses: actions/checkout@v4
+        with:
+          repository: papers-we-love/papers-we-love
+          path: data/admin/files/papers
+          ref: ad039b1e29ddb6ab1e217d39f16a5051c18ccc5a # to be deterministic
+
+      - name: Prepare docs
+        run: |
+          cd data/admin/files
+          mv documentation/admin_manual .
+          cp -R documentation/developer_manual .
+          cd developer_manual
+          find . -type f -name "*.rst" -exec bash -c 'mv "$0" "${0%.rst}.md"' {} \;
+          cd ..
+          cp -R documentation/developer_manual ./developer_manual2
+          cd developer_manual2
+          find . -type f -name "*.rst" -exec bash -c 'mv "$0" "${0%.rst}.txt"' {} \;
+          cd ..
+          rm -rf documentation
+
+      - name: Run files scan
+        run: |
+          ./occ files:scan admin # Do the scan before enabling context chat
+
+      - name: Enable context chat
+        run: ./occ app:enable -vvv -f ${{ env.APP_NAME }}
+
       - name: Run indexer cron
         run: |
-          ./occ files:scan admin
           # Run cron in speed mode: Set interval to 0 minutes
           ./occ config:app:set --value 30 --type integer context_chat indexing_job_interval # 30 seconds
           ./occ config:app:set --value 10 --type integer context_chat crawl_job_interval # 10 seconds
