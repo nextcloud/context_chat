@@ -506,3 +506,248 @@ jobs:
           cat context_chat_backend/backend_logs || echo "No backend logs"
           echo '--------------------------------------------------'
           tail -v -n +1 context_chat_backend/persistent_storage/logs/* || echo "No logs in logs directory"
+
+  listener-test:
+    runs-on: ubuntu-22.04
+
+    strategy:
+      # do not stop on another job's failure
+      fail-fast: false
+      matrix:
+        php-versions: [ '8.1' ]
+        databases: [ 'pgsql' ]
+        server-versions: [ 'master' ]
+
+    name: Integration test with file listener on ${{ matrix.server-versions }} php@${{ matrix.php-versions }}
+
+    env:
+      MYSQL_PORT: 4444
+      PGSQL_PORT: 4445
+      # use the same db for ccb and nextcloud
+      CCB_DB_URL: postgresql+psycopg://root:rootpassword@localhost:4445/nextcloud
+
+    services:
+      mysql:
+        image: mariadb:10.5
+        ports:
+          - 4444:3306/tcp
+        env:
+          MYSQL_ROOT_PASSWORD: rootpassword
+        options: --health-cmd="mysqladmin ping" --health-interval 5s --health-timeout 2s --health-retries 5
+      postgres:
+        image: pgvector/pgvector:pg17
+        ports:
+          - 4445:5432/tcp
+        env:
+          POSTGRES_USER: root
+          POSTGRES_PASSWORD: rootpassword
+          POSTGRES_DB: nextcloud
+        options: --health-cmd pg_isready --health-interval 5s --health-timeout 2s --health-retries 5
+
+    steps:
+      - name: Checkout server
+        uses: actions/checkout@v4
+        with:
+          repository: nextcloud/server
+          ref: ${{ matrix.server-versions }}
+
+      - name: Checkout submodules
+        shell: bash
+        run: |
+          auth_header="$(git config --local --get http.https://github.com/.extraheader)"
+          git submodule sync --recursive
+          git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
+
+      - name: Set up php ${{ matrix.php-versions }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-versions }}
+          tools: phpunit
+          extensions: mbstring, iconv, fileinfo, intl, sqlite, pdo_mysql, pdo_sqlite, pgsql, pdo_pgsql, gd, zip
+
+      - name: Checkout app
+        uses: actions/checkout@v4
+        with:
+          path: apps/${{ env.APP_NAME }}
+
+      - name: Checkout backend
+        uses: actions/checkout@v4
+        with:
+          repository: nextcloud/context_chat_backend
+          path: context_chat_backend/
+
+      - name: Get backend app version
+        id: appinfo
+        uses: skjnldsv/xpath-action@7e6a7c379d0e9abc8acaef43df403ab4fc4f770c # master
+        with:
+          filename: context_chat_backend/appinfo/info.xml
+          expression: "/info/version/text()"
+
+      - name: Read package.json node and npm engines version
+        uses: skjnldsv/read-package-engines-version-actions@v3
+        id: versions
+        with:
+          path: apps/${{ env.APP_NAME }}
+          fallbackNode: '^20'
+          fallbackNpm: '^10'
+
+      - name: Set up node ${{ steps.versions.outputs.nodeVersion }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ steps.versions.outputs.nodeVersion }}
+
+      - name: Set up npm ${{ steps.versions.outputs.npmVersion }}
+        run: npm i -g npm@"${{ steps.versions.outputs.npmVersion }}"
+
+      - name: Install app
+        working-directory: apps/${{ env.APP_NAME }}
+        run: |
+          make all
+          composer install --no-dev
+
+      - name: Set up Nextcloud
+        if: ${{ matrix.databases != 'pgsql'}}
+        run: |
+          sleep 25
+          mkdir data
+          ./occ maintenance:install --verbose --database=${{ matrix.databases }} --database-name=nextcloud --database-host=127.0.0.1 --database-port=$MYSQL_PORT --database-user=root --database-pass=rootpassword --admin-user admin --admin-pass password
+          composer run serve &
+
+      - name: Set up Nextcloud
+        if: ${{ matrix.databases == 'pgsql'}}
+        run: |
+          sleep 25
+          mkdir data
+          ./occ maintenance:install --verbose --database=${{ matrix.databases }} --database-name=nextcloud --database-host=127.0.0.1 --database-port=$PGSQL_PORT --database-user=root --database-pass=rootpassword --admin-user admin --admin-pass password
+          composer run serve &
+
+      - name: Enable app_api and testing
+        run: ./occ app:enable -vvv -f app_api testing
+
+      - name: Setup python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: context_chat_backend/requirements.txt
+
+      - name: Install and init backend
+        run: |
+          cd context_chat_backend
+          pip install --upgrade pip setuptools wheel
+          pip install -r requirements.txt
+          cp example.env .env
+          echo "NEXTCLOUD_URL=http://localhost:8080" >> .env
+          python3 -u ./main.py > backend_logs 2>&1 &
+          echo $! > ../pid.txt          # Save the process ID (PID)
+
+      - name: Register backend
+        run: |
+          set -x
+          ./occ config:system:set debug --value true
+          ./occ config:system:set loglevel --value 0
+          ./occ app_api:daemon:register --net host manual_install "Manual Install" manual-install http localhost http://localhost:8080
+          timeout 120 ./occ app_api:app:register context_chat_backend manual_install --json-info "{\"appid\":\"context_chat_backend\",\"name\":\"Context Chat Backend\",\"daemon_config_name\":\"manual_install\",\"version\":\"${{ fromJson(steps.appinfo.outputs.result).version }}\",\"secret\":\"12345\",\"port\":10034,\"scopes\":[],\"system_app\":0}" --force-scopes --wait-finish
+
+      - name: Enable context chat
+        run: |
+          ./occ app:enable -vvv -f ${{ env.APP_NAME }}
+          # Run cron in speed mode
+          ./occ config:app:set --value 30 --type integer context_chat indexing_job_interval # 30 seconds
+          ./occ config:app:set --value 10 --type integer context_chat crawl_job_interval # 10 seconds
+          # Run normal indexing jobs which will only pick up welcome.txt etc
+          for i in {1..10}; do
+          php cron.php -v &
+          wait
+          ./occ context_chat:stats
+          done
+
+      - name: Checkout documentation
+        uses: actions/checkout@v4
+        with:
+          repository: nextcloud/documentation
+          path: data/admin/files/documentation
+
+      - name: Checkout pdfs
+        uses: actions/checkout@v4
+        with:
+          repository: papers-we-love/papers-we-love
+          path: data/admin/files/papers
+          ref: ad039b1e29ddb6ab1e217d39f16a5051c18ccc5a # to be deterministic
+
+      - name: Prepare docs
+        run: |
+          cd data/admin/files
+          mv documentation/admin_manual .
+          cp -R documentation/developer_manual .
+          cd developer_manual
+          find . -type f -name "*.rst" -exec bash -c 'mv "$0" "${0%.rst}.md"' {} \;
+          cd ..
+          cp -R documentation/developer_manual ./developer_manual2
+          cd developer_manual2
+          find . -type f -name "*.rst" -exec bash -c 'mv "$0" "${0%.rst}.txt"' {} \;
+          cd ..
+          rm -rf documentation
+
+      - name: Run files scan
+        run: |
+          ./occ files:scan admin # Do the scan before enabling context chat
+
+      - name: Run indexer cron
+        run: |
+          for i in {1..100}; do 
+            php cron.php -v &
+            wait
+            ./occ context_chat:stats
+          done
+
+      - name: Check context chat state
+        run: |
+          ./occ context_chat:stats
+          ./occ background-job:list
+          ./occ context_chat:stats | grep -q "Index complete time" || echo "Indexing did not complete"
+          ./occ context_chat:stats | awk '
+              /Total eligible files/ {
+                 total = $NF + 0  # force conversion to number
+              }
+              /files__default/ {
+                  indexed = $NF;
+                  sub(/,$/, "", indexed)  # remove trailing comma
+                  indexed = indexed + 0    # force conversion to number
+              }
+              END {
+                  low = total * 0.85;
+                  high = total * 1.15;
+                  if (indexed >= low && indexed <= high) {
+                      print "✅ Indexed files (" indexed ") are within 15% of eligible files (" total ").";
+                      exit 0;
+                  } else {
+                      print "❌ Indexed files (" indexed ") are OUTSIDE the 15% range of eligible files (" total ").";
+                      exit 1;
+                  }
+              }
+          '
+
+      - name: Run the prompts
+        run: |
+          ./occ background-job:worker 'OC\TaskProcessing\SynchronousBackgroundJob' &
+          ./occ background-job:worker 'OC\TaskProcessing\SynchronousBackgroundJob' &
+          ./occ context_chat:prompt admin "Which factors are taken into account for the Ethical AI Rating?"
+          ./occ context_chat:prompt admin "Welche Faktoren beeinflussen das Ethical AI Rating?"
+
+      - name: Show nextcloud logs
+        if: always()
+        run: |
+          cat data/nextcloud.log
+
+      - name: Show context chat logs
+        if: always()
+        run: |
+          cat data/context_chat.log
+
+      - name: Show backend logs
+        if: always()
+        run: |
+          cat context_chat_backend/backend_logs || echo "No backend logs"
+          echo '--------------------------------------------------'
+          tail -v -n +1 context_chat_backend/persistent_storage/logs/* || echo "No logs in logs directory"
