@@ -246,10 +246,6 @@ class IndexerJob extends TimedJob {
 					$loadedSources = array_merge($loadedSources, $loadSourcesResult['loaded_sources']);
 					$sourcesToRetry = array_merge($sourcesToRetry, $loadSourcesResult['sources_to_retry']);
 					$retryQFiles = array_merge($retryQFiles, array_map(fn ($sourceId) => $trackedQFiles[$sourceId], $loadSourcesResult['sources_to_retry']));
-					$failedSources = array_diff(array_map(fn (Source $source) => $source->reference, $sources), $loadSourcesResult['loaded_sources'], $loadSourcesResult['sources_to_retry']);
-					$this->contextChatLogger->debug('[IndexerJob] Indexed ' . count($loadSourcesResult['loaded_sources']) . ' files: ' . json_encode($this->exportFileSources($loadSourcesResult['loaded_sources']), \JSON_THROW_ON_ERROR | \JSON_OBJECT_AS_ARRAY), ['storageId' => $this->storageId, 'rootId' => $this->rootId]);
-					$this->contextChatLogger->debug('[IndexerJob] ' . count($loadSourcesResult['sources_to_retry']) . ' files to retry: ' . json_encode($this->exportFileSources($loadSourcesResult['sources_to_retry']), \JSON_THROW_ON_ERROR | \JSON_OBJECT_AS_ARRAY), ['storageId' => $this->storageId, 'rootId' => $this->rootId]);
-					$this->contextChatLogger->debug('[IndexerJob] ' . count($failedSources) . ' files failed: ' . json_encode($this->exportFileSources($failedSources), \JSON_THROW_ON_ERROR | \JSON_OBJECT_AS_ARRAY), ['storageId' => $this->storageId, 'rootId' => $this->rootId]);
 
 					// reset buffer
 					$sources = [];
