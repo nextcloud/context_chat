@@ -253,7 +253,6 @@ class IndexerJob extends TimedJob {
 
 					// reset buffer
 					$sources = [];
-					$trackedQFiles = [];
 					$size = 0;
 				}
 			} catch (InvalidPathException|NotFoundException $e) {
@@ -276,7 +275,7 @@ class IndexerJob extends TimedJob {
 		}
 
 		try {
-			$this->queue->removeFromQueue($files);
+			$this->queue->removeFromQueue(array_values($trackedQFiles));
 			// add files that were locked to the end of the queue
 			foreach ($retryQFiles as $queueFile) {
 				$this->queue->insertIntoQueue($queueFile);
