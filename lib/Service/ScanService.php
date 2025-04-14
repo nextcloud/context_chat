@@ -8,6 +8,7 @@
 namespace OCA\ContextChat\Service;
 
 use OCA\ContextChat\AppInfo\Application;
+use OCA\ContextChat\Logger;
 use OCA\ContextChat\Type\Source;
 use OCP\AppFramework\Services\IAppConfig;
 use OCP\Files\File;
@@ -15,13 +16,12 @@ use OCP\Files\Folder;
 use OCP\Files\IRootFolder;
 use OCP\IConfig;
 use OCP\IL10N;
-use Psr\Log\LoggerInterface;
 
 class ScanService {
 
 	public function __construct(
 		private IRootFolder $root,
-		private LoggerInterface $logger,
+		private Logger $logger,
 		private IL10N $l10n,
 		private IConfig $config,
 		private LangRopeService $langRopeService,

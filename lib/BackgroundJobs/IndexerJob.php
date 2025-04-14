@@ -12,6 +12,7 @@ namespace OCA\ContextChat\BackgroundJobs;
 use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\Db\QueueFile;
 use OCA\ContextChat\Exceptions\RetryIndexException;
+use OCA\ContextChat\Logger;
 use OCA\ContextChat\Service\DiagnosticService;
 use OCA\ContextChat\Service\LangRopeService;
 use OCA\ContextChat\Service\ProviderConfigService;
@@ -32,7 +33,6 @@ use OCP\Files\IRootFolder;
 use OCP\Files\NotFoundException;
 use OCP\Files\NotPermittedException;
 use OCP\Lock\LockedException;
-use Psr\Log\LoggerInterface;
 
 /**
  * Indexer Job
@@ -53,9 +53,11 @@ class IndexerJob extends TimedJob {
 	// Specifying a higher number here will still be overruled by the max indexing time
 	public const DEFAULT_BATCH_SIZE = 5000;
 
+	public int $storageId;
+	public int $rootId;
+
 	public function __construct(
 		ITimeFactory $time,
-		private LoggerInterface $logger,
 		private QueueService $queue,
 		private IUserMountCache $userMountCache,
 		private IJobList $jobList,
@@ -66,6 +68,7 @@ class IndexerJob extends TimedJob {
 		private DiagnosticService $diagnosticService,
 		private ITimeFactory $timeFactory,
 		private IAppManager $appManager,
+		private Logger $logger,
 	) {
 		parent::__construct($time);
 		$this->setInterval($this->getJobInterval());
@@ -86,22 +89,17 @@ class IndexerJob extends TimedJob {
 			return;
 		}
 
-		/**
-		 * @var int $storageId
-		 */
-		$storageId = $argument['storageId'];
-		$rootId = $argument['rootId'];
+		$this->storageId = $argument['storageId'];
+		$this->rootId = $argument['rootId'];
 		if ($this->appConfig->getAppValue('auto_indexing', 'true') === 'false') {
 			return;
 		}
 		$this->diagnosticService->sendJobTrigger(static::class, $this->getId());
 		$this->setInitialIndexCompletion();
-		$this->logger->debug('Index files of storage ' . $storageId);
 		try {
-			$this->logger->debug('fetching ' . $this->getBatchSize() . ' files from queue');
-			$files = $this->queue->getFromQueue($storageId, $rootId, $this->getBatchSize());
+			$files = $this->queue->getFromQueue($this->storageId, $this->rootId, $this->getBatchSize());
 		} catch (Exception $e) {
-			$this->logger->error('Cannot retrieve items from  queue', ['exception' => $e]);
+			$this->logger->error('[IndexerJob] Cannot retrieve items from  queue', ['exception' => $e, 'storageId' => $this->storageId, 'rootId' => $this->rootId]);
 			return;
 		}
 
@@ -109,8 +107,8 @@ class IndexerJob extends TimedJob {
 		$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
 
 		// Setup Filesystem for a users that can access this mount
-		$mounts = array_values(array_filter($this->userMountCache->getMountsForStorageId($storageId), function (ICachedMountInfo $mount) use ($rootId) {
-			return $mount->getRootId() === $rootId;
+		$mounts = array_values(array_filter($this->userMountCache->getMountsForStorageId($this->storageId), function (ICachedMountInfo $mount) {
+			return $mount->getRootId() === $this->rootId;
 		}));
 
 		if (count($mounts) > 0) {
@@ -118,29 +116,32 @@ class IndexerJob extends TimedJob {
 		}
 
 		try {
-			$this->logger->debug('Running indexing');
+			$this->logger->debug('[IndexerJob] Running indexing', ['storageId' => $this->storageId, 'rootId' => $this->rootId]);
 			$this->index($files);
 		} catch (\RuntimeException $e) {
-			$this->logger->warning('Temporary problem with indexing, trying again soon', ['exception' => $e]);
+			$this->logger->warning('[IndexerJob] Temporary problem with indexing', ['exception' => $e, 'storageId' => $this->storageId, 'rootId' => $this->rootId]);
 		} catch (\ErrorException $e) {
-			$this->logger->warning('Problem with indexing', ['exception' => $e]);
-			$this->logger->debug('Removing ' . static::class . ' with argument ' . var_export($argument, true) . 'from oc_jobs');
+			$this->logger->warning('[IndexerJob]  Problem with indexing', ['exception' => $e, 'storageId' => $this->storageId, 'rootId' => $this->rootId]);
+			$this->logger->info('[IndexerJob] Removing ' . static::class . ' with argument ' . var_export($argument, true) . 'from oc_jobs');
 			$this->jobList->remove(static::class, $argument);
 			throw $e;
 		}
 
 		try {
 			// If there is at least one file left in the queue, reschedule this job
-			$files = $this->queue->getFromQueue($storageId, $rootId, 1);
+			$files = $this->queue->getFromQueue($this->storageId, $this->rootId, 1);
 			$indexerJobCount = $this->getJobCount(IndexerJob::class);
 			$crawlJobCount = $this->getJobCount(StorageCrawlJob::class);
 			if (count($files) === 0 && ($indexerJobCount > 1 || $crawlJobCount === 0)) {
-				$this->logger->debug('Removing ' . static::class . ' with argument ' . var_export($argument, true) . 'from oc_jobs');
+				$this->logger->info('[IndexerJob]  Removing ' . static::class . ' with argument ' . var_export($argument, true) . 'from oc_jobs');
 				$this->jobList->remove(static::class, $argument);
 				$this->setInitialIndexCompletion();
+			} elseif (count($files) === 0) {
+				$this->logger->debug('[IndexerJob] No files left in queue, but we keep the job around to wait for potential StorageCrawlJob instances to finish');
+
 			}
 		} catch (Exception $e) {
-			$this->logger->error('Cannot retrieve items from queue', ['exception' => $e]);
+			$this->logger->error('[IndexerJob] Cannot retrieve items from queue', ['exception' => $e, 'storageId' => $this->storageId, 'rootId' => $this->rootId]);
 			return;
 		}
 		$this->diagnosticService->sendJobEnd(static::class, $this->getId());
@@ -174,12 +175,13 @@ class IndexerJob extends TimedJob {
 		$sources = [];
 		$allSourceIds = [];
 		$loadedSources = [];
+		$sourcesToRetry = [];
 		$retryQFiles = [];
 		// work along with $sources to keep track of the $queueFile's that are being indexed
 		$trackedQFiles = [];
 		$size = 0;
 
-		foreach ($files as $queueFile) {
+		foreach ($files as $i => $queueFile) {
 			$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
 			if ($startTime + $maxTime < time()) {
 				break;
@@ -199,47 +201,30 @@ class IndexerJob extends TimedJob {
 						'maxSize' => $maxSize,
 						'nodeId' => $file->getId(),
 						'path' => $file->getPath(),
+						'storageId' => $this->storageId,
+						'rootId' => $this->rootId
 					]);
 					continue;
 				}
 
-				if ($size + $fileSize > $maxSize || count($sources) >= Application::CC_MAX_FILES) {
-					try {
-						$loadSourcesResult = $this->langRopeService->indexSources($sources);
-						$this->diagnosticService->sendIndexedFiles(count($loadSourcesResult['loaded_sources']));
-						$loadedSources = array_merge($loadedSources, $loadSourcesResult['loaded_sources']);
-						$retryQFiles = array_merge($retryQFiles, array_map(fn ($sourceId) => $trackedQFiles[$sourceId], $loadSourcesResult['sources_to_retry']));
-						$sources = [];
-						$trackedQFiles = [];
-						$size = 0;
-					} catch (RetryIndexException $e) {
-						$this->logger->debug('At least one source is already being processed from another request, trying again soon', ['exception' => $e]);
-						$retryQFiles = array_merge($retryQFiles, array_values($trackedQFiles));
-						$sources = [];
-						$trackedQFiles = [];
-						$size = 0;
-						continue;
-					}
-				}
-
-				$userIds = $this->storageService->getUsersForFileId($queueFile->getFileId());
-				$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
-
 				try {
 					$fileHandle = $file->fopen('r');
 				} catch (NotPermittedException $e) {
-					$this->logger->error('Could not open file ' . $file->getPath() . ' for reading', ['exception' => $e]);
+					$this->logger->error('[IndexerJob] Could not open file ' . $file->getPath() . ' for reading', ['exception' => $e, 'storageId' => $this->storageId, 'rootId' => $this->rootId]);
 					continue;
 				} catch (LockedException $e) {
 					$retryQFiles[] = $queueFile;
-					$this->logger->info('File ' . $file->getPath() . ' is locked, could not read for indexing. Adding it to the next batch.');
+					$this->logger->info('[IndexerJob] File ' . $file->getPath() . ' is locked, could not read for indexing. Adding it to the next batch.', ['storageId' => $this->storageId, 'rootId' => $this->rootId]);
 					continue;
 				}
 				if (!is_resource($fileHandle)) {
-					$this->logger->warning('File handle for' . $file->getPath() . ' is not readable');
+					$this->logger->warning('File handle for' . $file->getPath() . ' is not readable', ['storageId' => $this->storageId, 'rootId' => $this->rootId]);
 					continue;
 				}
 
+
+				$size += $fileSize;
+				$userIds = $this->storageService->getUsersForFileId($queueFile->getFileId());
 				$sources[] = new Source(
 					$userIds,
 					ProviderConfigService::getSourceId($file->getId()),
@@ -251,42 +236,53 @@ class IndexerJob extends TimedJob {
 				);
 				$trackedQFiles[ProviderConfigService::getSourceId($file->getId())] = $queueFile;
 				$allSourceIds[] = ProviderConfigService::getSourceId($file->getId());
+
+				// Either the buffer is full, or we're at the last item
+				if ($size > $maxSize || count($sources) >= Application::CC_MAX_FILES || $i === count($files) - 1) {
+					try {
+						$loadSourcesResult = $this->langRopeService->indexSources($sources);
+						// track files
+						$this->diagnosticService->sendIndexedFiles(count($loadSourcesResult['loaded_sources']));
+						$loadedSources = array_merge($loadedSources, $loadSourcesResult['loaded_sources']);
+						$sourcesToRetry = array_merge($sourcesToRetry, $loadSourcesResult['sources_to_retry']);
+						$retryQFiles = array_merge($retryQFiles, array_map(fn ($sourceId) => $trackedQFiles[$sourceId], $loadSourcesResult['sources_to_retry']));
+					} catch (RetryIndexException $e) {
+						$this->logger->debug('At least one source is already being processed from another request, trying again soon', ['exception' => $e, 'storageId' => $this->storageId, 'rootId' => $this->rootId]);
+						$retryQFiles = array_merge($retryQFiles, array_map(fn (Source $source) => $trackedQFiles[$source->reference], $sources));
+					} finally {
+						// reset buffer
+						$sources = [];
+						$size = 0;
+					}
+				}
 			} catch (InvalidPathException|NotFoundException $e) {
-				$this->logger->error('Could not find file ' . $file->getPath(), ['exception' => $e]);
+				$this->logger->error('[IndexerJob] Could not find file ' . $file->getPath(), ['exception' => $e, 'storageId' => $this->storageId, 'rootId' => $this->rootId]);
 				continue;
 			}
 		}
 
-		if (count($sources) > 0) {
-			try {
-				$loadSourcesResult = $this->langRopeService->indexSources($sources);
-				$this->diagnosticService->sendIndexedFiles(count($loadSourcesResult['loaded_sources']));
-				$loadedSources = array_merge($loadedSources, $loadSourcesResult['loaded_sources']);
-				$retryQFiles = array_merge($retryQFiles, array_map(fn ($sourceId) => $trackedQFiles[$sourceId], $loadSourcesResult['sources_to_retry']));
-			} catch (RetryIndexException $e) {
-				$this->logger->debug('At least one source is already being processed from another request, trying again soon', ['exception' => $e]);
-				return;
-			}
+		$emptyInvalidSources = array_values(array_diff($allSourceIds, $loadedSources, $sourcesToRetry));
+		if (count($emptyInvalidSources) > 0) {
+			$this->logger->info('[IndexerJob] Invalid or empty files that were not indexed (n=' . count($emptyInvalidSources) . '): ' .
+				json_encode($this->exportFileSources($emptyInvalidSources), \JSON_THROW_ON_ERROR | \JSON_OBJECT_AS_ARRAY),
+				['storageId' => $this->storageId, 'rootId' => $this->rootId]);
 		}
 
-		$emptyInvalidSources = array_diff($allSourceIds, $loadedSources);
-		if (count($emptyInvalidSources) > 0) {
-			$this->logger->info('Invalid or empty sources that were not indexed (n=' . count($emptyInvalidSources) . ')', ['sourceIds' => $emptyInvalidSources]);
-			try {
-				$this->logger->info('Invalid or empty files that were not indexed: ' . json_encode(array_map(fn ($sourceId) => $this->rootFolder->getFirstNodeById(intval(explode(' ', $sourceId)[1]))->getPath(), $emptyInvalidSources), \JSON_THROW_ON_ERROR));
-			} catch (\Exception $e) {
-				$this->logger->warning('Could not get invalid or empty files that were not indexed', ['exception' => $e]);
-			}
+		if (count($sourcesToRetry) > 0) {
+			$this->logger->info('[IndexerJob] Files that were not indexed but will be retried (n=' . count($sourcesToRetry) . '): '
+				. json_encode($this->exportFileSources($sourcesToRetry), \JSON_THROW_ON_ERROR | \JSON_OBJECT_AS_ARRAY),
+				['storageId' => $this->storageId, 'rootId' => $this->rootId]);
 		}
 
 		try {
-			$this->queue->removeFromQueue($files);
+			$this->queue->removeFromQueue(array_values($trackedQFiles));
 			// add files that were locked to the end of the queue
 			foreach ($retryQFiles as $queueFile) {
 				$this->queue->insertIntoQueue($queueFile);
 			}
 		} catch (Exception $e) {
-			$this->logger->error('Could not remove indexed files from queue', ['exception' => $e]);
+			$this->logger->error('[IndexerJob] Could not prepare file queue for next iteration',
+				['exception' => $e, 'storageId' => $this->storageId, 'rootId' => $this->rootId]);
 		}
 	}
 
@@ -318,5 +314,16 @@ class IndexerJob extends TimedJob {
 		$countByClass = array_values(array_filter($this->jobList->countByClass(), fn ($row) => $row['class'] == $jobClass));
 		$jobCount = count($countByClass) > 0 ? $countByClass[0]['count'] : 0;
 		return $jobCount;
+	}
+
+	private function exportFileSources(array $sources): array {
+		return array_map(function ($sourceId) {
+			$id = (int)(explode(' ', $sourceId)[1]);
+			$node = $this->rootFolder->getFirstNodeById($id);
+			if ($node === null) {
+				return $id . ': <not found>';
+			}
+			return $id . ':' . $node->getPath();
+		}, $sources);
 	}
 }

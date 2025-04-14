@@ -9,6 +9,7 @@ namespace OCA\ContextChat\Service;
 
 use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\Exceptions\RetryIndexException;
+use OCA\ContextChat\Logger;
 use OCA\ContextChat\Public\IContentProvider;
 use OCA\ContextChat\Type\Source;
 use OCP\App\IAppManager;
@@ -19,12 +20,11 @@ use OCP\IUserManager;
 use OCP\Server;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
-use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 class LangRopeService {
 	public function __construct(
-		private LoggerInterface $logger,
+		private Logger $logger,
 		private IL10N $l10n,
 		private IConfig $config,
 		private IAppManager $appManager,

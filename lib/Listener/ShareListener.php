@@ -11,6 +11,7 @@ declare(strict_types=1);
 namespace OCA\ContextChat\Listener;
 
 use OCA\ContextChat\AppInfo\Application;
+use OCA\ContextChat\Logger;
 use OCA\ContextChat\Public\UpdateAccessOp;
 use OCA\ContextChat\Service\ActionService;
 use OCA\ContextChat\Service\ProviderConfigService;
@@ -26,7 +27,6 @@ use OCP\IGroupManager;
 use OCP\Share\Events\ShareCreatedEvent;
 use OCP\Share\Events\ShareDeletedEvent;
 use OCP\Share\IManager;
-use Psr\Log\LoggerInterface;
 
 /**
  * @template-implements IEventListener<Event>
@@ -34,7 +34,7 @@ use Psr\Log\LoggerInterface;
 class ShareListener implements IEventListener {
 
 	public function __construct(
-		private LoggerInterface $logger,
+		private Logger $logger,
 		private StorageService $storageService,
 		private IManager $shareManager,
 		private IRootFolder $rootFolder,

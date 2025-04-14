@@ -12,10 +12,10 @@ namespace OCA\ContextChat\Service;
 use OCA\ContextChat\BackgroundJobs\ActionJob;
 use OCA\ContextChat\Db\QueueAction;
 use OCA\ContextChat\Db\QueueActionMapper;
+use OCA\ContextChat\Logger;
 use OCA\ContextChat\Type\ActionType;
 use OCA\ContextChat\Type\UpdateAccessOp;
 use OCP\BackgroundJob\IJobList;
-use Psr\Log\LoggerInterface;
 
 class ActionService {
 	private const BATCH_SIZE = 500;
@@ -23,7 +23,7 @@ class ActionService {
 	public function __construct(
 		private IJobList $jobList,
 		private QueueActionMapper $actionMapper,
-		private LoggerInterface $logger,
+		private Logger $logger,
 	) {
 	}
 

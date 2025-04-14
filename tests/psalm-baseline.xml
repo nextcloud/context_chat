@@ -9,6 +9,11 @@
       <code><![CDATA[\OC_Util]]></code>
     </UndefinedClass>
   </file>
+  <file src="lib/BackgroundJobs/RotateLogsJob.php">
+    <UndefinedClass>
+      <code><![CDATA[\OC]]></code>
+    </UndefinedClass>
+  </file>
   <file src="lib/Command/Diagnostics.php">
     <UndefinedClass>
       <code><![CDATA[Command]]></code>
@@ -27,6 +32,11 @@
   <file src="lib/Command/Statistics.php">
     <UndefinedClass>
       <code><![CDATA[Command]]></code>
+    </UndefinedClass>
+  </file>
+  <file src="lib/Logger.php">
+    <UndefinedClass>
+      <code><![CDATA[\OC]]></code>
     </UndefinedClass>
   </file>
 </files>

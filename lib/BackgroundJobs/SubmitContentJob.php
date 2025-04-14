@@ -13,6 +13,7 @@ use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\Db\QueueContentItem;
 use OCA\ContextChat\Db\QueueContentItemMapper;
 use OCA\ContextChat\Exceptions\RetryIndexException;
+use OCA\ContextChat\Logger;
 use OCA\ContextChat\Service\LangRopeService;
 use OCA\ContextChat\Service\ProviderConfigService;
 use OCA\ContextChat\Type\Source;
@@ -20,7 +21,6 @@ use OCP\AppFramework\Services\IAppConfig;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\IJobList;
 use OCP\BackgroundJob\QueuedJob;
-use Psr\Log\LoggerInterface;
 
 class SubmitContentJob extends QueuedJob {
 	private const BATCH_SIZE = 20;
@@ -30,7 +30,7 @@ class SubmitContentJob extends QueuedJob {
 		private LangRopeService $service,
 		private QueueContentItemMapper $mapper,
 		private IJobList $jobList,
-		private LoggerInterface $logger,
+		private Logger $logger,
 		private IAppConfig $appConfig,
 	) {
 		parent::__construct($timeFactory);
@@ -51,7 +51,7 @@ class SubmitContentJob extends QueuedJob {
 		$sources = array_map(function (QueueContentItem $item) use ($maxSize) {
 			$contentSize = mb_strlen($item->getContent(), '8bit');
 			if ($contentSize > $maxSize) {
-				$this->logger->warning('Content too large to index', [
+				$this->logger->warning('[SubmitContentJob] Content too large to index', [
 					'contentSize' => $contentSize,
 					'maxSize' => $maxSize,
 					'itemId' => $item->getItemId(),
@@ -77,13 +77,13 @@ class SubmitContentJob extends QueuedJob {
 
 		try {
 			$loadSourcesResult = $this->service->indexSources($sources);
-			$this->logger->info('Indexed sources for providers', [
+			$this->logger->info('[SubmitContentJob] Indexed sources for providers', [
 				'count' => count($loadSourcesResult['loaded_sources']),
 				'loaded_sources' => $loadSourcesResult['loaded_sources'],
 				'sources_to_retry' => $loadSourcesResult['sources_to_retry'],
 			]);
 		} catch (RetryIndexException $e) {
-			$this->logger->debug('At least one source is already being processed from another request, trying again soon', ['exception' => $e]);
+			$this->logger->debug('[SubmitContentJob] At least one source is already being processed from another request, trying again soon', ['exception' => $e]);
 			// schedule in 5mins
 			$this->jobList->scheduleAfter(static::class, $this->time->getTime() + 5 * 60);
 			return;

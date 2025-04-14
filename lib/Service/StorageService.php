@@ -13,6 +13,7 @@ namespace OCA\ContextChat\Service;
 use OC\Files\Cache\CacheQueryBuilder;
 use OC\SystemConfig;
 use OCA\ContextChat\AppInfo\Application;
+use OCA\ContextChat\Logger;
 use OCP\DB\Exception;
 use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\Files\Config\ICachedMountInfo;
@@ -24,7 +25,6 @@ use OCP\Files\IRootFolder;
 use OCP\Files\Node;
 use OCP\FilesMetadata\IFilesMetadataManager;
 use OCP\IDBConnection;
-use Psr\Log\LoggerInterface;
 
 class StorageService {
 	public const ALLOWED_MOUNT_TYPES = [
@@ -41,7 +41,7 @@ class StorageService {
 
 	public function __construct(
 		private IDBConnection $db,
-		private LoggerInterface $logger,
+		private Logger $logger,
 		private SystemConfig $systemConfig,
 		private IMimeTypeLoader $mimeTypes,
 		private IUserMountCache $userMountCache,

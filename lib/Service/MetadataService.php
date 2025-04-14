@@ -7,6 +7,7 @@
 
 namespace OCA\ContextChat\Service;
 
+use OCA\ContextChat\Logger;
 use OCA\ContextChat\Public\ContentManager;
 use OCA\ContextChat\Public\IContentProvider;
 use OCP\App\IAppManager;
@@ -18,11 +19,10 @@ use OCP\IUserManager;
 use OCP\Server;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
-use Psr\Log\LoggerInterface;
 
 class MetadataService {
 	public function __construct(
-		private LoggerInterface $logger,
+		private Logger $logger,
 		private IL10N $l10n,
 		private IAppManager $appManager,
 		private IUserManager $userManager,

@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace OCA\ContextChat\BackgroundJobs;
 
+use OCA\ContextChat\Logger;
 use OCA\ContextChat\Public\IContentProvider;
 use OCA\ContextChat\Service\ProviderConfigService;
 use OCP\App\IAppManager;
@@ -18,13 +19,12 @@ use OCP\IUserManager;
 use OCP\Server;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
-use Psr\Log\LoggerInterface;
 
 class InitialContentImportJob extends QueuedJob {
 	public function __construct(
 		private IAppManager $appManager,
 		private ProviderConfigService $providerConfig,
-		private LoggerInterface $logger,
+		private Logger $logger,
 		private IUserManager $userMan,
 		ITimeFactory $timeFactory,
 		private ?string $userId,
@@ -45,12 +45,12 @@ class InitialContentImportJob extends QueuedJob {
 			/** @var IContentProvider */
 			$providerObj = Server::get($argument);
 		} catch (ContainerExceptionInterface|NotFoundExceptionInterface $e) {
-			$this->logger->warning('Could not run initial import for content provider', ['exception' => $e]);
+			$this->logger->warning('[InitialContentImportJob] Could not run initial import for content provider', ['exception' => $e]);
 			return;
 		}
 
 		if (!$this->appManager->isEnabledForUser($providerObj->getAppId())) {
-			$this->logger->info('App is not enabled for user, skipping content import', ['appId' => $providerObj->getAppId()]);
+			$this->logger->info('[InitialContentImportJob] App is not enabled for user, skipping content import', ['appId' => $providerObj->getAppId()]);
 			return;
 		}
 
@@ -59,7 +59,7 @@ class InitialContentImportJob extends QueuedJob {
 		if (!isset($registeredProviders[$identifier])
 			|| $registeredProviders[$identifier]['isInitiated']
 		) {
-			$this->logger->info('Provider has already been initiated, skipping content import', ['provider' => $identifier]);
+			$this->logger->info('[InitialContentImportJob] Provider has already been initiated, skipping content import', ['provider' => $identifier]);
 			return;
 		}
 

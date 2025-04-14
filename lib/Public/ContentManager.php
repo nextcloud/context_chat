@@ -12,6 +12,7 @@ use OCA\ContextChat\BackgroundJobs\SubmitContentJob;
 use OCA\ContextChat\Db\QueueContentItem;
 use OCA\ContextChat\Db\QueueContentItemMapper;
 use OCA\ContextChat\Event\ContentProviderRegisterEvent;
+use OCA\ContextChat\Logger;
 use OCA\ContextChat\Service\ActionService;
 use OCA\ContextChat\Service\ProviderConfigService;
 use OCP\BackgroundJob\IJobList;
@@ -19,7 +20,6 @@ use OCP\EventDispatcher\IEventDispatcher;
 use OCP\Server;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
-use Psr\Log\LoggerInterface;
 
 class ContentManager {
 	public function __construct(
@@ -27,7 +27,7 @@ class ContentManager {
 		private ProviderConfigService $providerConfig,
 		private QueueContentItemMapper $mapper,
 		private ActionService $actionService,
-		private LoggerInterface $logger,
+		private Logger $logger,
 		private IEventDispatcher $eventDispatcher,
 	) {
 	}
