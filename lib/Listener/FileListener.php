@@ -12,6 +12,7 @@ namespace OCA\ContextChat\Listener;
 
 use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\Db\QueueFile;
+use OCA\ContextChat\Logger;
 use OCA\ContextChat\Service\ActionService;
 use OCA\ContextChat\Service\ProviderConfigService;
 use OCA\ContextChat\Service\QueueService;
@@ -33,7 +34,6 @@ use OCP\Files\IRootFolder;
 use OCP\Files\Node;
 use OCP\Files\NotFoundException;
 use OCP\Share\IManager;
-use Psr\Log\LoggerInterface;
 
 /**
  * @template-implements IEventListener<Event>
@@ -41,7 +41,7 @@ use Psr\Log\LoggerInterface;
 class FileListener implements IEventListener {
 
 	public function __construct(
-		private LoggerInterface $logger,
+		private Logger $logger,
 		private QueueService $queue,
 		private IRootFolder $rootFolder,
 		private ActionService $actionService,

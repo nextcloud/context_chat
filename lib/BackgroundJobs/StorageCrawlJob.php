@@ -12,6 +12,7 @@ namespace OCA\ContextChat\BackgroundJobs;
 
 use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\Db\QueueFile;
+use OCA\ContextChat\Logger;
 use OCA\ContextChat\Service\DiagnosticService;
 use OCA\ContextChat\Service\QueueService;
 use OCA\ContextChat\Service\StorageService;
@@ -20,7 +21,6 @@ use OCP\BackgroundJob\IJobList;
 use OCP\BackgroundJob\QueuedJob;
 use OCP\DB\Exception;
 use OCP\IAppConfig;
-use Psr\Log\LoggerInterface;
 
 class StorageCrawlJob extends QueuedJob {
 	public const BATCH_SIZE = 2000;
@@ -28,7 +28,7 @@ class StorageCrawlJob extends QueuedJob {
 
 	public function __construct(
 		ITimeFactory $timeFactory,
-		private LoggerInterface $logger,
+		private Logger $logger,
 		private QueueService $queue,
 		private IJobList $jobList,
 		private StorageService $storageService,

@@ -13,6 +13,7 @@ use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\Db\QueueContentItem;
 use OCA\ContextChat\Db\QueueContentItemMapper;
 use OCA\ContextChat\Exceptions\RetryIndexException;
+use OCA\ContextChat\Logger;
 use OCA\ContextChat\Service\LangRopeService;
 use OCA\ContextChat\Service\ProviderConfigService;
 use OCA\ContextChat\Type\Source;
@@ -20,7 +21,6 @@ use OCP\AppFramework\Services\IAppConfig;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\IJobList;
 use OCP\BackgroundJob\QueuedJob;
-use Psr\Log\LoggerInterface;
 
 class SubmitContentJob extends QueuedJob {
 	private const BATCH_SIZE = 20;
@@ -30,7 +30,7 @@ class SubmitContentJob extends QueuedJob {
 		private LangRopeService $service,
 		private QueueContentItemMapper $mapper,
 		private IJobList $jobList,
-		private LoggerInterface $logger,
+		private Logger $logger,
 		private IAppConfig $appConfig,
 	) {
 		parent::__construct($timeFactory);

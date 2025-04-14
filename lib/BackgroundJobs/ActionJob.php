@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace OCA\ContextChat\BackgroundJobs;
 
 use OCA\ContextChat\Db\QueueActionMapper;
+use OCA\ContextChat\Logger;
 use OCA\ContextChat\Service\DiagnosticService;
 use OCA\ContextChat\Service\LangRopeService;
 use OCA\ContextChat\Type\ActionType;
@@ -17,7 +18,6 @@ use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\IJobList;
 use OCP\BackgroundJob\QueuedJob;
-use Psr\Log\LoggerInterface;
 
 class ActionJob extends QueuedJob {
 	private const BATCH_SIZE = 100;
@@ -27,7 +27,7 @@ class ActionJob extends QueuedJob {
 		private LangRopeService $networkService,
 		private QueueActionMapper $actionMapper,
 		private IJobList $jobList,
-		private LoggerInterface $logger,
+		private Logger $logger,
 		private DiagnosticService $diagnosticService,
 		private IAppManager $appManager,
 	) {

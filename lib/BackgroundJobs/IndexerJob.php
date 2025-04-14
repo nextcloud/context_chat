@@ -33,7 +33,6 @@ use OCP\Files\IRootFolder;
 use OCP\Files\NotFoundException;
 use OCP\Files\NotPermittedException;
 use OCP\Lock\LockedException;
-use Psr\Log\LoggerInterface;
 
 /**
  * Indexer Job
@@ -59,7 +58,6 @@ class IndexerJob extends TimedJob {
 
 	public function __construct(
 		ITimeFactory $time,
-		private LoggerInterface $logger,
 		private QueueService $queue,
 		private IUserMountCache $userMountCache,
 		private IJobList $jobList,
@@ -70,7 +68,7 @@ class IndexerJob extends TimedJob {
 		private DiagnosticService $diagnosticService,
 		private ITimeFactory $timeFactory,
 		private IAppManager $appManager,
-		private Logger $contextChatLogger,
+		private Logger $logger,
 	) {
 		parent::__construct($time);
 		$this->setInterval($this->getJobInterval());
@@ -87,7 +85,7 @@ class IndexerJob extends TimedJob {
 	 */
 	public function run($argument): void {
 		if (!$this->appManager->isInstalled('app_api')) {
-			$this->contextChatLogger->warning('IndexerJob is skipped as app_api is disabled');
+			$this->logger->warning('IndexerJob is skipped as app_api is disabled');
 			return;
 		}
 
@@ -101,7 +99,7 @@ class IndexerJob extends TimedJob {
 		try {
 			$files = $this->queue->getFromQueue($this->storageId, $this->rootId, $this->getBatchSize());
 		} catch (Exception $e) {
-			$this->contextChatLogger->error('[IndexerJob] Cannot retrieve items from  queue', ['exception' => $e, 'storageId' => $this->storageId, 'rootId' => $this->rootId]);
+			$this->logger->error('[IndexerJob] Cannot retrieve items from  queue', ['exception' => $e, 'storageId' => $this->storageId, 'rootId' => $this->rootId]);
 			return;
 		}
 
@@ -118,13 +116,13 @@ class IndexerJob extends TimedJob {
 		}
 
 		try {
-			$this->contextChatLogger->debug('[IndexerJob] Running indexing', ['storageId' => $this->storageId, 'rootId' => $this->rootId]);
+			$this->logger->debug('[IndexerJob] Running indexing', ['storageId' => $this->storageId, 'rootId' => $this->rootId]);
 			$this->index($files);
 		} catch (\RuntimeException $e) {
-			$this->contextChatLogger->warning('[IndexerJob] Temporary problem with indexing', ['exception' => $e, 'storageId' => $this->storageId, 'rootId' => $this->rootId]);
+			$this->logger->warning('[IndexerJob] Temporary problem with indexing', ['exception' => $e, 'storageId' => $this->storageId, 'rootId' => $this->rootId]);
 		} catch (\ErrorException $e) {
-			$this->contextChatLogger->warning('[IndexerJob]  Problem with indexing', ['exception' => $e, 'storageId' => $this->storageId, 'rootId' => $this->rootId]);
-			$this->contextChatLogger->info('[IndexerJob] Removing ' . static::class . ' with argument ' . var_export($argument, true) . 'from oc_jobs');
+			$this->logger->warning('[IndexerJob]  Problem with indexing', ['exception' => $e, 'storageId' => $this->storageId, 'rootId' => $this->rootId]);
+			$this->logger->info('[IndexerJob] Removing ' . static::class . ' with argument ' . var_export($argument, true) . 'from oc_jobs');
 			$this->jobList->remove(static::class, $argument);
 			throw $e;
 		}
@@ -135,15 +133,15 @@ class IndexerJob extends TimedJob {
 			$indexerJobCount = $this->getJobCount(IndexerJob::class);
 			$crawlJobCount = $this->getJobCount(StorageCrawlJob::class);
 			if (count($files) === 0 && ($indexerJobCount > 1 || $crawlJobCount === 0)) {
-				$this->contextChatLogger->info('[IndexerJob]  Removing ' . static::class . ' with argument ' . var_export($argument, true) . 'from oc_jobs');
+				$this->logger->info('[IndexerJob]  Removing ' . static::class . ' with argument ' . var_export($argument, true) . 'from oc_jobs');
 				$this->jobList->remove(static::class, $argument);
 				$this->setInitialIndexCompletion();
 			} elseif (count($files) === 0) {
-				$this->contextChatLogger->debug('[IndexerJob] No files left in queue, but we keep the job around to wait for potential StorageCrawlJob instances to finish');
+				$this->logger->debug('[IndexerJob] No files left in queue, but we keep the job around to wait for potential StorageCrawlJob instances to finish');
 
 			}
 		} catch (Exception $e) {
-			$this->contextChatLogger->error('[IndexerJob] Cannot retrieve items from queue', ['exception' => $e, 'storageId' => $this->storageId, 'rootId' => $this->rootId]);
+			$this->logger->error('[IndexerJob] Cannot retrieve items from queue', ['exception' => $e, 'storageId' => $this->storageId, 'rootId' => $this->rootId]);
 			return;
 		}
 		$this->diagnosticService->sendJobEnd(static::class, $this->getId());
@@ -198,7 +196,7 @@ class IndexerJob extends TimedJob {
 				$fileSize = $file->getSize();
 
 				if ($fileSize > $maxSize) {
-					$this->contextChatLogger->info('[IndexerJob] File is too large to index', [
+					$this->logger->info('[IndexerJob] File is too large to index', [
 						'size' => $fileSize,
 						'maxSize' => $maxSize,
 						'nodeId' => $file->getId(),
@@ -212,15 +210,15 @@ class IndexerJob extends TimedJob {
 				try {
 					$fileHandle = $file->fopen('r');
 				} catch (NotPermittedException $e) {
-					$this->contextChatLogger->error('[IndexerJob] Could not open file ' . $file->getPath() . ' for reading', ['exception' => $e, 'storageId' => $this->storageId, 'rootId' => $this->rootId]);
+					$this->logger->error('[IndexerJob] Could not open file ' . $file->getPath() . ' for reading', ['exception' => $e, 'storageId' => $this->storageId, 'rootId' => $this->rootId]);
 					continue;
 				} catch (LockedException $e) {
 					$retryQFiles[] = $queueFile;
-					$this->contextChatLogger->info('[IndexerJob] File ' . $file->getPath() . ' is locked, could not read for indexing. Adding it to the next batch.', ['storageId' => $this->storageId, 'rootId' => $this->rootId]);
+					$this->logger->info('[IndexerJob] File ' . $file->getPath() . ' is locked, could not read for indexing. Adding it to the next batch.', ['storageId' => $this->storageId, 'rootId' => $this->rootId]);
 					continue;
 				}
 				if (!is_resource($fileHandle)) {
-					$this->contextChatLogger->warning('File handle for' . $file->getPath() . ' is not readable', ['storageId' => $this->storageId, 'rootId' => $this->rootId]);
+					$this->logger->warning('File handle for' . $file->getPath() . ' is not readable', ['storageId' => $this->storageId, 'rootId' => $this->rootId]);
 					continue;
 				}
 
@@ -249,7 +247,7 @@ class IndexerJob extends TimedJob {
 						$sourcesToRetry = array_merge($sourcesToRetry, $loadSourcesResult['sources_to_retry']);
 						$retryQFiles = array_merge($retryQFiles, array_map(fn ($sourceId) => $trackedQFiles[$sourceId], $loadSourcesResult['sources_to_retry']));
 					} catch (RetryIndexException $e) {
-						$this->contextChatLogger->debug('At least one source is already being processed from another request, trying again soon', ['exception' => $e, 'storageId' => $this->storageId, 'rootId' => $this->rootId]);
+						$this->logger->debug('At least one source is already being processed from another request, trying again soon', ['exception' => $e, 'storageId' => $this->storageId, 'rootId' => $this->rootId]);
 						$retryQFiles = array_merge($retryQFiles, array_map(fn (Source $source) => $trackedQFiles[$source->reference], $sources));
 					} finally {
 						// reset buffer
@@ -258,20 +256,20 @@ class IndexerJob extends TimedJob {
 					}
 				}
 			} catch (InvalidPathException|NotFoundException $e) {
-				$this->contextChatLogger->error('[IndexerJob] Could not find file ' . $file->getPath(), ['exception' => $e, 'storageId' => $this->storageId, 'rootId' => $this->rootId]);
+				$this->logger->error('[IndexerJob] Could not find file ' . $file->getPath(), ['exception' => $e, 'storageId' => $this->storageId, 'rootId' => $this->rootId]);
 				continue;
 			}
 		}
 
 		$emptyInvalidSources = array_values(array_diff($allSourceIds, $loadedSources, $sourcesToRetry));
 		if (count($emptyInvalidSources) > 0) {
-			$this->contextChatLogger->info('[IndexerJob] Invalid or empty files that were not indexed (n=' . count($emptyInvalidSources) . '): ' .
+			$this->logger->info('[IndexerJob] Invalid or empty files that were not indexed (n=' . count($emptyInvalidSources) . '): ' .
 				json_encode($this->exportFileSources($emptyInvalidSources), \JSON_THROW_ON_ERROR | \JSON_OBJECT_AS_ARRAY),
 				['storageId' => $this->storageId, 'rootId' => $this->rootId]);
 		}
 
 		if (count($sourcesToRetry) > 0) {
-			$this->contextChatLogger->info('[IndexerJob] Files that were not indexed but will be retried (n=' . count($sourcesToRetry) . '): '
+			$this->logger->info('[IndexerJob] Files that were not indexed but will be retried (n=' . count($sourcesToRetry) . '): '
 				. json_encode($this->exportFileSources($sourcesToRetry), \JSON_THROW_ON_ERROR | \JSON_OBJECT_AS_ARRAY),
 				['storageId' => $this->storageId, 'rootId' => $this->rootId]);
 		}

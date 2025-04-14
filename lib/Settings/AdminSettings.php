@@ -7,6 +7,7 @@
 namespace OCA\ContextChat\Settings;
 
 use OCA\ContextChat\Db\QueueContentItemMapper;
+use OCA\ContextChat\Logger;
 use OCA\ContextChat\Service\ActionService;
 use OCA\ContextChat\Service\LangRopeService;
 use OCA\ContextChat\Service\ProviderConfigService;
@@ -18,7 +19,6 @@ use OCP\AppFramework\Services\IInitialState;
 use OCP\DB\Exception;
 use OCP\Settings\ISettings;
 use OCP\Util;
-use Psr\Log\LoggerInterface;
 
 class AdminSettings implements ISettings {
 	public function __construct(
@@ -29,7 +29,7 @@ class AdminSettings implements ISettings {
 		private StorageService $storageService,
 		private LangRopeService $langRopeService,
 		private QueueContentItemMapper $contentQueue,
-		private LoggerInterface $logger,
+		private Logger $logger,
 	) {
 	}
 

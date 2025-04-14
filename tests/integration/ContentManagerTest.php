@@ -15,6 +15,7 @@ use OCA\ContextChat\BackgroundJobs\InitialContentImportJob;
 use OCA\ContextChat\BackgroundJobs\SubmitContentJob;
 use OCA\ContextChat\Db\QueueContentItemMapper;
 use OCA\ContextChat\Event\ContentProviderRegisterEvent;
+use OCA\ContextChat\Logger;
 use OCA\ContextChat\Public\ContentItem;
 use OCA\ContextChat\Public\ContentManager;
 use OCA\ContextChat\Public\IContentProvider;
@@ -94,7 +95,7 @@ class ContentManagerTest extends TestCase {
 			$this->providerConfig,
 			$this->mapper,
 			$this->actionService,
-			$this->logger,
+			Server::get(Logger::class),
 			$this->eventDispatcher,
 		);
 	}

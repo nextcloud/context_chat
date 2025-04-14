@@ -10,17 +10,17 @@ declare(strict_types=1);
 namespace OCA\ContextChat\Repair;
 
 use OCA\ContextChat\AppInfo\Application;
+use OCA\ContextChat\Logger;
 use OCA\ContextChat\Service\ProviderConfigService;
 use OCP\IAppConfig;
 use OCP\IConfig;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
-use Psr\Log\LoggerInterface;
 
 class AppInstallStep implements IRepairStep {
 
 	public function __construct(
-		private LoggerInterface $logger,
+		private Logger $logger,
 		private IAppConfig $appConfig,
 		private IConfig $config,
 	) {

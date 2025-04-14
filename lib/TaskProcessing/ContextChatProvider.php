@@ -11,6 +11,7 @@ namespace OCA\ContextChat\TaskProcessing;
 
 use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\Exceptions\RetryIndexException;
+use OCA\ContextChat\Logger;
 use OCA\ContextChat\Service\LangRopeService;
 use OCA\ContextChat\Service\MetadataService;
 use OCA\ContextChat\Service\ProviderConfigService;
@@ -24,7 +25,6 @@ use OCP\Files\IRootFolder;
 use OCP\Files\NotPermittedException;
 use OCP\IL10N;
 use OCP\TaskProcessing\ISynchronousProvider;
-use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 class ContextChatProvider implements ISynchronousProvider {
@@ -33,7 +33,7 @@ class ContextChatProvider implements ISynchronousProvider {
 		private LangRopeService $langRopeService,
 		private IL10N $l10n,
 		private IRootFolder $rootFolder,
-		private LoggerInterface $logger,
+		private Logger $logger,
 		private ScanService $scanService,
 		private MetadataService $metadataService,
 		private IAppConfig $appConfig,

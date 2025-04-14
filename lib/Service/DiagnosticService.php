@@ -15,7 +15,7 @@ class DiagnosticService {
 
 	public function __construct(
 		private IAppConfig $appConfig,
-		private Logger $contextChatLogger,
+		private Logger $logger,
 	) {
 	}
 
@@ -25,7 +25,7 @@ class DiagnosticService {
 	 * @return void
 	 */
 	public function sendJobTrigger(string $class, int $id): void {
-		$this->contextChatLogger->info('Background jobs: ' . $class . ' ' . $id . ' triggered');
+		$this->logger->info('Background jobs: ' . $class . ' ' . $id . ' triggered');
 	}
 
 	/**
@@ -34,7 +34,7 @@ class DiagnosticService {
 	 * @return void
 	 */
 	public function sendJobStart(string $class, int $id): void {
-		$this->contextChatLogger->info('Background jobs: ' . $class . ' ' . $id . ' started');
+		$this->logger->info('Background jobs: ' . $class . ' ' . $id . ' started');
 	}
 
 	/**
@@ -43,7 +43,7 @@ class DiagnosticService {
 	 * @return void
 	 */
 	public function sendJobEnd(string $class, int $id): void {
-		$this->contextChatLogger->info('Background jobs: ' . $class . ' ' . $id . ' ended');
+		$this->logger->info('Background jobs: ' . $class . ' ' . $id . ' ended');
 	}
 
 	/**
@@ -59,7 +59,7 @@ class DiagnosticService {
 	 * @return void
 	 */
 	public function sendIndexedFiles(int $count): void {
-		$this->contextChatLogger->info('Indexed ' . $count . ' files');
+		$this->logger->info('Indexed ' . $count . ' files');
 		// We use numericToNumber to fall back to float in case int is too small
 		$this->appConfig->setAppValueString('indexed_files_count', (string)Util::numericToNumber($count + Util::numericToNumber($this->appConfig->getAppValueString('indexed_files_count', '0', false))), false);
 	}
