@@ -11,6 +11,7 @@ namespace OCA\ContextChat\BackgroundJobs;
 
 use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\Db\QueueFile;
+use OCA\ContextChat\Exceptions\RetryIndexException;
 use OCA\ContextChat\Logger;
 use OCA\ContextChat\Service\DiagnosticService;
 use OCA\ContextChat\Service\LangRopeService;
@@ -240,16 +241,21 @@ class IndexerJob extends TimedJob {
 
 				// Either the buffer is full, or we're at the last item
 				if ($size > $maxSize || count($sources) >= Application::CC_MAX_FILES || $i === count($files) - 1) {
-					$loadSourcesResult = $this->langRopeService->indexSources($sources);
-					// track files
-					$this->diagnosticService->sendIndexedFiles(count($loadSourcesResult['loaded_sources']));
-					$loadedSources = array_merge($loadedSources, $loadSourcesResult['loaded_sources']);
-					$sourcesToRetry = array_merge($sourcesToRetry, $loadSourcesResult['sources_to_retry']);
-					$retryQFiles = array_merge($retryQFiles, array_map(fn ($sourceId) => $trackedQFiles[$sourceId], $loadSourcesResult['sources_to_retry']));
-
-					// reset buffer
-					$sources = [];
-					$size = 0;
+					try {
+						$loadSourcesResult = $this->langRopeService->indexSources($sources);
+						// track files
+						$this->diagnosticService->sendIndexedFiles(count($loadSourcesResult['loaded_sources']));
+						$loadedSources = array_merge($loadedSources, $loadSourcesResult['loaded_sources']);
+						$sourcesToRetry = array_merge($sourcesToRetry, $loadSourcesResult['sources_to_retry']);
+						$retryQFiles = array_merge($retryQFiles, array_map(fn ($sourceId) => $trackedQFiles[$sourceId], $loadSourcesResult['sources_to_retry']));
+					} catch (RetryIndexException $e) {
+						$this->contextChatLogger->debug('At least one source is already being processed from another request, trying again soon', ['exception' => $e, 'storageId' => $this->storageId, 'rootId' => $this->rootId]);
+						$retryQFiles = array_merge($retryQFiles, array_map(fn (Source $source) => $trackedQFiles[$source->reference], $sources));
+					} finally {
+						// reset buffer
+						$sources = [];
+						$size = 0;
+					}
 				}
 			} catch (InvalidPathException|NotFoundException $e) {
 				$this->contextChatLogger->error('[IndexerJob] Could not find file ' . $file->getPath(), ['exception' => $e, 'storageId' => $this->storageId, 'rootId' => $this->rootId]);
