@@ -209,12 +209,12 @@ class IndexerJob extends TimedJob {
 
 				try {
 					$fileHandle = $file->fopen('r');
-				} catch (NotPermittedException $e) {
-					$this->logger->error('[IndexerJob] Could not open file ' . $file->getPath() . ' for reading', ['exception' => $e, 'storageId' => $this->storageId, 'rootId' => $this->rootId]);
-					continue;
 				} catch (LockedException $e) {
 					$retryQFiles[] = $queueFile;
 					$this->logger->info('[IndexerJob] File ' . $file->getPath() . ' is locked, could not read for indexing. Adding it to the next batch.', ['storageId' => $this->storageId, 'rootId' => $this->rootId]);
+					continue;
+				} catch (NotPermittedException|\Throwable $e) {
+					$this->logger->error('[IndexerJob] Could not open file ' . $file->getPath() . ' for reading', ['exception' => $e, 'storageId' => $this->storageId, 'rootId' => $this->rootId]);
 					continue;
 				}
 				if (!is_resource($fileHandle)) {
