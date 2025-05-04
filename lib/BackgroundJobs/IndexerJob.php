@@ -208,7 +208,7 @@ class IndexerJob extends TimedJob {
 				}
 
 				try {
-					$fileHandle = $file->fopen('r');
+					$fileHandle = $file->fopen('rb');
 				} catch (LockedException $e) {
 					$retryQFiles[] = $queueFile;
 					$this->logger->info('[IndexerJob] File ' . $file->getPath() . ' is locked, could not read for indexing. Adding it to the next batch.', ['storageId' => $this->storageId, 'rootId' => $this->rootId]);
