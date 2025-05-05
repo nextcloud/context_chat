@@ -10,6 +10,25 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [4.3.0] - 2025-05-05
+
+### Added
+* feat(Logger): Log to a dedicated context chat log file (#125) @marcelklehr
+
+### Fixed
+* fix(cron): Save cron work when app_api is disabled (#122) @nickvergessen
+* fix(ci): Fix integration test workflow (#124) @marcelklehr
+* fix(StorageService#getMounts): Use correct files folder per home mount (#124) @marcelklehr
+* fix(StorageService#getAllFilesInFolder): Return generator (#124) @marcelklehr
+* fix(StorageService#getFilesInMount): Use sub query (#124) @marcelklehr
+* fix(IndexerJob): Catch more errors from fopen (#126) @marcelklehr
+* fix: curl EOF error for incomplete file uploads to the backend (#127) @kyteinsky
+
+### Changed
+* test(StorageCrawlJob): Allow changing interval of StorageCrawlJob @marcelklehr
+* perf(DiagnosticService): Don't store data in AppConfig (#123) @marcelklehr
+
+
 ## [4.2.0] - 2025-04-03
 
 ### Added
