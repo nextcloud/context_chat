@@ -109,7 +109,7 @@ class ScanService {
 		}
 
 		try {
-			$fileHandle = $node->fopen('r');
+			$fileHandle = $node->fopen('rb');
 		} catch (\Exception $e) {
 			$this->logger->error('Could not open file ' . $node->getPath() . ' for reading: ' . $e->getMessage());
 			return null;
