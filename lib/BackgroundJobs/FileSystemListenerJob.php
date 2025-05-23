@@ -71,9 +71,6 @@ class FileSystemListenerJob extends QueuedJob {
 						case FsEventType::DELETE:
 							$this->fsEventService->onDelete($node);
 							break;
-
-						default:
-							$this->logger->warning('Unknown fs event  type', ['type' => $fsEvent->getType()]);
 					}
 					$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
 					$this->fsEventMapper->delete($fsEvent);

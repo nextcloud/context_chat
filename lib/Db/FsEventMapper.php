@@ -22,7 +22,7 @@ class FsEventMapper extends QBMapper {
 	protected $db;
 
 	public function __construct(IDBConnection $db) {
-		parent::__construct($db, 'context_chat_fs_events', QueueAction::class);
+		parent::__construct($db, 'context_chat_fs_events', FsEvent::class);
 	}
 
 	/**
