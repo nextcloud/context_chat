@@ -80,9 +80,6 @@ class FsEventService {
 		}
 	}
 
-	/**
-	 * @throws \OCP\Files\InvalidPathException
-	 */
 	public function onInsert(Node $node, bool $recurse = true, bool $update = false): void {
 		if (!$this->allowedPath($node)) {
 			return;

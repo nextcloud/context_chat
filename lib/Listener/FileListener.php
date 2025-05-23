@@ -11,7 +11,9 @@ declare(strict_types=1);
 namespace OCA\ContextChat\Listener;
 
 use OCA\ContextChat\Logger;
+use OCA\ContextChat\Service\FsEventScheduler;
 use OCA\ContextChat\Service\FsEventService;
+use OCP\DB\Exception;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use OCP\Files\Cache\CacheEntryInsertedEvent;
@@ -24,6 +26,7 @@ use OCP\Files\File;
 use OCP\Files\Folder;
 use OCP\Files\InvalidPathException;
 use OCP\Files\IRootFolder;
+use OCP\Files\NotFoundException;
 
 /**
  * @template-implements IEventListener<Event>
@@ -33,7 +36,10 @@ class FileListener implements IEventListener {
 	public function __construct(
 		private Logger $logger,
 		private IRootFolder $rootFolder,
+		// Executes fs event listening code synchronously
 		private FsEventService $fsEventService,
+		// Executes fs event listening code asynchronously
+		private FsEventScheduler $fsEventScheduler,
 	) {
 	}
 
@@ -44,15 +50,18 @@ class FileListener implements IEventListener {
 				if (!$node instanceof File) {
 					return;
 				}
+				// Synchronous, because we don't recurse
 				$this->fsEventService->onInsert($node, false, true);
 			}
 
 			if ($event instanceof BeforeNodeDeletedEvent) {
+				// Synchronous, because we don't recurse
 				$this->fsEventService->onDelete($event->getNode(), false);
 				return;
 			}
 
 			if ($event instanceof NodeCreatedEvent) {
+				// Synchronous, because we don't recurse
 				$this->fsEventService->onInsert($event->getNode(), false);
 				return;
 			}
@@ -65,6 +74,7 @@ class FileListener implements IEventListener {
 				if ($node instanceof Folder) {
 					return;
 				}
+				// Synchronous, because we don't recurse
 				$this->fsEventService->onInsert($node);
 				return;
 			}
@@ -72,7 +82,8 @@ class FileListener implements IEventListener {
 			// This event is also used for moves
 			if ($event instanceof NodeRenamedEvent) {
 				$targetNode = $event->getTarget();
-				$this->fsEventService->onAccessUpdate($targetNode);
+				// Asynchronous, because we potentially recurse
+				$this->fsEventScheduler->onAccessUpdate($targetNode);
 				return;
 			}
 
@@ -85,6 +96,8 @@ class FileListener implements IEventListener {
 				if ($node === false) {
 					return;
 				}
+				// todo: not sure if this need to be synchronous
+				// Synchronous
 				$this->fsEventService->onDelete($node);
 			}
 
@@ -93,7 +106,8 @@ class FileListener implements IEventListener {
 				if ($node === null) {
 					return;
 				}
-				$this->fsEventService->onInsert($node);
+				// Asynchronous, because we potentially recurse and this event needs to be handled fast
+				$this->fsEventScheduler->onAccessUpdate($node);
 			}
 
 			if ($event instanceof \OCP\Files\Config\Event\UserMountRemovedEvent) {
@@ -101,9 +115,10 @@ class FileListener implements IEventListener {
 				if ($node === null) {
 					return;
 				}
-				$this->fsEventService->onDelete($node);
+				// Asynchronous, because we potentially recurse and this event needs to be handled fast
+				$this->fsEventScheduler->onAccessUpdate($node);
 			}
-		} catch (InvalidPathException $e) {
+		} catch (InvalidPathException|Exception|NotFoundException $e) {
 			$this->logger->warning($e->getMessage(), ['exception' => $e]);
 		}
 	}
