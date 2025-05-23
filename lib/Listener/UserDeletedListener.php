@@ -9,9 +9,7 @@ declare(strict_types=1);
 
 namespace OCA\ContextChat\Listener;
 
-use OCA\ContextChat\Logger;
 use OCA\ContextChat\Service\ActionScheduler;
-use OCA\ContextChat\Service\ProviderConfigService;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use OCP\User\Events\UserDeletedEvent;
