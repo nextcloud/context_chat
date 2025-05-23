@@ -16,7 +16,7 @@ class FsEventService {
 	public function __construct(
 		private Logger $logger,
 		private QueueService $queue,
-		private ActionService $actionService,
+		private ActionScheduler $actionService,
 		private StorageService $storageService,
 		private \OCP\Share\IManager $shareManager,
 	) {

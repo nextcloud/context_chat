@@ -13,7 +13,7 @@ use OCA\ContextChat\Db\QueueContentItem;
 use OCA\ContextChat\Db\QueueContentItemMapper;
 use OCA\ContextChat\Event\ContentProviderRegisterEvent;
 use OCA\ContextChat\Logger;
-use OCA\ContextChat\Service\ActionService;
+use OCA\ContextChat\Service\ActionScheduler;
 use OCA\ContextChat\Service\ProviderConfigService;
 use OCP\BackgroundJob\IJobList;
 use OCP\EventDispatcher\IEventDispatcher;
@@ -26,7 +26,7 @@ class ContentManager {
 		private IJobList $jobList,
 		private ProviderConfigService $providerConfig,
 		private QueueContentItemMapper $mapper,
-		private ActionService $actionService,
+		private ActionScheduler $actionService,
 		private Logger $logger,
 		private IEventDispatcher $eventDispatcher,
 	) {
