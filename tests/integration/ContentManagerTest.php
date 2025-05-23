@@ -19,7 +19,7 @@ use OCA\ContextChat\Logger;
 use OCA\ContextChat\Public\ContentItem;
 use OCA\ContextChat\Public\ContentManager;
 use OCA\ContextChat\Public\IContentProvider;
-use OCA\ContextChat\Service\ActionService;
+use OCA\ContextChat\Service\ActionScheduler;
 use OCA\ContextChat\Service\ProviderConfigService;
 use OCP\BackgroundJob\IJobList;
 use OCP\EventDispatcher\IEventDispatcher;
@@ -35,8 +35,8 @@ class ContentManagerTest extends TestCase {
 	private QueueContentItemMapper $mapper;
 	/** @var MockObject | ProviderConfigService */
 	private ProviderConfigService $providerConfig;
-	/** @var MockObject | ActionService */
-	private ActionService $actionService;
+	/** @var MockObject | ActionScheduler */
+	private ActionScheduler $actionService;
 
 	private ContentManager $contentManager;
 	private LoggerInterface $logger;
@@ -54,7 +54,7 @@ class ContentManagerTest extends TestCase {
 
 		$this->mapper = $this->createMock(QueueContentItemMapper::class);
 		$this->providerConfig = $this->createMock(ProviderConfigService::class);
-		$this->actionService = $this->createMock(ActionService::class);
+		$this->actionService = $this->createMock(ActionScheduler::class);
 
 		// new dispatcher for each test
 		$this->dispatcher = new SymfonyDispatcher();
