@@ -25,8 +25,7 @@
 		"nextcloud/ocp": "dev-master",
 		"roave/security-advisories": "dev-latest",
 		"phpunit/phpunit": "^10.5",
-		"vimeo/psalm": "^6.11.0",
-		"symfony/console": "^6.4.21"
+		"vimeo/psalm": "^6.11.0"
 	},
 	"scripts": {
 		"lint": "find . -name \\*.php -not -path './vendor/*' -print0 | xargs -0 -n1 php -l",
@@ -41,7 +40,10 @@
 	},
 	"config": {
 		"optimize-autoloader": true,
-		"classmap-authoritative": true
+		"classmap-authoritative": true,
+		"platform": {
+			"php": "8.1.31"
+		}
 	},
 	"autoload": {
 		"psr-4": {
