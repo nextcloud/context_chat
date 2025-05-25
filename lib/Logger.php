@@ -23,12 +23,16 @@ class Logger {
 
 	public function __construct(
 		ILogFactory $logFactory,
-		IConfig $config,
+		private IConfig $config,
 	) {
-		$default = $config->getSystemValue('datadirectory', \OC::$SERVERROOT . '/data') . '/context_chat.log';
+		$logFilepath = $this->getLogFilepath();
+		$this->parentLogger = $logFactory->getCustomPsrLogger($logFilepath, 'file', 'Nextcloud Context Chat');
+	}
+
+	public function getLogFilepath(): string {
+		$default = $this->config->getSystemValue('datadirectory', \OC::$SERVERROOT . '/data') . '/context_chat.log';
 		// Legacy way was appconfig, now it's paralleled with the normal log config
-		$logFile = $config->getAppValue(Application::APP_ID, 'logfile', $default);
-		$this->parentLogger = $logFactory->getCustomPsrLogger($logFile, 'file', 'Nextcloud Context Chat');
+		return $this->config->getAppValue(Application::APP_ID, 'logfile', $default);
 	}
 
 	public function emergency($message, array $context = []): void {
@@ -43,11 +47,11 @@ class Logger {
 		$this->parentLogger->critical($message, $context);
 	}
 
-	public function error($message, array $context = []): void {
+	public function error(string $message, array $context = []): void {
 		$this->parentLogger->critical($message, $context);
 	}
 
-	public function warning($message, array $context = []): void {
+	public function warning(string $message, array $context = []): void {
 		$this->parentLogger->critical($message, $context);
 	}
 
@@ -55,11 +59,11 @@ class Logger {
 		$this->parentLogger->critical($message, $context);
 	}
 
-	public function info($message, array $context = []): void {
+	public function info(string $message, array $context = []): void {
 		$this->parentLogger->critical($message, $context);
 	}
 
-	public function debug($message, array $context = []): void {
+	public function debug(string $message, array $context = []): void {
 		$this->parentLogger->critical($message, $context);
 	}
 

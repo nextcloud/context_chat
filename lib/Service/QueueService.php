@@ -36,9 +36,7 @@ class QueueService {
 	}
 
 	/**
-	 * @param string $model
 	 * @param QueueFile $file
-	 * @param string|null $userId
 	 * @return void
 	 */
 	public function scheduleJob(QueueFile $file): void {
@@ -71,7 +69,6 @@ class QueueService {
 	}
 
 	/**
-	 * @param string $model
 	 * @param QueueFile[] $files
 	 * @return void
 	 * @throws \OCP\DB\Exception

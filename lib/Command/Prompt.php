@@ -52,7 +52,7 @@ class Prompt extends Command {
 			);
 	}
 
-	protected function execute(InputInterface $input, OutputInterface $output) {
+	protected function execute(InputInterface $input, OutputInterface $output): int {
 		$userId = $input->getArgument('uid');
 		$prompt = $input->getArgument('prompt');
 		$contextSources = $input->getOption('context-sources');
