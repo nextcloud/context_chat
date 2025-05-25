@@ -65,14 +65,8 @@ jobs:
         with:
           repository: nextcloud/server
           ref: ${{ matrix.server-versions }}
+          submodules: recursive
           persist-credentials: false
-
-      - name: Checkout submodules
-        shell: bash
-        run: |
-          auth_header="$(git config --local --get http.https://github.com/.extraheader)"
-          git submodule sync --recursive
-          git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
 
       - name: Set up php ${{ matrix.php-versions }}
         uses: shivammathur/setup-php@cf4cade2721270509d5b1c766ab3549210a39a2a # 2.33.0
@@ -147,12 +141,14 @@ jobs:
         with:
           repository: nextcloud/documentation
           path: data/admin/files/documentation
+          persist-credentials: false
 
       - name: Checkout pdfs
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           repository: papers-we-love/papers-we-love
           path: data/admin/files/papers
+          persist-credentials: false
 
       - name: Prepare docs
         run: |
@@ -318,13 +314,8 @@ jobs:
         with:
           repository: nextcloud/server
           ref: ${{ matrix.server-versions }}
-
-      - name: Checkout submodules
-        shell: bash
-        run: |
-          auth_header="$(git config --local --get http.https://github.com/.extraheader)"
-          git submodule sync --recursive
-          git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
+          submodules: recursive
+          persist-credentials: false
 
       - name: Set up php ${{ matrix.php-versions }}
         uses: shivammathur/setup-php@cf4cade2721270509d5b1c766ab3549210a39a2a # 2.33.0
@@ -337,12 +328,14 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           path: apps/${{ env.APP_NAME }}
+          persist-credentials: false
 
       - name: Checkout backend
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           repository: nextcloud/context_chat_backend
           path: context_chat_backend/
+          persist-credentials: false
 
       - name: Get backend app version
         id: appinfo
@@ -422,6 +415,7 @@ jobs:
         with:
           repository: nextcloud/documentation
           path: data/admin/files/documentation
+          persist-credentials: false
 
       - name: Checkout pdfs
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -429,6 +423,7 @@ jobs:
           repository: papers-we-love/papers-we-love
           path: data/admin/files/papers
           ref: ad039b1e29ddb6ab1e217d39f16a5051c18ccc5a # to be deterministic
+          persist-credentials: false
 
       - name: Prepare docs
         run: |
@@ -556,13 +551,8 @@ jobs:
         with:
           repository: nextcloud/server
           ref: ${{ matrix.server-versions }}
-
-      - name: Checkout submodules
-        shell: bash
-        run: |
-          auth_header="$(git config --local --get http.https://github.com/.extraheader)"
-          git submodule sync --recursive
-          git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
+          submodules: recursive
+          persist-credentials: false
 
       - name: Set up php ${{ matrix.php-versions }}
         uses: shivammathur/setup-php@cf4cade2721270509d5b1c766ab3549210a39a2a # 2.33.0
@@ -575,12 +565,14 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           path: apps/${{ env.APP_NAME }}
+          persist-credentials: false
 
       - name: Checkout backend
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           repository: nextcloud/context_chat_backend
           path: context_chat_backend/
+          persist-credentials: false
 
       - name: Get backend app version
         id: appinfo
@@ -673,6 +665,7 @@ jobs:
         with:
           repository: nextcloud/documentation
           path: data/admin/files/documentation
+          persist-credentials: false
 
       - name: Checkout pdfs
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -680,6 +673,7 @@ jobs:
           repository: papers-we-love/papers-we-love
           path: data/admin/files/papers
           ref: ad039b1e29ddb6ab1e217d39f16a5051c18ccc5a # to be deterministic
+          persist-credentials: false
 
       - name: Prepare docs
         run: |
