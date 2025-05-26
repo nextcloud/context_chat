@@ -131,8 +131,7 @@ class ContextChatSearchProvider implements ISynchronousProvider {
 			throw new \RuntimeException('No supported sources found in the scope list, extend the list or use unscoped query instead');
 		}
 
-		// TODO use a different query to only ask for sources to the backend app
-		$response = $this->langRopeService->query(
+		$response = $this->langRopeService->docSearch(
 			$userId,
 			$input['prompt'],
 			true,
@@ -155,11 +154,11 @@ class ContextChatSearchProvider implements ISynchronousProvider {
 		if (isset($response['error'])) {
 			throw new \RuntimeException('No result in ContextChat response: ' . $response['error']);
 		}
-		if (!isset($response['sources']) || !is_array($response['sources'])) {
-			throw new \RuntimeException('Invalid response from ContextChat, expected "sources" keys: ' . json_encode($response));
+		if (!isset($response) || !is_array($response)) {
+			throw new \RuntimeException('Invalid response from ContextChat, expected a list: ' . json_encode($response));
 		}
 
-		if (count($response['sources']) === 0) {
+		if (count($response) === 0) {
 			$this->logger->info('No sources found in the response', ['response' => $response]);
 			return [
 				'sources' => [],

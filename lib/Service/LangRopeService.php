@@ -343,6 +343,30 @@ class LangRopeService {
 	 * @return array
 	 * @throws RuntimeException
 	 */
+	public function docSearch(string $userId, string $prompt, bool $useContext = true, ?string $scopeType = null, ?array $scopeList = null): array {
+		$params = [
+			'query' => $prompt,
+			'userId' => $userId,
+			'useContext' => $useContext,
+		];
+		if ($scopeType !== null && $scopeList !== null) {
+			$params['useContext'] = true;
+			$params['scopeType'] = $scopeType;
+			$params['scopeList'] = $scopeList;
+		}
+
+		return $this->requestToExApp('/docSearch', 'POST', $params);
+	}
+
+	/**
+	 * @param string $userId
+	 * @param string $prompt
+	 * @param bool $useContext
+	 * @param ?string $scopeType
+	 * @param ?array<string> $scopeList
+	 * @return array
+	 * @throws RuntimeException
+	 */
 	public function textProcessingQuery(string $userId, string $prompt, bool $useContext = true, ?string $scopeType = null, ?array $scopeList = null): array {
 		[$output, $sources] = $this->query($userId, $prompt, $useContext, $scopeType, $scopeList);
 		return ['message' => $this->getWithPresentableSources($output ?? '', ...($sources ?? []))];
