@@ -73,6 +73,11 @@ class ContextChatSearchTaskType implements ITaskType {
 				$this->l->t('Required to nicely render the scope list in assistant'),
 				EShapeType::Text,
 			),
+			'limit' => new ShapeDescriptor(
+				$this->l->t('Max result number'),
+				$this->l->t('Maximum number of results returned by Context Chat'),
+				EShapeType::Number,
+			),
 		];
 	}
 

@@ -48,7 +48,9 @@ class ContextChatSearchProvider implements ISynchronousProvider {
 	}
 
 	public function getInputShapeDefaults(): array {
-		return [];
+		return [
+			'limit' => 10,
+		];
 	}
 
 	public function getOptionalInputShape(): array {
@@ -89,6 +91,11 @@ class ContextChatSearchProvider implements ISynchronousProvider {
 			throw new \RuntimeException('Invalid input, expected "prompt" key with string value');
 		}
 
+		if (!isset($input['limit']) || !is_numeric($input['limit'])) {
+			throw new \RuntimeException('Invalid input, expected "limit" key with number value');
+		}
+		$limit = (int)$input['limit'];
+
 		if (
 			!isset($input['scopeType']) || !is_string($input['scopeType'])
 			|| !isset($input['scopeList']) || !is_array($input['scopeList'])
@@ -108,7 +115,13 @@ class ContextChatSearchProvider implements ISynchronousProvider {
 
 		// unscoped query
 		if ($input['scopeType'] === ScopeType::NONE) {
-			$response = $this->langRopeService->docSearch($userId, $input['prompt']);
+			$response = $this->langRopeService->docSearch(
+				$userId,
+				$input['prompt'],
+				null,
+				null,
+				$limit,
+			);
 			if (isset($response['error'])) {
 				throw new \RuntimeException('No result in ContextChat response. ' . $response['error']);
 			}
@@ -139,6 +152,7 @@ class ContextChatSearchProvider implements ISynchronousProvider {
 			$input['prompt'],
 			$input['scopeType'],
 			$processedScopes,
+			$limit,
 		);
 
 		return $this->processResponse($userId, $response);
@@ -154,7 +168,7 @@ class ContextChatSearchProvider implements ISynchronousProvider {
 	 */
 	private function processResponse(string $userId, array $response): array {
 		if (isset($response['error'])) {
-			throw new \RuntimeException('No result in ContextChat response: ' . $response['error']);
+			throw new \RuntimeException('Error received in ContextChat document search request: ' . $response['error']);
 		}
 		if (!array_is_list($response)) {
 			throw new \RuntimeException('Invalid response from ContextChat, expected a list: ' . json_encode($response));

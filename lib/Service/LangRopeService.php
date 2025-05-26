@@ -339,10 +339,10 @@ class LangRopeService {
 	 * @param string $prompt
 	 * @param ?string $scopeType
 	 * @param ?array<string> $scopeList
+	 * @param int|null $limit
 	 * @return array
-	 * @throws RuntimeException
 	 */
-	public function docSearch(string $userId, string $prompt, ?string $scopeType = null, ?array $scopeList = null): array {
+	public function docSearch(string $userId, string $prompt, ?string $scopeType = null, ?array $scopeList = null, ?int $limit = null): array {
 		$params = [
 			'query' => $prompt,
 			'userId' => $userId,
@@ -350,6 +350,9 @@ class LangRopeService {
 		if ($scopeType !== null && $scopeList !== null) {
 			$params['scopeType'] = $scopeType;
 			$params['scopeList'] = $scopeList;
+		}
+		if ($limit !== null) {
+			$params['ctxLimit'] = $limit;
 		}
 
 		return $this->requestToExApp('/docSearch', 'POST', $params);
