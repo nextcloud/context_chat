@@ -7,7 +7,7 @@
 
 namespace OCA\ContextChat\Command;
 
-use OCA\ContextChat\TaskProcessing\ContextChatTaskType;
+use OCA\ContextChat\TaskProcessing\ContextChatSearchTaskType;
 use OCA\ContextChat\Type\ScopeType;
 use OCP\TaskProcessing\IManager;
 use OCP\TaskProcessing\Task;
@@ -54,14 +54,14 @@ class Search extends Command {
 		if (!empty($contextProviders)) {
 			$contextProviders = preg_replace('/\s*,+\s*/', ',', $contextProviders);
 			$contextProvidersArray = array_filter(explode(',', $contextProviders), fn ($source) => !empty($source));
-			$task = new Task(ContextChatTaskType::ID, [
+			$task = new Task(ContextChatSearchTaskType::ID, [
 				'prompt' => $prompt,
 				'scopeType' => ScopeType::PROVIDER,
 				'scopeList' => $contextProvidersArray,
 				'scopeListMeta' => '',
 			], 'context_chat', $userId);
 		} else {
-			$task = new Task(ContextChatTaskType::ID, [
+			$task = new Task(ContextChatSearchTaskType::ID, [
 				'prompt' => $prompt,
 				'scopeType' => ScopeType::NONE,
 				'scopeList' => [],
@@ -77,7 +77,7 @@ class Search extends Command {
 			$output->writeln(var_export($task->getOutput(), true));
 			return 0;
 		} else {
-			$output->writeln($task->getErrorMessage());
+			$output->writeln('<error>' . $task->getErrorMessage() . '</error>');
 			return 1;
 		}
 	}

@@ -102,10 +102,13 @@ class ContextChatSearchProvider implements ISynchronousProvider {
 		} catch (\InvalidArgumentException $e) {
 			throw new \RuntimeException($e->getMessage(), intval($e->getCode()), $e);
 		}
+		if ($input['scopeType'] === ScopeType::SOURCE) {
+			throw new \InvalidArgumentException('Invalid scope type, source cannot be used to search');
+		}
 
 		// unscoped query
 		if ($input['scopeType'] === ScopeType::NONE) {
-			$response = $this->langRopeService->query($userId, $input['prompt']);
+			$response = $this->langRopeService->docSearch($userId, $input['prompt']);
 			if (isset($response['error'])) {
 				throw new \RuntimeException('No result in ContextChat response. ' . $response['error']);
 			}
@@ -134,7 +137,6 @@ class ContextChatSearchProvider implements ISynchronousProvider {
 		$response = $this->langRopeService->docSearch(
 			$userId,
 			$input['prompt'],
-			true,
 			$input['scopeType'],
 			$processedScopes,
 		);
@@ -165,15 +167,22 @@ class ContextChatSearchProvider implements ISynchronousProvider {
 			];
 		}
 
+		$sources = $response;
 		$jsonSources = array_filter(array_map(
 			fn ($source) => json_encode($source),
-			$this->metadataService->getEnrichedSources($userId, ...$response['sources'] ?? []),
+			$this->metadataService->getEnrichedSources(
+				$userId,
+				...array_map(
+					fn ($source) => $source['source_id'] ?? null,
+					$sources,
+				),
+			),
 		), fn ($json) => is_string($json));
 
 		if (count($jsonSources) === 0) {
-			$this->logger->warning('No sources could be enriched', ['sources' => $response['sources']]);
-		} elseif (count($jsonSources) !== count($response['sources'] ?? [])) {
-			$this->logger->warning('Some sources could not be enriched', ['sources' => $response['sources'], 'jsonSources' => $jsonSources]);
+			$this->logger->warning('No sources could be enriched', ['sources' => $sources]);
+		} elseif (count($jsonSources) !== count($sources)) {
+			$this->logger->warning('Some sources could not be enriched', ['sources' => $sources, 'jsonSources' => $jsonSources]);
 		}
 
 		return [

@@ -337,20 +337,17 @@ class LangRopeService {
 	/**
 	 * @param string $userId
 	 * @param string $prompt
-	 * @param bool $useContext
 	 * @param ?string $scopeType
 	 * @param ?array<string> $scopeList
 	 * @return array
 	 * @throws RuntimeException
 	 */
-	public function docSearch(string $userId, string $prompt, bool $useContext = true, ?string $scopeType = null, ?array $scopeList = null): array {
+	public function docSearch(string $userId, string $prompt, ?string $scopeType = null, ?array $scopeList = null): array {
 		$params = [
 			'query' => $prompt,
 			'userId' => $userId,
-			'useContext' => $useContext,
 		];
 		if ($scopeType !== null && $scopeList !== null) {
-			$params['useContext'] = true;
 			$params['scopeType'] = $scopeType;
 			$params['scopeList'] = $scopeList;
 		}
