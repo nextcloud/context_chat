@@ -156,7 +156,7 @@ class ContextChatSearchProvider implements ISynchronousProvider {
 		if (isset($response['error'])) {
 			throw new \RuntimeException('No result in ContextChat response: ' . $response['error']);
 		}
-		if (!isset($response) || !is_array($response)) {
+		if (!array_is_list($response)) {
 			throw new \RuntimeException('Invalid response from ContextChat, expected a list: ' . json_encode($response));
 		}
 
