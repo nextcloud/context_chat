@@ -18,31 +18,31 @@
 		}
 	],
 	"require": {
-		"php": "^8.1 || ^8.2 || ^8.3"
+		"php": "^8.1 || ^8.2 || ^8.3 || ^8.4"
 	},
 	"require-dev": {
 		"nextcloud/coding-standard": "^1.3.2",
 		"nextcloud/ocp": "dev-master",
 		"roave/security-advisories": "dev-latest",
 		"phpunit/phpunit": "^10.5",
-		"psalm/phar": "^5.25"
+		"vimeo/psalm": "^6.11.0"
 	},
 	"scripts": {
 		"lint": "find . -name \\*.php -not -path './vendor/*' -print0 | xargs -0 -n1 php -l",
 		"cs:check": "php-cs-fixer fix --dry-run --diff",
 		"cs:fix": "php-cs-fixer fix",
-		"psalm": "psalm.phar --threads=1 --no-cache",
-		"psalm:update-baseline": "psalm.phar --threads=1 --update-baseline",
-		"psalm:update-baseline:force": "psalm.phar --threads=1 --update-baseline --set-baseline=tests/psalm-baseline.xml",
-		"psalm:clear": "psalm.phar --clear-cache && psalm.phar --clear-global-cache",
-		"psalm:fix": "psalm.phar --alter --issues=InvalidReturnType,InvalidNullableReturnType,MissingParamType,InvalidFalsableReturnType",
+		"psalm": "psalm --threads=1 --no-cache",
+		"psalm:update-baseline": "psalm --threads=1 --update-baseline",
+		"psalm:update-baseline:force": "psalm --threads=1 --update-baseline --set-baseline=tests/psalm-baseline.xml",
+		"psalm:clear": "psalm --clear-cache && psalm --clear-global-cache",
+		"psalm:fix": "psalm --alter --issues=InvalidReturnType,InvalidNullableReturnType,MissingParamType,InvalidFalsableReturnType",
 		"test": "phpunit --configuration tests/phpunit.xml"
 	},
 	"config": {
 		"optimize-autoloader": true,
 		"classmap-authoritative": true,
 		"platform": {
-			"php": "8.1"
+			"php": "8.1.31"
 		}
 	},
 	"autoload": {

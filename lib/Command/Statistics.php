@@ -38,7 +38,7 @@ class Statistics extends Command {
 			->setDescription('Check ContextChat statistics');
 	}
 
-	protected function execute(InputInterface $input, OutputInterface $output) {
+	protected function execute(InputInterface $input, OutputInterface $output): int {
 		$output->writeln('ContextChat statistics:');
 		if ($this->appConfig->getAppValueInt('last_indexed_time', 0) === 0) {
 			$output->writeln('The indexing is not complete yet.');
@@ -49,7 +49,7 @@ class Statistics extends Command {
 
 			$output->writeln('Installed time: ' . (new \DateTime('@' . $installedTime))->format('Y-m-d H:i') . ' UTC');
 			$output->writeln('Index complete time: ' . (new \DateTime('@' . $lastIndexedTime))->format('Y-m-d H:i') . ' UTC');
-			$output->writeln('Total time taken for complete index: ' . floor($indexTime / (60 * 60 * 24)) . ' days ' . gmdate('H:i', $indexTime) . ' (hh:mm)');
+			$output->writeln('Total time taken for complete index: ' . strval(floor($indexTime / (60 * 60 * 24))) . ' days ' . gmdate('H:i', $indexTime) . ' (hh:mm)');
 		}
 
 		$eligibleFilesCount = $this->storageService->countFiles();
@@ -62,7 +62,7 @@ class Statistics extends Command {
 		$output->writeln('Queued documents (without files):' . var_export($queuedDocumentsCount, true));
 
 		$indexFilesCount = Util::numericToNumber($this->appConfig->getAppValueString('indexed_files_count', '0'));
-		$output->writeln('Files successfully sent to backend: ' . $indexFilesCount);
+		$output->writeln('Files successfully sent to backend: ' . strval($indexFilesCount));
 
 		$indexedDocumentsCount = $this->langRopeService->getIndexedDocumentsCounts();
 		$output->writeln('Indexed documents: ' . var_export($indexedDocumentsCount, true));

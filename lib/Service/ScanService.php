@@ -14,16 +14,12 @@ use OCP\AppFramework\Services\IAppConfig;
 use OCP\Files\File;
 use OCP\Files\Folder;
 use OCP\Files\IRootFolder;
-use OCP\IConfig;
-use OCP\IL10N;
 
 class ScanService {
 
 	public function __construct(
 		private IRootFolder $root,
 		private Logger $logger,
-		private IL10N $l10n,
-		private IConfig $config,
 		private LangRopeService $langRopeService,
 		private StorageService $storageService,
 		private IAppConfig $appConfig,
@@ -53,13 +49,13 @@ class ScanService {
 	 * @return \Generator<Source>
 	 */
 	public function scanDirectory(array $mimeTypeFilter, Folder $directory): \Generator {
-		$maxSize = $this->appConfig->getAppValueInt('indexing_max_size', Application::CC_MAX_SIZE);
+		$maxSize = (float)$this->appConfig->getAppValueInt('indexing_max_size', Application::CC_MAX_SIZE);
 		$sources = [];
-		$size = 0;
+		$size = 0.0;
 
 		foreach ($directory->getDirectoryListing() as $node) {
 			if ($node instanceof File) {
-				$nodeSize = $node->getSize();
+				$nodeSize = (float)$node->getSize();
 
 				if ($nodeSize > $maxSize) {
 					$this->logger->warning('[ScanService] File too large to index', [
@@ -74,7 +70,7 @@ class ScanService {
 				if ($size + $nodeSize > $maxSize || count($sources) >= Application::CC_MAX_FILES) {
 					$this->langRopeService->indexSources($sources);
 					$sources = [];
-					$size = 0;
+					$size = 0.0;
 				}
 
 				$source = $this->getSourceFromFile($mimeTypeFilter, $node);

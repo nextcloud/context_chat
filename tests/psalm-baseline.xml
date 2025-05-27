@@ -14,26 +14,6 @@
       <code><![CDATA[\OC]]></code>
     </UndefinedClass>
   </file>
-  <file src="lib/Command/Diagnostics.php">
-    <UndefinedClass>
-      <code><![CDATA[Command]]></code>
-    </UndefinedClass>
-  </file>
-  <file src="lib/Command/Prompt.php">
-    <UndefinedClass>
-      <code><![CDATA[Command]]></code>
-    </UndefinedClass>
-  </file>
-  <file src="lib/Command/ScanFiles.php">
-    <UndefinedClass>
-      <code><![CDATA[Command]]></code>
-    </UndefinedClass>
-  </file>
-  <file src="lib/Command/Statistics.php">
-    <UndefinedClass>
-      <code><![CDATA[Command]]></code>
-    </UndefinedClass>
-  </file>
   <file src="lib/Logger.php">
     <UndefinedClass>
       <code><![CDATA[\OC]]></code>

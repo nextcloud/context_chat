@@ -47,7 +47,6 @@ Refer to the [Context Chat Backend's readme](https://github.com/nextcloud/contex
 		<job>OCA\ContextChat\BackgroundJobs\RotateLogsJob</job>
 	</background-jobs>
 	<commands>
-		<command>OCA\ContextChat\Command\Diagnostics</command>
 		<command>OCA\ContextChat\Command\Prompt</command>
 		<command>OCA\ContextChat\Command\ScanFiles</command>
 		<command>OCA\ContextChat\Command\Statistics</command>
