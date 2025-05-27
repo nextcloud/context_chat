@@ -50,23 +50,25 @@ class Logger {
 	}
 
 	public function error(Stringable|string $message, array $context = []): void {
-		$this->parentLogger->error($message, $context);
+		$this->parentLogger->critical($message, $context);
 	}
 
 	public function warning(Stringable|string $message, array $context = []): void {
-		$this->parentLogger->warning($message, $context);
+		$this->parentLogger->critical($message, $context);
 	}
 
 	public function notice(Stringable|string $message, array $context = []): void {
-		$this->parentLogger->notice($message, $context);
+		$this->parentLogger->critical($message, $context);
 	}
 
 	public function info(Stringable|string $message, array $context = []): void {
-		$this->parentLogger->info($message, $context);
+		$this->parentLogger->critical($message, $context);
 	}
 
 	public function debug(Stringable|string $message, array $context = []): void {
-		$this->parentLogger->debug($message, $context);
+		// critical level is used here and at other places to not miss any message
+		// from context chat when the server's log level is set to a higher level
+		$this->parentLogger->critical($message, $context);
 	}
 
 	public function log(LogLevel $level, Stringable|string $message, array $context = []): void {
