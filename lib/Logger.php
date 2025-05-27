@@ -13,6 +13,8 @@ use OCA\ContextChat\AppInfo\Application;
 use OCP\IConfig;
 use OCP\Log\ILogFactory;
 use Psr\Log\LoggerInterface;
+use Psr\Log\LogLevel;
+use Stringable;
 
 /**
  * Logger that logs in the context chat log file instead of the normal log file
@@ -35,39 +37,39 @@ class Logger {
 		return $this->config->getAppValue(Application::APP_ID, 'logfile', $default);
 	}
 
-	public function emergency($message, array $context = []): void {
+	public function emergency(Stringable|string $message, array $context = []): void {
 		$this->parentLogger->emergency($message, $context);
 	}
 
-	public function alert($message, array $context = []): void {
+	public function alert(Stringable|string $message, array $context = []): void {
 		$this->parentLogger->alert($message, $context);
 	}
 
-	public function critical($message, array $context = []): void {
+	public function critical(Stringable|string $message, array $context = []): void {
 		$this->parentLogger->critical($message, $context);
 	}
 
-	public function error(string $message, array $context = []): void {
-		$this->parentLogger->critical($message, $context);
+	public function error(Stringable|string $message, array $context = []): void {
+		$this->parentLogger->error($message, $context);
 	}
 
-	public function warning(string $message, array $context = []): void {
-		$this->parentLogger->critical($message, $context);
+	public function warning(Stringable|string $message, array $context = []): void {
+		$this->parentLogger->warning($message, $context);
 	}
 
-	public function notice($message, array $context = []): void {
-		$this->parentLogger->critical($message, $context);
+	public function notice(Stringable|string $message, array $context = []): void {
+		$this->parentLogger->notice($message, $context);
 	}
 
-	public function info(string $message, array $context = []): void {
-		$this->parentLogger->critical($message, $context);
+	public function info(Stringable|string $message, array $context = []): void {
+		$this->parentLogger->info($message, $context);
 	}
 
-	public function debug(string $message, array $context = []): void {
-		$this->parentLogger->critical($message, $context);
+	public function debug(Stringable|string $message, array $context = []): void {
+		$this->parentLogger->debug($message, $context);
 	}
 
-	public function log($level, $message, array $context = []): void {
-		$this->parentLogger->critical($message, $context);
+	public function log(LogLevel $level, Stringable|string $message, array $context = []): void {
+		$this->parentLogger->log($level, $message, $context);
 	}
 }
