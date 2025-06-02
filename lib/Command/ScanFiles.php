@@ -35,7 +35,7 @@ class ScanFiles extends Command {
 			->addOption('directory', 'd', InputOption::VALUE_REQUIRED, 'The directory to scan, relative to the user\'s home directory');
 	}
 
-	protected function execute(InputInterface $input, OutputInterface $output) {
+	protected function execute(InputInterface $input, OutputInterface $output): int {
 		$mimeTypeFilter = $input->getOption('mimetype') !== null
 			? explode(',', $input->getOption('mimetype'))
 			: Application::MIMETYPES;

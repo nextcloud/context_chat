@@ -159,8 +159,8 @@ class IndexerJob extends TimedJob {
 		return $this->appConfig->getAppValueInt('indexing_job_interval', self::DEFAULT_JOB_INTERVAL);
 	}
 
-	protected function getMaxSize(): int {
-		return $this->appConfig->getAppValueInt('indexing_max_size', Application::CC_MAX_SIZE);
+	protected function getMaxSize(): float {
+		return (float)$this->appConfig->getAppValueInt('indexing_max_size', Application::CC_MAX_SIZE);
 	}
 
 	/**
@@ -179,7 +179,7 @@ class IndexerJob extends TimedJob {
 		$retryQFiles = [];
 		// work along with $sources to keep track of the $queueFile's that are being indexed
 		$trackedQFiles = [];
-		$size = 0;
+		$size = 0.0;
 
 		foreach ($files as $i => $queueFile) {
 			$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
@@ -193,7 +193,7 @@ class IndexerJob extends TimedJob {
 			}
 
 			try {
-				$fileSize = $file->getSize();
+				$fileSize = (float)$file->getSize();
 
 				if ($fileSize > $maxSize) {
 					$this->logger->info('[IndexerJob] File is too large to index', [
@@ -252,7 +252,7 @@ class IndexerJob extends TimedJob {
 					} finally {
 						// reset buffer
 						$sources = [];
-						$size = 0;
+						$size = 0.0;
 					}
 				}
 			} catch (InvalidPathException|NotFoundException $e) {
@@ -308,9 +308,10 @@ class IndexerJob extends TimedJob {
 	}
 
 	/**
-	 * @return int|mixed
+	 * @template T of \OCP\BackgroundJob\Job
+	 * @psalm-param T::class $jobClass
 	 */
-	public function getJobCount($jobClass): mixed {
+	public function getJobCount(string $jobClass): int {
 		$countByClass = array_values(array_filter($this->jobList->countByClass(), fn ($row) => $row['class'] == $jobClass));
 		$jobCount = count($countByClass) > 0 ? $countByClass[0]['count'] : 0;
 		return $jobCount;

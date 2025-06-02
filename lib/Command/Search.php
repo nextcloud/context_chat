@@ -7,7 +7,7 @@
 
 namespace OCA\ContextChat\Command;
 
-use OCA\ContextChat\TaskProcessing\ContextChatTaskType;
+use OCA\ContextChat\TaskProcessing\ContextChatSearchTaskType;
 use OCA\ContextChat\Type\ScopeType;
 use OCP\TaskProcessing\IManager;
 use OCP\TaskProcessing\Task;
@@ -17,7 +17,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class Prompt extends Command {
+class Search extends Command {
 
 	public function __construct(
 		private IManager $taskProcessingManager,
@@ -26,23 +26,17 @@ class Prompt extends Command {
 	}
 
 	protected function configure() {
-		$this->setName('context_chat:prompt')
-			->setDescription('Prompt Nextcloud Assistant Context Chat')
+		$this->setName('context_chat:search')
+			->setDescription('Search with Nextcloud Assistant Context Chat')
 			->addArgument(
 				'uid',
 				InputArgument::REQUIRED,
-				'The ID of the user to prompt the documents of'
+				'The ID of the user to search the documents of'
 			)
 			->addArgument(
 				'prompt',
 				InputArgument::REQUIRED,
 				'The prompt'
-			)
-			->addOption(
-				'context-sources',
-				null,
-				InputOption::VALUE_REQUIRED,
-				'Context sources to use (as a comma-separated list without brackets)',
 			)
 			->addOption(
 				'context-providers',
@@ -52,36 +46,27 @@ class Prompt extends Command {
 			);
 	}
 
-	protected function execute(InputInterface $input, OutputInterface $output): int {
+	protected function execute(InputInterface $input, OutputInterface $output) {
 		$userId = $input->getArgument('uid');
 		$prompt = $input->getArgument('prompt');
-		$contextSources = $input->getOption('context-sources');
 		$contextProviders = $input->getOption('context-providers');
 
-		if (!empty($contextSources) && !empty($contextProviders)) {
-			throw new \InvalidArgumentException('Cannot use --context-sources with --context-provider');
-		}
-
-		if (!empty($contextSources)) {
-			$contextSources = preg_replace('/\s*,+\s*/', ',', $contextSources);
-			$contextSourcesArray = array_filter(explode(',', $contextSources), fn ($source) => !empty($source));
-			$task = new Task(ContextChatTaskType::ID, [
-				'scopeType' => ScopeType::SOURCE,
-				'scopeList' => $contextSourcesArray,
-				'scopeListMeta' => '',
-				'prompt' => $prompt,
-			], 'context_chat', $userId);
-		} elseif (!empty($contextProviders)) {
+		if (!empty($contextProviders)) {
 			$contextProviders = preg_replace('/\s*,+\s*/', ',', $contextProviders);
 			$contextProvidersArray = array_filter(explode(',', $contextProviders), fn ($source) => !empty($source));
-			$task = new Task(ContextChatTaskType::ID, [
+			$task = new Task(ContextChatSearchTaskType::ID, [
+				'prompt' => $prompt,
 				'scopeType' => ScopeType::PROVIDER,
 				'scopeList' => $contextProvidersArray,
 				'scopeListMeta' => '',
-				'prompt' => $prompt,
 			], 'context_chat', $userId);
 		} else {
-			$task = new Task(ContextChatTaskType::ID, [ 'prompt' => $prompt, 'scopeType' => ScopeType::NONE, 'scopeList' => [], 'scopeListMeta' => '' ], 'context_chat', $userId);
+			$task = new Task(ContextChatSearchTaskType::ID, [
+				'prompt' => $prompt,
+				'scopeType' => ScopeType::NONE,
+				'scopeList' => [],
+				'scopeListMeta' => '',
+			], 'context_chat', $userId);
 		}
 
 		$this->taskProcessingManager->scheduleTask($task);
@@ -92,7 +77,7 @@ class Prompt extends Command {
 			$output->writeln(var_export($task->getOutput(), true));
 			return 0;
 		} else {
-			$output->writeln($task->getErrorMessage());
+			$output->writeln('<error>' . $task->getErrorMessage() . '</error>');
 			return 1;
 		}
 	}

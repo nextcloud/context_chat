@@ -11,7 +11,6 @@ declare(strict_types=1);
 namespace OCA\ContextChat\Service;
 
 use OC\Files\Cache\CacheQueryBuilder;
-use OC\SystemConfig;
 use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\Logger;
 use OCP\DB\Exception;
@@ -42,7 +41,6 @@ class StorageService {
 	public function __construct(
 		private IDBConnection $db,
 		private Logger $logger,
-		private SystemConfig $systemConfig,
 		private IMimeTypeLoader $mimeTypes,
 		private IUserMountCache $userMountCache,
 		private IFilesMetadataManager $metadataManager,
@@ -271,7 +269,6 @@ class StorageService {
 			return [];
 		}
 		$filesGen = $this->getFilesInMount($mount->getNumericStorageId(), $node->getId(), 0, 0);
-		$files = [];
 
 		foreach ($filesGen as $fileId) {
 			$node = current($this->rootFolder->getById($fileId));
