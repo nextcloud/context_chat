@@ -8,7 +8,7 @@ namespace OCA\ContextChat\Settings;
 
 use OCA\ContextChat\Db\QueueContentItemMapper;
 use OCA\ContextChat\Logger;
-use OCA\ContextChat\Service\ActionService;
+use OCA\ContextChat\Service\ActionScheduler;
 use OCA\ContextChat\Service\LangRopeService;
 use OCA\ContextChat\Service\ProviderConfigService;
 use OCA\ContextChat\Service\QueueService;
@@ -24,7 +24,7 @@ class AdminSettings implements ISettings {
 	public function __construct(
 		private IInitialState $initialState,
 		private IAppConfig $appConfig,
-		private ActionService $actionService,
+		private ActionScheduler $actionService,
 		private QueueService $queueService,
 		private StorageService $storageService,
 		private LangRopeService $langRopeService,

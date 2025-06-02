@@ -10,7 +10,7 @@ declare(strict_types=1);
 namespace OCA\ContextChat\Command;
 
 use OCA\ContextChat\Db\QueueContentItemMapper;
-use OCA\ContextChat\Service\ActionService;
+use OCA\ContextChat\Service\ActionScheduler;
 use OCA\ContextChat\Service\LangRopeService;
 use OCA\ContextChat\Service\QueueService;
 use OCA\ContextChat\Service\StorageService;
@@ -24,7 +24,7 @@ class Statistics extends Command {
 
 	public function __construct(
 		private IAppConfig $appConfig,
-		private ActionService $actionService,
+		private ActionScheduler $actionService,
 		private QueueService $queueService,
 		private StorageService $storageService,
 		private LangRopeService $langRopeService,
