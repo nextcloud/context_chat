@@ -61,7 +61,7 @@ class FileSystemListenerJob extends QueuedJob {
 						return;
 					}
 
-					switch ($fsEvent->getType()) {
+					switch ($fsEvent->getTypeObject()) {
 						case FsEventType::CREATE:
 							$this->fsEventService->onInsert($node);
 							break;

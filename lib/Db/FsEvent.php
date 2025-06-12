@@ -11,6 +11,7 @@ namespace OCA\ContextChat\Db;
 
 use OCA\ContextChat\Type\FsEventType;
 use OCP\AppFramework\Db\Entity;
+use OCP\DB\Types;
 
 /**
  * Class FsEvent
@@ -22,7 +23,7 @@ use OCP\AppFramework\Db\Entity;
 class FsEvent extends Entity {
 	public $id;
 	protected $type;
-	protected $payload;
+	protected $nodeId;
 
 	/** @var string[] */
 	public static array $columns = ['id', 'type', 'node_id'];
@@ -31,22 +32,35 @@ class FsEvent extends Entity {
 
 	public function __construct() {
 		// add types in constructor
-		$this->addType('id', 'integer');
-		$this->addType('type', 'string');
-		$this->addType('nodeId', 'string');
+		$this->addType('id', Types::BIGINT);
+		$this->addType('type', Types::STRING);
+		$this->addType('nodeId', Types::BIGINT);
 	}
 
 	/**
 	 * @throws \ValueError
+	 * @throws \InvalidArgumentException
 	 */
 	public function setType(FsEventType|string $type): void {
-		$this->setter('type', [FsEventType::from($type)->value]);
+		if (is_string($type)) {
+			$type = FsEventType::from($type);
+		}
+		$this->setter('type', [$type->value]);
 	}
 
 	/**
 	 * @throws \ValueError
+	 * @throws \InvalidArgumentException
 	 */
-	public function getType(): FsEventType {
+	public function getType(): string {
+		return $this->getter('type');
+	}
+
+	/**
+	 * @throws \ValueError
+	 * @throws \InvalidArgumentException
+	 */
+	public function getTypeObject(): FsEventType {
 		return FsEventType::from($this->getter('type'));
 	}
 }

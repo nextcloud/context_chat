@@ -83,7 +83,7 @@ class FileListener implements IEventListener {
 			if ($event instanceof NodeRenamedEvent) {
 				$targetNode = $event->getTarget();
 				// Asynchronous, because we potentially recurse
-				$this->fsEventScheduler->onAccessUpdate($targetNode);
+				$this->fsEventScheduler->onInsert($targetNode);
 				return;
 			}
 
