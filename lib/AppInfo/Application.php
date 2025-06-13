@@ -80,8 +80,16 @@ class Application extends App implements IBootstrap {
 		$context->registerEventListener(NodeWrittenEvent::class, FileListener::class);
 		$context->registerEventListener(AppDisableEvent::class, AppDisableListener::class);
 		$context->registerEventListener(UserDeletedEvent::class, UserDeletedListener::class);
-		$context->registerEventListener(ShareCreatedEvent::class, ShareListener::class);
-		$context->registerEventListener(ShareDeletedEvent::class, ShareListener::class);
+		// These events were added mid-way through NC 30, 31
+		if (class_exists('OCP\Files\Config\Event\UserMountAddedEvent')) {
+			$context->registerEventListener('OCP\Files\Config\Event\UserMountAddedEvent', FileListener::class);
+			$context->registerEventListener('OCP\Files\Config\Event\UserMountRemovedEvent', FileListener::class);
+			// it is not fired as of now, Added and Removed events are fired instead in that order
+			// $context->registerEventListener('OCP\Files\Config\Event\UserMountUpdatedEvent', FileListener::class);
+		} else {
+			$context->registerEventListener(ShareCreatedEvent::class, ShareListener::class);
+			$context->registerEventListener(ShareDeletedEvent::class, ShareListener::class);
+		}
 		$context->registerTaskProcessingTaskType(ContextChatTaskType::class);
 		$context->registerTaskProcessingProvider(ContextChatProvider::class);
 		$context->registerTaskProcessingTaskType(ContextChatSearchTaskType::class);

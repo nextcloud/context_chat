@@ -10,7 +10,7 @@ declare(strict_types=1);
 namespace OCA\ContextChat\Listener;
 
 use OCA\ContextChat\Logger;
-use OCA\ContextChat\Service\ActionService;
+use OCA\ContextChat\Service\ActionScheduler;
 use OCA\ContextChat\Service\ProviderConfigService;
 use OCP\App\Events\AppDisableEvent;
 use OCP\EventDispatcher\Event;
@@ -22,7 +22,7 @@ use OCP\EventDispatcher\IEventListener;
 class AppDisableListener implements IEventListener {
 	public function __construct(
 		private ProviderConfigService $providerConfig,
-		private ActionService $actionService,
+		private ActionScheduler $actionService,
 		private Logger $logger,
 	) {
 	}
