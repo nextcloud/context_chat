@@ -42,17 +42,8 @@ class FsEventScheduler {
 	 * @throws NotFoundException
 	 * @throws Exception
 	 */
-	public function onAccessUpdate(Node $node): void {
-		$this->scheduleEvent(FsEventType::ACCESS_UPDATE, $node->getId());
-	}
-
-	/**
-	 * @throws NotFoundException
-	 * @throws InvalidPathException
-	 * @throws Exception
-	 */
-	public function onDelete(Node $node): void {
-		$this->scheduleEvent(FsEventType::DELETE, $node->getId());
+	public function onAccessUpdateDecl(Node $node): void {
+		$this->scheduleEvent(FsEventType::ACCESS_UPDATE_DECL, $node->getId());
 	}
 
 	/**

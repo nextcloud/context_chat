@@ -23,7 +23,7 @@ class FsEventService {
 
 	}
 
-	public function onAccessUpdate(Node $node, bool $recurse = true): void {
+	public function onAccessUpdateDecl(Node $node, bool $recurse = true): void {
 		if ($node instanceof Folder) {
 			if (!$recurse) {
 				return;
@@ -39,19 +39,24 @@ class FsEventService {
 				continue;
 			}
 			try {
-				// todo: Remove this once we no longer support Nextcloud 31
-				$shareAccessList = $this->shareManager->getAccessList($file, true, true);
-				/**
-				 * @var string[] $shareUserIds
-				 */
-				$shareUserIds = array_keys($shareAccessList['users']);
-
 				$fileRef = ProviderConfigService::getSourceId($file->getId());
 				$fileUserIds = $this->storageService->getUsersForFileId($file->getId());
-				$userIds = array_values(array_unique(array_merge($shareUserIds, $fileUserIds)));
+
+				if (class_exists('OCP\Files\Config\Event\UserMountAddedEvent')) {
+					$userIds = $fileUserIds;
+				} else {
+					// todo: Remove this once we no longer support Nextcloud 31
+					$shareAccessList = $this->shareManager->getAccessList($file, true, true);
+					/** @var string[] $shareUserIds */
+					$shareUserIds = array_keys($shareAccessList['users']);
+					$userIds = array_values(array_unique(array_merge($shareUserIds, $fileUserIds)));
+				}
+
 				$this->actionService->updateAccessDeclSource($userIds, $fileRef);
 			} catch (InvalidPathException|NotFoundException $e) {
-				$this->logger->warning($e->getMessage(), ['exception' => $e]);
+				$this->logger->warning('Cannot get file id for declarative access update:' . $e->getMessage(), [
+					'exception' => $e
+				]);
 			}
 		}
 	}

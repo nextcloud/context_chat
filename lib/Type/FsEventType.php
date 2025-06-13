@@ -9,6 +9,5 @@ namespace OCA\ContextChat\Type;
 
 enum FsEventType: string {
 	case CREATE = 'create';
-	case ACCESS_UPDATE = 'access_update';
-	case DELETE = 'delete';
+	case ACCESS_UPDATE_DECL = 'access_update_decl';
 }

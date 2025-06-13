@@ -55,27 +55,26 @@ class FileSystemListenerJob extends QueuedJob {
 				$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
 
 				try {
-
+					// todo: $node is never returned here for some reason
 					$node = current($this->rootFolder->getById($fsEvent->getNodeId()));
 					if ($node === false) {
-						return;
+						$this->logger->warning('Node with ID ' . $fsEvent->getNodeId() . ' not found for fs event "' . $fsEvent->getType() . '"');
+						$this->fsEventMapper->delete($fsEvent);
+						continue;
 					}
 
 					switch ($fsEvent->getTypeObject()) {
 						case FsEventType::CREATE:
 							$this->fsEventService->onInsert($node);
 							break;
-						case FsEventType::ACCESS_UPDATE:
-							$this->fsEventService->onAccessUpdate($node);
-							break;
-						case FsEventType::DELETE:
-							$this->fsEventService->onDelete($node);
+						case FsEventType::ACCESS_UPDATE_DECL:
+							$this->fsEventService->onAccessUpdateDecl($node);
 							break;
 					}
 					$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
 					$this->fsEventMapper->delete($fsEvent);
 				} catch (\RuntimeException $e) {
-					$this->logger->warning('Error handling fs event "' . $fsEvent->getType()->value . '": ' . $e->getMessage(), ['exception' => $e]);
+					$this->logger->warning('Error handling fs event "' . $fsEvent->getType() . '": ' . $e->getMessage(), ['exception' => $e]);
 				}
 			}
 		} catch (\Throwable $e) {

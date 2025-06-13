@@ -45,6 +45,9 @@ class FileListener implements IEventListener {
 
 	public function handle(Event $event): void {
 		try {
+			if ($event instanceof CacheEntryInsertedEvent && str_starts_with($event->getPath(), 'appdata_')) {
+				return;
+			}
 			if ($event instanceof NodeWrittenEvent) {
 				$node = $event->getNode();
 				if (!$node instanceof File) {
@@ -82,7 +85,9 @@ class FileListener implements IEventListener {
 			// This event is also used for moves
 			if ($event instanceof NodeRenamedEvent) {
 				$targetNode = $event->getTarget();
-				// Asynchronous, because we potentially recurse
+				// Asynchronous, because we potentially recurse.
+				// Index the file again to update the metadata of the source in CCB
+				// and the access list based on the new path.
 				$this->fsEventScheduler->onInsert($targetNode);
 				return;
 			}
@@ -96,18 +101,18 @@ class FileListener implements IEventListener {
 				if ($node === false) {
 					return;
 				}
-				// todo: not sure if this need to be synchronous
-				// Synchronous
+				// Synchronous, because we wouldn't have the recursive list of file ids after deletion
 				$this->fsEventService->onDelete($node);
 			}
 
 			if ($event instanceof \OCP\Files\Config\Event\UserMountAddedEvent) {
+				// todo: mountPoint of class "OC\Files\Config\LazyStorageMountInfo"|"OC\Files\Config\LazyPathCachedMountInfo" is received here
 				$node = $event->mountPoint->getMountPointNode();
 				if ($node === null) {
 					return;
 				}
 				// Asynchronous, because we potentially recurse and this event needs to be handled fast
-				$this->fsEventScheduler->onAccessUpdate($node);
+				$this->fsEventScheduler->onAccessUpdateDecl($node);
 			}
 
 			if ($event instanceof \OCP\Files\Config\Event\UserMountRemovedEvent) {
@@ -116,7 +121,7 @@ class FileListener implements IEventListener {
 					return;
 				}
 				// Asynchronous, because we potentially recurse and this event needs to be handled fast
-				$this->fsEventScheduler->onAccessUpdate($node);
+				$this->fsEventScheduler->onAccessUpdateDecl($node);
 			}
 		} catch (InvalidPathException|Exception|NotFoundException $e) {
 			$this->logger->warning($e->getMessage(), ['exception' => $e]);
