@@ -107,21 +107,13 @@ class FileListener implements IEventListener {
 
 			if ($event instanceof \OCP\Files\Config\Event\UserMountAddedEvent) {
 				// todo: mountPoint of class "OC\Files\Config\LazyStorageMountInfo"|"OC\Files\Config\LazyPathCachedMountInfo" is received here
-				$node = $event->mountPoint->getMountPointNode();
-				if ($node === null) {
-					return;
-				}
 				// Asynchronous, because we potentially recurse and this event needs to be handled fast
-				$this->fsEventScheduler->onAccessUpdateDecl($node);
+				$this->fsEventScheduler->onAccessUpdateDecl($event->mountPoint->getRootId());
 			}
 
 			if ($event instanceof \OCP\Files\Config\Event\UserMountRemovedEvent) {
-				$node = $event->mountPoint->getMountPointNode();
-				if ($node === null) {
-					return;
-				}
 				// Asynchronous, because we potentially recurse and this event needs to be handled fast
-				$this->fsEventScheduler->onAccessUpdateDecl($node);
+				$this->fsEventScheduler->onAccessUpdateDecl($event->mountPoint->getRootId());
 			}
 		} catch (InvalidPathException|Exception|NotFoundException $e) {
 			$this->logger->warning($e->getMessage(), ['exception' => $e]);

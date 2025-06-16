@@ -22,6 +22,7 @@ class FsEventScheduler {
 	public function __construct(
 		private FsEventMapper $fsEventMapper,
 		private IJobList $jobList,
+		private StorageService $storageService,
 	) {
 
 	}
@@ -29,8 +30,23 @@ class FsEventScheduler {
 	/**
 	 * @throws Exception
 	 */
-	private function scheduleEvent(FsEventType $type, int $nodeId): void {
+	private function getOwnerIdForNode(Node $node): string {
+		if ($node->getOwner()) {
+			return $node->getOwner()->getUID();
+		}
+		$ownerId = $this->storageService->getOwnerForFileId($node->getId());
+		if ($ownerId !== false) {
+			return $ownerId;
+		}
+		throw new NotFoundException('Cannot get owner for node ID ' . $node->getId());
+	}
+
+	/**
+	 * @throws Exception
+	 */
+	private function scheduleEvent(FsEventType $type, string $userId, int $nodeId): void {
 		$item = new FsEvent();
+		$item->setUserId($userId);
 		$item->setType($type);
 		$item->setNodeId($nodeId);
 
@@ -47,8 +63,12 @@ class FsEventScheduler {
 	 * @throws NotFoundException
 	 * @throws Exception
 	 */
-	public function onAccessUpdateDecl(Node $node): void {
-		$this->scheduleEvent(FsEventType::ACCESS_UPDATE_DECL, $node->getId());
+	public function onAccessUpdateDecl(int $nodeId): void {
+		$ownerId = $this->storageService->getOwnerForFileId($nodeId);
+		if ($ownerId === false) {
+			throw new NotFoundException('Cannot get owner for file ID ' . $nodeId);
+		}
+		$this->scheduleEvent(FsEventType::ACCESS_UPDATE_DECL, $ownerId, $nodeId);
 	}
 
 	/**
@@ -57,6 +77,6 @@ class FsEventScheduler {
 	 * @throws Exception
 	 */
 	public function onInsert(Node $node): void {
-		$this->scheduleEvent(FsEventType::CREATE, $node->getId());
+		$this->scheduleEvent(FsEventType::CREATE, $this->getOwnerIdForNode($node), $node->getId());
 	}
 }

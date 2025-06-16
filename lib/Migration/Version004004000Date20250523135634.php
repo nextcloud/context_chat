@@ -39,6 +39,10 @@ class Version004004000Date20250523135634 extends SimpleMigrationStep {
 				'notnull' => true,
 				'length' => 128,
 			]);
+			$table->addColumn('user_id', Types::STRING, [
+				'notnull' => true,
+				'length' => 128,
+			]);
 			$table->addColumn('node_id', Types::BIGINT, [
 				'notnull' => true,
 			]);

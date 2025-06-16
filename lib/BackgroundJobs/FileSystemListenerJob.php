@@ -55,8 +55,7 @@ class FileSystemListenerJob extends QueuedJob {
 				$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
 
 				try {
-					// todo: $node is never returned here for some reason
-					$node = current($this->rootFolder->getById($fsEvent->getNodeId()));
+					$node = current($this->rootFolder->getUserFolder($fsEvent->getUserId())->getById($fsEvent->getNodeId()));
 					if ($node === false) {
 						$this->logger->warning('Node with ID ' . $fsEvent->getNodeId() . ' not found for fs event "' . $fsEvent->getType() . '"');
 						$this->fsEventMapper->delete($fsEvent);
