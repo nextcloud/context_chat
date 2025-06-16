@@ -58,8 +58,11 @@ class FileListener implements IEventListener {
 			}
 
 			if ($event instanceof BeforeNodeDeletedEvent) {
-				// Synchronous, because we don't recurse
-				$this->fsEventService->onDelete($event->getNode(), false);
+				// Synchronous, because we wouldn't have the recursive list of file ids after deletion.
+				// Folders need to be handled here too since cache entry is not removed when file is
+				//   initially deleted (moved to trashbin) so NodeRemovedFromCache is not fired and not
+				//   handled but we need to remove the file from the CCB index.
+				$this->fsEventService->onDelete($event->getNode());
 				return;
 			}
 
