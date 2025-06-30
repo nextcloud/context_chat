@@ -33,6 +33,11 @@ use OCP\Files\NotFoundException;
  */
 class FileListener implements IEventListener {
 
+	/**
+	 * @var array<array-key, bool>
+	 */
+	private array $addedMounts = [];
+
 	public function __construct(
 		private Logger $logger,
 		private IRootFolder $rootFolder,
@@ -109,19 +114,26 @@ class FileListener implements IEventListener {
 			}
 
 			if ($event instanceof \OCP\Files\Config\Event\UserMountAddedEvent) {
-				// todo: mountPoint of class "OC\Files\Config\LazyStorageMountInfo"|"OC\Files\Config\LazyPathCachedMountInfo" is received here
+				$rootId = $event->mountPoint->getRootId();
 				// Asynchronous, because we potentially recurse and this event needs to be handled fast
-				$this->fsEventScheduler->onAccessUpdateDecl($event->mountPoint->getRootId());
+				$this->fsEventScheduler->onAccessUpdateDecl($rootId);
+				// Remember that this mount was added in the current process (see UserMountRemovedEvent below)
+				$this->addedMounts[$event->mountPoint->getUser()->getUID() . '-' . $rootId] = true;
 			}
 
 			if ($event instanceof \OCP\Files\Config\Event\UserMountRemovedEvent) {
+				// If we just added this mount, ignore the removal, as the 'removal' event is always fired after
+				// the 'added' event in server
+				$rootId = $event->mountPoint->getRootId();
+				if ($this->addedMounts[$event->mountPoint->getUser()->getUID() . '-' . $rootId] === true) {
+					$this->fsEventScheduler->retractAccessUpdateDecl($rootId);
+					return;
+				}
 				// Asynchronous, because we potentially recurse and this event needs to be handled fast
-				$this->fsEventScheduler->onAccessUpdateDecl($event->mountPoint->getRootId());
+				$this->fsEventScheduler->onAccessUpdateDecl($rootId);
 			}
 		} catch (InvalidPathException|Exception|NotFoundException $e) {
 			$this->logger->warning($e->getMessage(), ['exception' => $e]);
 		}
 	}
-
-
 }

@@ -263,8 +263,8 @@ class IndexerJob extends TimedJob {
 
 		$emptyInvalidSources = array_values(array_diff($allSourceIds, $loadedSources, $sourcesToRetry));
 		if (count($emptyInvalidSources) > 0) {
-			$this->logger->info('[IndexerJob] Invalid or empty files that were not indexed (n=' . count($emptyInvalidSources) . '): ' .
-				json_encode($this->exportFileSources($emptyInvalidSources), \JSON_THROW_ON_ERROR | \JSON_OBJECT_AS_ARRAY),
+			$this->logger->info('[IndexerJob] Invalid or empty files that were not indexed (n=' . count($emptyInvalidSources) . '): '
+				. json_encode($this->exportFileSources($emptyInvalidSources), \JSON_THROW_ON_ERROR | \JSON_OBJECT_AS_ARRAY),
 				['storageId' => $this->storageId, 'rootId' => $this->rootId]);
 		}
 

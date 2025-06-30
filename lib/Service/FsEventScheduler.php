@@ -59,6 +59,13 @@ class FsEventScheduler {
 	}
 
 	/**
+	 * @throws Exception
+	 */
+	private function retractEvent(FsEventType $type, string $ownerId, int $nodeId) {
+		$this->fsEventMapper->deleteByContent($type, $ownerId, $nodeId);
+	}
+
+	/**
 	 * @throws InvalidPathException
 	 * @throws NotFoundException
 	 * @throws Exception
@@ -78,5 +85,17 @@ class FsEventScheduler {
 	 */
 	public function onInsert(Node $node): void {
 		$this->scheduleEvent(FsEventType::CREATE, $this->getOwnerIdForNode($node), $node->getId());
+	}
+
+	/**
+	 * @throws NotFoundException
+	 * @throws Exception
+	 */
+	public function retractAccessUpdateDecl(int $nodeId): void {
+		$ownerId = $this->storageService->getOwnerForFileId($nodeId);
+		if ($ownerId === false) {
+			throw new NotFoundException('Cannot get owner for file ID ' . $nodeId);
+		}
+		$this->retractEvent(FsEventType::ACCESS_UPDATE_DECL, $ownerId, $nodeId);
 	}
 }

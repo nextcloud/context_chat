@@ -10,6 +10,8 @@ declare(strict_types=1);
 namespace OCA\ContextChat\Db;
 
 use OCP\AppFramework\Db\QBMapper;
+use OCP\DB\Exception;
+use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\IDBConnection;
 
 /**
@@ -52,5 +54,19 @@ class FsEventMapper extends QBMapper {
 			return (int)$cnt;
 		}
 		return 0;
+	}
+
+	/**
+	 * @throws Exception
+	 */
+	public function deleteByContent(\OCA\ContextChat\Type\FsEventType $type, string $ownerId, int $nodeId): int {
+		$qb = $this->db->getQueryBuilder();
+		$qb->delete($this->getTableName())
+			->where($qb->expr()->eq('type', $qb->createNamedParameter($type->value)))
+			->andWhere($qb->expr()->eq('userId', $qb->createNamedParameter($ownerId)))
+			->andWhere($qb->expr()->eq('nodeId', $qb->createNamedParameter($nodeId, IQueryBuilder::PARAM_INT)))
+		;
+
+		return $qb->executeStatement();
 	}
 }
