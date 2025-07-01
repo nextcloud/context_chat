@@ -13,7 +13,7 @@ namespace OCA\ContextChat\Listener;
 use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\Logger;
 use OCA\ContextChat\Public\UpdateAccessOp;
-use OCA\ContextChat\Service\ActionService;
+use OCA\ContextChat\Service\ActionScheduler;
 use OCA\ContextChat\Service\ProviderConfigService;
 use OCA\ContextChat\Service\StorageService;
 use OCP\EventDispatcher\Event;
@@ -38,7 +38,7 @@ class ShareListener implements IEventListener {
 		private StorageService $storageService,
 		private IManager $shareManager,
 		private IRootFolder $rootFolder,
-		private ActionService $actionService,
+		private ActionScheduler $actionService,
 		private IGroupManager $groupManager,
 	) {
 	}

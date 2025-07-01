@@ -17,7 +17,7 @@ use OCA\ContextChat\Type\ActionType;
 use OCA\ContextChat\Type\UpdateAccessOp;
 use OCP\BackgroundJob\IJobList;
 
-class ActionService {
+class ActionScheduler {
 	private const BATCH_SIZE = 500;
 
 	public function __construct(

@@ -257,6 +257,25 @@ class StorageService {
 	}
 
 	/**
+	 * Get the owner of a file by its ID.
+	 * This will return the user ID of the owner if the file is in a home mount,
+	 * otherwise it will return false.
+	 * @param int $fileId
+	 * @return string|false $userId
+	 */
+	public function getOwnerForFileId(int $fileId): string|false {
+		$mountInfos = $this->userMountCache->getMountsForFileId($fileId);
+		return current(array_filter(
+			array_map(static function (ICachedMountInfo $mountInfo) {
+				return in_array($mountInfo->getMountProvider(), static::HOME_MOUNT_TYPES)
+					? $mountInfo->getUser()->getUID()
+					: false;
+			}, $mountInfos),
+			static fn ($userId) => $userId !== false
+		));
+	}
+
+	/**
 	 * @param Node $node
 	 * @return \Generator
 	 */
