@@ -114,7 +114,7 @@ class ScanService {
 		$providerKey = ProviderConfigService::getDefaultProviderKey();
 		$sourceId = ProviderConfigService::getSourceId($node->getId());
 		$userIds = $this->storageService->getUsersForFileId($node->getId());
-		$path = substr($node->getInternalPath(), 6); // remove 'files/' prefix
+		$path = $node->getInternalPath();
 		return new Source(
 			$userIds,
 			$sourceId,
