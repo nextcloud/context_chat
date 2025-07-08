@@ -7,24 +7,5 @@
 
 namespace OCA\ContextChat\Event;
 
-use OCA\ContextChat\Public\ContentManager;
-use OCA\ContextChat\Public\IContentProvider;
-use OCP\EventDispatcher\Event;
-
-class ContentProviderRegisterEvent extends Event {
-	public function __construct(
-		private ContentManager $contentManager,
-	) {
-	}
-
-	/**
-	 * @param string $appId
-	 * @param string $providerId
-	 * @param class-string<IContentProvider> $providerClass
-	 * @return void
-	 * @since 2.2.2
-	 */
-	public function registerContentProvider(string $appId, string $providerId, string $providerClass): void {
-		$this->contentManager->registerContentProvider($appId, $providerId, $providerClass);
-	}
+class ContentProviderRegisterEvent extends \OCP\ContextChat\Events\ContentProviderRegisterEvent {
 }
