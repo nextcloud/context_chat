@@ -13,5 +13,6 @@ return [
 		['name' => 'provider#getProviders', 'url' => '/providers', 'verb' => 'GET'],
 		['name' => 'provider#getDefaultProviderKey', 'url' => '/default-provider-key', 'verb' => 'GET'],
 		['name' => 'provider#getMetadataFor', 'url' => '/sources-metadata', 'verb' => 'POST'],
+		['name' => 'log#getNextcloudLogs', 'url' => '/download-logs-nextcloud', 'verb' => 'GET'],
 	],
 ];
