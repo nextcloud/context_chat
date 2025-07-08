@@ -16,13 +16,14 @@ use OCA\ContextChat\Logger;
 use OCA\ContextChat\Service\ActionScheduler;
 use OCA\ContextChat\Service\ProviderConfigService;
 use OCP\BackgroundJob\IJobList;
+use OCP\ContextChat\IContentManager;
 use OCP\DB\Exception;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\Server;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 
-class ContentManager {
+class ContentManager implements IContentManager {
 	public function __construct(
 		private IJobList $jobList,
 		private ProviderConfigService $providerConfig,
