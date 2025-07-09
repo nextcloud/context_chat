@@ -9,8 +9,11 @@ namespace OCA\ContextChat\Controller;
 
 use OCA\ContextChat\Logger;
 use OCP\AppFramework\Controller;
-use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
+use OCP\AppFramework\Http;
 
+use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
+use OCP\AppFramework\Http\Response;
+use OCP\AppFramework\Http\TextPlainResponse;
 use OCP\AppFramework\Http\ZipResponse;
 use OCP\IRequest;
 
@@ -25,10 +28,10 @@ class LogController extends Controller {
 	/**
 	 * Downloads log file
 	 *
-	 * @return ZipResponse
+	 * @return Response
 	 */
 	#[NoCSRFRequired]
-	public function getNextcloudLogs(): ZipResponse {
+	public function getNextcloudLogs(): Response {
 		$logFilepath = $this->logger->getLogFilepath();
 		$response = new ZipResponse($this->request, 'nextcloud-logs');
 		$filePath = $logFilepath;
@@ -38,6 +41,9 @@ class LogController extends Controller {
 			$time = filemtime($filePath); // Needed otherwise tar complains that time is in the future
 			$response->addResource($remoteFile, basename($filePath), $size, $time);
 			$filePath = $logFilepath . '.' . $counter++;
+		}
+		if ($counter == 1) {
+			return new TextPlainResponse('No log file found', Http::STATUS_NOT_FOUND);
 		}
 		return $response;
 	}
