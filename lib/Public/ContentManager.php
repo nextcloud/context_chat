@@ -7,6 +7,7 @@
 
 namespace OCA\ContextChat\Public;
 
+use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\BackgroundJobs\InitialContentImportJob;
 use OCA\ContextChat\BackgroundJobs\SubmitContentJob;
 use OCA\ContextChat\Db\QueueContentItem;
@@ -19,6 +20,7 @@ use OCP\BackgroundJob\IJobList;
 use OCP\ContextChat\IContentManager;
 use OCP\DB\Exception;
 use OCP\EventDispatcher\IEventDispatcher;
+use OCP\IConfig;
 use OCP\Server;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
@@ -26,12 +28,23 @@ use Psr\Container\NotFoundExceptionInterface;
 class ContentManager implements IContentManager {
 	public function __construct(
 		private IJobList $jobList,
+		private IConfig $config,
 		private ProviderConfigService $providerConfig,
 		private QueueContentItemMapper $mapper,
 		private ActionScheduler $actionService,
 		private Logger $logger,
 		private IEventDispatcher $eventDispatcher,
 	) {
+	}
+
+	/**
+	 * Checks if the context chat app is enabled or not
+	 *
+	 * @return bool
+	 * @since 4.6.0
+	 */
+	public function isContextChatAvailable(): bool {
+		return $this->config->getAppValue(Application::APP_ID, 'backend_init', 'false') === 'true';
 	}
 
 	/**
