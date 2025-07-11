@@ -1,44 +1,52 @@
-# SPDX-FileCopyrightText: 2023 Nextcloud GmbH and Nextcloud contributors
+# SPDX-FileCopyrightText: 2025 Nextcloud GmbH and Nextcloud contributors
 # SPDX-License-Identifier: AGPL-3.0-or-later
 name: 🐞 Bug Report
 description: Create a bug report for context_chat
-labels: ['bug']
+labels: [ 'bug' ]
 body:
   - type: markdown
     attributes:
       value: Thanks for taking the time to file a bug report! Please fill out this form as completely as possible.
   - type: input
     attributes:
-      label: Which version of context_chat are you using?
-      description: 'Please specify the exact version instead of "latest". For example: 2.0.2'
+      label: Which version of Nextcloud are you using?
+      description: 'Can be found with the command `occ status | grep version`. For example: v23.0.1'
     validations:
       required: true
   - type: input
     attributes:
-      label: Which version of Nextcloud are you using?
-      description: 'For example: v23.0.1'
+      label: Which version of PHP context_chat are you using?
+      description: 'Can be found with the command `occ app:list | grep context_chat`. For example: 1.0.0'
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Which version of backend context_chat are you using?
+      description: 'Can be found with the command `occ app:list | grep context_chat_backend`. For example: 1.0.0'
     validations:
       required: true
   - type: input
     attributes:
       label: Which browser are you using? In case you are using the phone App, specify the Android or iOS version and device please.
-      description: 'Please specify the exact version instead of "latest". For example: Chrome 100.0.4878.0 or '
-  - type: textarea
+      description: 'Please specify the exact version instead of "latest". For example: Chrome 100.0.4878.0'
+    validations:
+      required: true
+  - type: input
     attributes:
-      label: Describe the Bug
-      description: A clear and concise description of what the bug is.
+      label: Nextcloud deployment method?
+      description: 'eg. apache, bare-metal, AIO, docker-compose'
     validations:
       required: true
   - type: textarea
     attributes:
-      label: Expected Behavior
-      description: A clear and concise description of what you expected to happen.
+      label: Describe the Bug
+      description: A clear and concise description of what the bug is and what you expected to happen instead.
     validations:
       required: true
   - type: textarea
     attributes:
       label: To Reproduce
-      description: Steps to reproduce the behavior, please provide a clear number of steps that always reproduces the issue. Screenshots can be provided in the issue body below.
+      description: Steps to reproduce the behavior, please provide a clear number of steps that always reproduces the issue. Screenshots can be provided here.
     validations:
       required: true
   - type: markdown
@@ -46,3 +54,15 @@ body:
       value: |
         Before posting the issue go through the steps you've written down to make sure the steps provided are detailed and clear.
         Contributors should be able to follow the steps provided in order to reproduce the bug.
+  - type: textarea
+    attributes:
+      label: PHP logs (Warning these might contain sensitive information)
+      description: To get these logs go to the admin settings for context_chat and click on the "Download the PHP App logs" button.
+  - type: textarea
+    attributes:
+      label: Ex-App logs (Warning these might contain sensitive information)
+      description: To get these logs go to the admin settings for context_chat and click on the "Download the Ex-App Backend logs" button.
+  - type: textarea
+    attributes:
+      label: Server logs (if applicable)
+      description: The nextcloud server logs.
