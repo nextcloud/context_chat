@@ -82,9 +82,9 @@ appstore: clean
 	--exclude=node_modules \
 	--exclude=/src \
 	--exclude=translationfiles \
-	--exclude=webpack.* \
+	--exclude=vite.* \
 	--exclude=stylelint.config.js \
-	--exclude=.eslintrc.js \
+	--exclude=.eslintrc.cjs \
 	--exclude=.github \
 	--exclude=.gitlab-ci.yml \
 	--exclude=crowdin.yml \
