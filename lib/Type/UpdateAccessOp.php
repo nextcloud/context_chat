@@ -9,7 +9,5 @@ declare(strict_types=1);
 
 namespace OCA\ContextChat\Type;
 
-class UpdateAccessOp {
-	public const ALLOW = 'allow';
-	public const DENY = 'deny';
+class UpdateAccessOp extends \OCP\ContextChat\Type\UpdateAccessOp {
 }

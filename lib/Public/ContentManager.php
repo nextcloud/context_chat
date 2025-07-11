@@ -16,12 +16,13 @@ use OCA\ContextChat\Logger;
 use OCA\ContextChat\Service\ActionScheduler;
 use OCA\ContextChat\Service\ProviderConfigService;
 use OCP\BackgroundJob\IJobList;
+use OCP\ContextChat\IContentManager;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\Server;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 
-class ContentManager {
+class ContentManager implements IContentManager {
 	public function __construct(
 		private IJobList $jobList,
 		private ProviderConfigService $providerConfig,
@@ -30,6 +31,16 @@ class ContentManager {
 		private Logger $logger,
 		private IEventDispatcher $eventDispatcher,
 	) {
+	}
+
+	/**
+	 * Checks if the context chat app is enabled or not
+	 *
+	 * @return bool
+	 * @since 4.4.0
+	 */
+	public function isContextChatAvailable(): bool {
+		return true;
 	}
 
 	/**
