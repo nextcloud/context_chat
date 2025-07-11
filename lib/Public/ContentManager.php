@@ -34,6 +34,16 @@ class ContentManager implements IContentManager {
 	}
 
 	/**
+	 * Checks if the context chat app is enabled or not
+	 *
+	 * @return bool
+	 * @since 4.4.0
+	 */
+	public function isContextChatAvailable(): bool {
+		return true;
+	}
+
+	/**
 	 * @param string $appId
 	 * @param string $providerId
 	 * @param class-string<IContentProvider> $providerClass
