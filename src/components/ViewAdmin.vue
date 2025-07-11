@@ -46,25 +46,43 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 			<p>&nbsp;</p>
 			<p>{{ t('context_chat', 'Eligible files for indexing: {count}', {count: stats.eligible_files_count}) }}</p>
 			<p>{{ t('context_chat', 'Queued content update actions: {count}', {count: stats.queued_actions_count}) }}</p>
-			<p><a href="https://docs.nextcloud.com/server/latest/admin_manual/ai/app_context_chat.html">{{ t('context_chat', 'Official documentation') }}</a></p>
+		</NcSettingsSection>
+		<NcSettingsSection :name="t('context_chat', 'Context Chat Logs')">
+			<div class="horizontal-flex">
+				<NcButton :href="downloadURLNextcloudLogs">
+					{{ t('context_chat', 'Download the PHP App logs') }}
+				</NcButton>
+				<NcButton :href="downloadURLDockerLogs">
+					{{ t('context_chat', 'Download the Ex-App Backend logs') }}
+				</NcButton>
+			</div>
+			<p>&nbsp;</p>
+			<p>
+				<a href="https://docs.nextcloud.com/server/latest/admin_manual/ai/app_context_chat.html">{{
+					t('context_chat', 'Official documentation')
+				}}</a>
+			</p>
 		</NcSettingsSection>
 	</div>
 </template>
 
 <script>
-import { NcNoteCard, NcSettingsSection } from '@nextcloud/vue'
+import { NcNoteCard, NcSettingsSection, NcButton } from '@nextcloud/vue'
 import { loadState } from '@nextcloud/initial-state'
 import humanizeDuration from 'humanize-duration'
+import { generateUrl } from '@nextcloud/router'
 
 const MAX_RELATIVE_DATE = 1000 * 60 * 60 * 24 * 7 // one week
 
 export default {
 	name: 'ViewAdmin',
-	components: { NcSettingsSection, NcNoteCard },
+	components: { NcSettingsSection, NcNoteCard, NcButton },
 
 	data() {
 		return {
-		  stats: {},
+			stats: {},
+			downloadURLNextcloudLogs: generateUrl('/apps/context_chat/download-logs-nextcloud'),
+			downloadURLDockerLogs: generateUrl('/apps/app_api/proxy/context_chat_backend/downloadLogs'),
 		}
 	},
 
@@ -126,7 +144,12 @@ figure[class^='icon-'] {
 	background-color: var(--color-background-dark);
 }
 
-#context_chat a:link, #context_chat a:visited, #context_chat a:hover {
+#context_chat p a:link, #context_chat p a:visited, #context_chat p a:hover {
 	text-decoration: underline;
+}
+
+.horizontal-flex {
+	display: flex;
+	gap: 10px;
 }
 </style>
