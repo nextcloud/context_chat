@@ -31,7 +31,7 @@ Refer to the [Context Chat Backend's readme](https://github.com/nextcloud/contex
     <documentation>
         <developer>https://github.com/nextcloud/context_chat</developer>
     </documentation>
-    <category>integration</category>
+    <category>ai</category>
     <website>https://github.com/nextcloud/context_chat</website>
     <bugs>https://github.com/nextcloud/context_chat/issues</bugs>
     <screenshot>https://raw.githubusercontent.com/nextcloud/context_chat/main/img/Logo.png</screenshot>
