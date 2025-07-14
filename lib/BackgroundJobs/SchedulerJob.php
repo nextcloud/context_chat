@@ -41,7 +41,7 @@ class SchedulerJob extends QueuedJob {
 			$this->jobList->add(StorageCrawlJob::class, [
 				'storage_id' => $mount['storage_id'],
 				'root_id' => $mount['root_id' ],
-				'override_root' => $mount['override_root'],
+				'overridden_root' => $mount['overridden_root'],
 				'last_file_id' => 0,
 			]);
 		}

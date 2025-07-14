@@ -39,13 +39,13 @@ class StorageCrawlJob extends QueuedJob {
 	}
 
 	/**
-	 * @param array{storage_id:int, root_id:int, override_root:int, last_file_id:int} $argument
+	 * @param array{storage_id:int, root_id:int, overridden_root:int, last_file_id:int} $argument
 	 * @return void
 	 */
 	protected function run($argument): void {
 		$storageId = $argument['storage_id'];
 		$rootId = $argument['root_id'];
-		$overrideRoot = $argument['override_root'];
+		$overrideRoot = $argument['overridden_root'];
 		$lastFileId = $argument['last_file_id'];
 
 		// Remove current iteration
@@ -55,7 +55,7 @@ class StorageCrawlJob extends QueuedJob {
 		$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
 
 		$i = 0;
-		foreach ($this->storageService->getFilesInMount($storageId, $overrideRoot, $lastFileId, self::BATCH_SIZE) as $fileId) {
+		foreach ($this->storageService->getFilesInMount($storageId, $overrideRoot ?? $rootId, $lastFileId, self::BATCH_SIZE) as $fileId) {
 			$queueFile = new QueueFile();
 			$queueFile->setStorageId($storageId);
 			$queueFile->setRootId($rootId);
