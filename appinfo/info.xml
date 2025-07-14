@@ -22,7 +22,7 @@ Setup background job workers as described here: https://docs.nextcloud.com/serve
 Note:
 Refer to the [Context Chat Backend's readme](https://github.com/nextcloud/context_chat_backend/?tab=readme-ov-file) and the [AppAPI's documentation](https://cloud-py-api.github.io/app_api/) for help with setup of AppAPI's deploy daemon.
 ]]></description>
-    <version>4.3.0</version>
+    <version>5.0.0-dev.0</version>
     <licence>agpl</licence>
     <author>Julien Veyssier</author>
     <author>Anupam Kumar</author>
@@ -40,7 +40,7 @@ Refer to the [Context Chat Backend's readme](https://github.com/nextcloud/contex
     <screenshot>https://raw.githubusercontent.com/nextcloud/context_chat/main/screenshots/context_chat_4.png</screenshot>
     <screenshot>https://raw.githubusercontent.com/nextcloud/context_chat/main/screenshots/context_chat_5.png</screenshot>
     <dependencies>
-        <nextcloud min-version="30" max-version="32"/>
+        <nextcloud min-version="32" max-version="32"/>
     </dependencies>
     <background-jobs>
 		<job>OCA\ContextChat\BackgroundJobs\SchedulerJob</job>

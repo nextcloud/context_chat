@@ -15,6 +15,7 @@ use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\Logger;
 use OCP\DB\Exception;
 use OCP\DB\QueryBuilder\IQueryBuilder;
+use OCP\Files\Cache\IFileAccess;
 use OCP\Files\Config\ICachedMountInfo;
 use OCP\Files\Config\IUserMountCache;
 use OCP\Files\File;
@@ -45,6 +46,7 @@ class StorageService {
 		private IUserMountCache $userMountCache,
 		private IFilesMetadataManager $metadataManager,
 		private IRootFolder $rootFolder,
+		private IFileAccess $fileAccess,
 	) {
 	}
 
@@ -130,48 +132,7 @@ class StorageService {
 	 * @throws \OCP\DB\Exception
 	 */
 	public function getMounts(): \Generator {
-		$qb = $this->db->getQueryBuilder();
-		$qb->selectDistinct(['root_id', 'storage_id', 'mount_provider_class']) // to avoid scanning each occurrence of a groupfolder
-			->from('mounts')
-			->where($qb->expr()->in('mount_provider_class', $qb->createPositionalParameter(self::ALLOWED_MOUNT_TYPES, IQueryBuilder::PARAM_STR_ARRAY)))
-			// Exclude groupfolder trashbin mounts
-			->andWhere($qb->expr()->notLike('mount_point', $qb->createPositionalParameter('/%/files_trashbin/%')));
-		$result = $qb->executeQuery();
-
-
-		while (
-			/** @var array{storage_id:int, root_id:int,mount_provider_class:string} $row */
-			$row = $result->fetch()
-		) {
-			$storageId = (int)$row['storage_id'];
-			$rootId = (int)$row['root_id'];
-			$overrideRoot = $rootId;
-			if (in_array($row['mount_provider_class'], self::HOME_MOUNT_TYPES)) {
-				// Only crawl files, not cache or trashbin
-				$qb = $this->getCacheQueryBuilder();
-				try {
-					$qb->selectFileCache();
-					/** @var array|false $root */
-					$root = $qb
-						->andWhere($qb->expr()->eq('filecache.storage', $qb->createNamedParameter($storageId, IQueryBuilder::PARAM_INT)))
-						->andWhere($qb->expr()->eq('filecache.name', $qb->createNamedParameter('files')))
-						->andWhere($qb->expr()->eq('filecache.parent', $qb->createNamedParameter($rootId, IQueryBuilder::PARAM_INT)))
-						->executeQuery()->fetch();
-					if ($root !== false) {
-						$overrideRoot = (int)$root['fileid'];
-					}
-				} catch (Exception $e) {
-					$this->logger->error('Could not fetch home storage files root for storage ' . $storageId, ['exception' => $e]);
-					continue;
-				}
-			}
-			yield [
-				'storage_id' => $storageId,
-				'root_id' => $rootId,
-				'override_root' => $overrideRoot,
-			];
-		}
-		$result->closeCursor();
+		return $this->fileAccess->getDistinctMounts(self::ALLOWED_MOUNT_TYPES, true);
 	}
 
 	/**
@@ -182,67 +143,9 @@ class StorageService {
 	 * @return \Generator<int,int,mixed,void>
 	 */
 	public function getFilesInMount(int $storageId, int $rootId, int $lastFileId = 0, int $maxResults = 100): \Generator {
-		$qb = $this->getCacheQueryBuilder();
-		try {
-			$qb->selectFileCache();
-			$qb->andWhere($qb->expr()->eq('filecache.fileid', $qb->createNamedParameter($rootId, IQueryBuilder::PARAM_INT)));
-			$result = $qb->executeQuery();
-			/** @var array{path:string}|false $root */
-			$root = $result->fetch();
-			$result->closeCursor();
-		} catch (Exception $e) {
-			$this->logger->error('Could not fetch storage root', ['exception' => $e]);
-			return;
+		foreach ($this->fileAccess->getByAncestorInStorage($storageId, $rootId, $lastFileId, $maxResults, Application::MIMETYPES, false, true) as $cacheEntry) {
+			yield $cacheEntry['fileid'];
 		}
-
-		if ($root === false) {
-			$this->logger->error('Could not fetch storage root');
-			return;
-		}
-
-		$mimeTypes = array_map(fn ($mimeType) => $this->mimeTypes->getId($mimeType), Application::MIMETYPES);
-
-		$qb = $this->getCacheQueryBuilder();
-
-		try {
-			$path = $root['path'] === '' ? '' : $root['path'] . '/';
-
-			$qb->select('*')
-				->from('filecache', 'filecache');
-			// End to end encrypted files are descendants of a folder with encrypted=1
-			// Use a subquery to check the `encrypted` status of the parent folder
-			$subQuery = $this->getCacheQueryBuilder()->select('p.encrypted')
-				->from('filecache', 'p')
-				->andWhere($qb->expr()->eq('p.fileid', 'filecache.parent'))
-				->getSQL();
-
-			$qb->andWhere(
-				$qb->expr()->eq($qb->createFunction(sprintf('(%s)', $subQuery)), $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT))
-			);
-			$qb
-				->andWhere($qb->expr()->like('filecache.path', $qb->createNamedParameter($path . '%')))
-				->andWhere($qb->expr()->eq('filecache.storage', $qb->createNamedParameter($storageId)))
-				->andWhere($qb->expr()->gt('filecache.fileid', $qb->createNamedParameter($lastFileId)))
-				->andWhere($qb->expr()->in('filecache.mimetype', $qb->createNamedParameter($mimeTypes, IQueryBuilder::PARAM_INT_ARRAY)));
-
-			if ($maxResults !== 0) {
-				$qb->setMaxResults($maxResults);
-			}
-			$files = $qb->orderBy('filecache.fileid', 'ASC')
-				->executeQuery();
-		} catch (Exception $e) {
-			$this->logger->error('Could not fetch files', ['exception' => $e]);
-			return;
-		}
-
-		while (
-			/** @var array */
-			$file = $files->fetch()
-		) {
-			yield (int)$file['fileid'];
-		}
-
-		$files->closeCursor();
 	}
 
 	/**
