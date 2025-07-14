@@ -143,7 +143,8 @@ class StorageService {
 	 * @return \Generator<int,int,mixed,void>
 	 */
 	public function getFilesInMount(int $storageId, int $rootId, int $lastFileId = 0, int $maxResults = 100): \Generator {
-		foreach ($this->fileAccess->getByAncestorInStorage($storageId, $rootId, $lastFileId, $maxResults, Application::MIMETYPES, false, true) as $cacheEntry) {
+		$mimeTypeIds = array_map(fn ($mimeType) => $this->mimeTypes->getId($mimeType), Application::MIMETYPES);
+		foreach ($this->fileAccess->getByAncestorInStorage($storageId, $rootId, $lastFileId, $maxResults, $mimeTypeIds, false, true) as $cacheEntry) {
 			yield $cacheEntry['fileid'];
 		}
 	}
