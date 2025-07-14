@@ -151,7 +151,7 @@ class StorageService {
 	private function getMountsOld(): \Generator {
 		$qb = $this->db->getQueryBuilder();
 		$qb->selectDistinct(['root_id', 'storage_id', 'mount_provider_class']) // to avoid scanning each occurrence of a groupfolder
-		->from('mounts')
+			->from('mounts')
 			->where($qb->expr()->in('mount_provider_class', $qb->createPositionalParameter(self::ALLOWED_MOUNT_TYPES, IQueryBuilder::PARAM_STR_ARRAY)))
 			// Exclude groupfolder trashbin mounts
 			->andWhere($qb->expr()->notLike('mount_point', $qb->createPositionalParameter('/%/files_trashbin/%')));
@@ -160,7 +160,7 @@ class StorageService {
 
 		while (
 			/** @var array{storage_id:int, root_id:int,mount_provider_class:string} $row */
-		$row = $result->fetch()
+			$row = $result->fetch()
 		) {
 			$storageId = (int)$row['storage_id'];
 			$rootId = (int)$row['root_id'];
@@ -285,7 +285,7 @@ class StorageService {
 
 		while (
 			/** @var array */
-		$file = $files->fetch()
+			$file = $files->fetch()
 		) {
 			yield (int)$file['fileid'];
 		}
