@@ -28,6 +28,6 @@ class UserDeletedListener implements IEventListener {
 			return;
 		}
 
-		$this->actionService->deleteUser($event->getUid());
+		$this->actionService->deleteUser($event->getUser()->getUID());
 	}
 }
