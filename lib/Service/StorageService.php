@@ -133,7 +133,7 @@ class StorageService {
 	}
 
 	/**
-	 * @return \Generator<array{root_id: int, override_root: int, storage_id: int}>
+	 * @return \Generator<array{root_id: int, overridden_root: int, storage_id: int}>
 	 * @throws \OCP\DB\Exception
 	 */
 	public function getMounts(): \Generator {
