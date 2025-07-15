@@ -39,13 +39,13 @@ class StorageCrawlJob extends QueuedJob {
 	}
 
 	/**
-	 * @param array{storage_id:int, root_id:int, overridden_root:int, last_file_id:int} $argument
+	 * @param array{storage_id:int, root_id:int, overridden_root:int|null, override_root:int|null, last_file_id:int} $argument
 	 * @return void
 	 */
 	protected function run($argument): void {
 		$storageId = $argument['storage_id'];
 		$rootId = $argument['root_id'];
-		$overrideRoot = $argument['overridden_root'];
+		$overrideRoot = $argument['overridden_root'] ?? $argument['override_root'] ?? $rootId;
 		$lastFileId = $argument['last_file_id'];
 
 		// Remove current iteration
