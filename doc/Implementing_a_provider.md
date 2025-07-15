@@ -2,6 +2,12 @@
   - SPDX-FileCopyrightText: 2024 Nextcloud GmbH and Nextcloud contributors
   - SPDX-License-Identifier: AGPL-3.0-or-later
 -->
+
+> [!IMPORTANT]
+> As of Nextcloud 32, the internal API described in this document has been replaced with the OCP API.
+>
+> For more details, see the [Nextcloud documentation](https://docs.nextcloud.com/server/latest/developer_manual/digging_deeper/context_chat.html).
+
 # How to implement a content provider for Context Chat
 
 ### The content provider interface
