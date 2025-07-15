@@ -31,7 +31,7 @@ jobs:
       matrix:
         php-versions: [ '8.1' ]
         databases: [ 'pgsql' ]
-        server-versions: [ 'stable30', 'stable31', 'feat/getByAncestorInStorage' ]
+        server-versions: [ 'stable30', 'stable31', 'master' ]
 
     name: Integration test on ${{ matrix.server-versions }} php@${{ matrix.php-versions }}
 
@@ -280,7 +280,7 @@ jobs:
       matrix:
         php-versions: [ '8.1' ]
         databases: [ 'pgsql' ]
-        server-versions: [ 'stable30', 'stable31', 'feat/getByAncestorInStorage' ]
+        server-versions: [ 'stable30', 'stable31', 'master' ]
 
     name: Integration test with cron on ${{ matrix.server-versions }} php@${{ matrix.php-versions }}
 
@@ -517,7 +517,7 @@ jobs:
       matrix:
         php-versions: [ '8.1' ]
         databases: [ 'pgsql' ]
-        server-versions: [ 'stable30', 'stable31', 'feat/getByAncestorInStorage' ]
+        server-versions: [ 'stable30', 'stable31', 'master' ]
 
     name: Integration test with file listener on ${{ matrix.server-versions }} php@${{ matrix.php-versions }}
 
