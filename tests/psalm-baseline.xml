@@ -19,4 +19,10 @@
       <code><![CDATA[\OC]]></code>
     </UndefinedClass>
   </file>
+  <file src="lib/Service/StorageService.php">
+    <UndefinedInterfaceMethod>
+      <code><![CDATA[getByAncestorInStorage]]></code>
+      <code><![CDATA[getDistinctMounts]]></code>
+    </UndefinedInterfaceMethod>
+  </file>
 </files>

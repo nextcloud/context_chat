@@ -37,11 +37,11 @@ class SchedulerJob extends QueuedJob {
 		$this->appConfig->setAppValueString('indexed_files_count', (string)0);
 		$this->appConfig->setAppValueInt('last_indexed_time', 0);
 		foreach ($this->storageService->getMounts() as $mount) {
-			$this->logger->debug('Scheduling StorageCrawlJob storage_id=' . $mount['storage_id'] . ' root_id=' . $mount['root_id' ] . 'override_root=' . $mount['override_root']);
+			$this->logger->debug('Scheduling StorageCrawlJob storage_id=' . $mount['storage_id'] . ' root_id=' . $mount['root_id' ] . 'override_root=' . $mount['overridden_root']);
 			$this->jobList->add(StorageCrawlJob::class, [
 				'storage_id' => $mount['storage_id'],
 				'root_id' => $mount['root_id' ],
-				'override_root' => $mount['override_root'],
+				'overridden_root' => $mount['overridden_root'],
 				'last_file_id' => 0,
 			]);
 		}

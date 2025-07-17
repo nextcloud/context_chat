@@ -15,6 +15,7 @@ use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\Logger;
 use OCP\DB\Exception;
 use OCP\DB\QueryBuilder\IQueryBuilder;
+use OCP\Files\Cache\IFileAccess;
 use OCP\Files\Config\ICachedMountInfo;
 use OCP\Files\Config\IUserMountCache;
 use OCP\Files\File;
@@ -45,6 +46,7 @@ class StorageService {
 		private IUserMountCache $userMountCache,
 		private IFilesMetadataManager $metadataManager,
 		private IRootFolder $rootFolder,
+		private IFileAccess $fileAccess,
 	) {
 	}
 
@@ -125,11 +127,28 @@ class StorageService {
 		return $countInMount;
 	}
 
+	private function isFileAccessAvailable(): bool {
+		$reflection = new \ReflectionClass($this->fileAccess);
+		return $reflection->hasMethod('getByAncestorInStorage');
+	}
+
 	/**
-	 * @return \Generator<array{root_id: int, override_root: int, storage_id: int}>
+	 * @return \Generator<array{root_id: int, overridden_root: int, storage_id: int}>
 	 * @throws \OCP\DB\Exception
 	 */
 	public function getMounts(): \Generator {
+		if (!$this->isFileAccessAvailable()) {
+			return $this->getMountsOld();
+		}
+
+		return $this->fileAccess->getDistinctMounts(self::ALLOWED_MOUNT_TYPES, true);
+	}
+
+	/**
+	 * @return \Generator<array{root_id: int, overridden_root: int, storage_id: int}>
+	 * @throws \OCP\DB\Exception
+	 */
+	private function getMountsOld(): \Generator {
 		$qb = $this->db->getQueryBuilder();
 		$qb->selectDistinct(['root_id', 'storage_id', 'mount_provider_class']) // to avoid scanning each occurrence of a groupfolder
 			->from('mounts')
@@ -154,7 +173,7 @@ class StorageService {
 					/** @var array|false $root */
 					$root = $qb
 						->andWhere($qb->expr()->eq('filecache.storage', $qb->createNamedParameter($storageId, IQueryBuilder::PARAM_INT)))
-						->andWhere($qb->expr()->eq('filecache.name', $qb->createNamedParameter('files')))
+						->andWhere($qb->expr()->eq('filecache.path', $qb->createNamedParameter('files')))
 						->andWhere($qb->expr()->eq('filecache.parent', $qb->createNamedParameter($rootId, IQueryBuilder::PARAM_INT)))
 						->executeQuery()->fetch();
 					if ($root !== false) {
@@ -168,7 +187,7 @@ class StorageService {
 			yield [
 				'storage_id' => $storageId,
 				'root_id' => $rootId,
-				'override_root' => $overrideRoot,
+				'overridden_root' => $overrideRoot,
 			];
 		}
 		$result->closeCursor();
@@ -182,6 +201,35 @@ class StorageService {
 	 * @return \Generator<int,int,mixed,void>
 	 */
 	public function getFilesInMount(int $storageId, int $rootId, int $lastFileId = 0, int $maxResults = 100): \Generator {
+		if (!$this->isFileAccessAvailable()) {
+			return $this->getFilesInMountOld($storageId, $rootId, $lastFileId, $maxResults);
+		}
+
+		return $this->getFilesInMountUsingFileAccess($storageId, $rootId, $lastFileId, $maxResults);
+	}
+
+	/**
+	 * @param int $storageId
+	 * @param int $rootId
+	 * @param int $lastFileId
+	 * @param int $maxResults
+	 * @return \Generator<int,int,mixed,void>
+	 */
+	private function getFilesInMountUsingFileAccess(int $storageId, int $rootId, int $lastFileId = 0, int $maxResults = 100): \Generator {
+		$mimeTypeIds = array_map(fn ($mimeType) => $this->mimeTypes->getId($mimeType), Application::MIMETYPES);
+		foreach ($this->fileAccess->getByAncestorInStorage($storageId, $rootId, $lastFileId, $maxResults, $mimeTypeIds, false, true) as $cacheEntry) {
+			yield $cacheEntry['fileid'];
+		}
+	}
+
+	/**
+	 * @param int $storageId
+	 * @param int $rootId
+	 * @param int $lastFileId
+	 * @param int $maxResults
+	 * @return \Generator<int,int,mixed,void>
+	 */
+	private function getFilesInMountOld(int $storageId, int $rootId, int $lastFileId = 0, int $maxResults = 100): \Generator {
 		$qb = $this->getCacheQueryBuilder();
 		try {
 			$qb->selectFileCache();
