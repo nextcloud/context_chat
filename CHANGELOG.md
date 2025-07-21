@@ -10,6 +10,24 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [4.4.0] - 2025-07-21
+
+### Added
+* Add search task type and provider only returning sources (#129) @julien-nc
+* Allow for downloading logs in the admin settings (#140) @lukasdotcom
+
+### Fixed
+* Refactor fs events, better mounts tracking (#130) @marcelklehr @kyteinsky
+* fix(IndexerJob,ScanService): Do not attempt to remove prefix from paths (#137) @marcelklehr
+* fix(StorageService): Use OCP..\FileAccess interface (#142) @marcelklehr
+
+### Changed
+* Maintenance updates (#132) @kyteinsky
+* Change category to AI @marcelklehr
+* Update issue template to attach logs (#141) @lukasdotcom
+* Upgrade to vue 3 and vite (#136) @lukasdotcom
+
+
 ## [4.3.0] - 2025-05-05
 
 ### Added
