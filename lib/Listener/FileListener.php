@@ -125,7 +125,7 @@ class FileListener implements IEventListener {
 				// If we just added this mount, ignore the removal, as the 'removal' event is always fired after
 				// the 'added' event in server
 				$rootId = $event->mountPoint->getRootId();
-				if ($this->addedMounts[$event->mountPoint->getUser()->getUID() . '-' . $rootId] === true) {
+				if (($this->addedMounts[$event->mountPoint->getUser()->getUID() . '-' . $rootId] ?? false) === true) {
 					$this->fsEventScheduler->retractAccessUpdateDecl($rootId);
 					return;
 				}
