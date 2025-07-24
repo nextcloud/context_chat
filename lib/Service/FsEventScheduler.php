@@ -7,7 +7,6 @@
 
 namespace OCA\ContextChat\Service;
 
-use OCA\ContextChat\BackgroundJobs\FileSystemListenerJob;
 use OCA\ContextChat\Db\FsEvent;
 use OCA\ContextChat\Db\FsEventMapper;
 use OCA\ContextChat\Type\FsEventType;

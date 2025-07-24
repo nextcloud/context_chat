@@ -67,7 +67,7 @@ class FileSystemListenerJob extends TimedJob {
 				continue;
 			}
 
-			try{
+			try {
 				switch ($fsEvent->getTypeObject()) {
 					case FsEventType::CREATE:
 						$this->fsEventService->onInsert($node);
