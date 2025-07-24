@@ -17,10 +17,10 @@ use OCA\ContextChat\Type\FsEventType;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\IJobList;
-use OCP\BackgroundJob\QueuedJob;
+use OCP\BackgroundJob\TimedJob;
 use OCP\Files\IRootFolder;
 
-class FileSystemListenerJob extends QueuedJob {
+class FileSystemListenerJob extends TimedJob {
 	private const BATCH_SIZE = 500;
 
 	public function __construct(
@@ -34,6 +34,8 @@ class FileSystemListenerJob extends QueuedJob {
 		private IRootFolder $rootFolder,
 	) {
 		parent::__construct($timeFactory);
+		$this->allowParallelRuns = false;
+		$this->setInterval(5 * 60); // 5 minutes
 	}
 
 	protected function run($argument): void {

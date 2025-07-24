@@ -52,10 +52,6 @@ class FsEventScheduler {
 
 		// do not catch DB exceptions
 		$this->fsEventMapper->insert($item);
-
-		if (!$this->jobList->has(FileSystemListenerJob::class, null)) {
-			$this->jobList->add(FileSystemListenerJob::class, null);
-		}
 	}
 
 	/**
