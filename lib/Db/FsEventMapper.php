@@ -63,8 +63,8 @@ class FsEventMapper extends QBMapper {
 		$qb = $this->db->getQueryBuilder();
 		$qb->delete($this->getTableName())
 			->where($qb->expr()->eq('type', $qb->createNamedParameter($type->value)))
-			->andWhere($qb->expr()->eq('userId', $qb->createNamedParameter($ownerId)))
-			->andWhere($qb->expr()->eq('nodeId', $qb->createNamedParameter($nodeId, IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->eq('user_id', $qb->createNamedParameter($ownerId)))
+			->andWhere($qb->expr()->eq('node_id', $qb->createNamedParameter($nodeId, IQueryBuilder::PARAM_INT)))
 		;
 
 		return $qb->executeStatement();
