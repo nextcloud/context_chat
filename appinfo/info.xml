@@ -44,6 +44,7 @@ Refer to the [Context Chat Backend's readme](https://github.com/nextcloud/contex
     </dependencies>
     <background-jobs>
 		<job>OCA\ContextChat\BackgroundJobs\SchedulerJob</job>
+		<job>OCA\ContextChat\BackgroundJobs\FileSystemListenerJob</job>
 		<job>OCA\ContextChat\BackgroundJobs\RotateLogsJob</job>
 	</background-jobs>
 	<commands>
