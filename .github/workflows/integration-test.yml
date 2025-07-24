@@ -698,7 +698,7 @@ jobs:
 
       - name: Run files scan
         run: |
-          ./occ files:scan admin # Do the scan before enabling context chat
+          ./occ files:scan admin # We do the scan after enabling context chat here, so we can test the file listeners
 
       - name: Run indexer cron
         run: |
@@ -736,6 +736,31 @@ jobs:
           '
 
       - name: Run the prompts
+        run: |
+          ./occ background-job:worker 'OC\TaskProcessing\SynchronousBackgroundJob' &
+          ./occ background-job:worker 'OC\TaskProcessing\SynchronousBackgroundJob' &
+          ./occ context_chat:prompt admin "Which factors are taken into account for the Ethical AI Rating?"
+          ./occ context_chat:prompt admin "Welche Faktoren beeinflussen das Ethical AI Rating?"
+          ./occ context_chat:search admin "Welche Faktoren beeinflussen das Ethical AI Rating?"
+
+      - name: Remove some files
+        run: |
+          cd data/admin/files
+          rm -rf ./admin_manual
+
+      - name: Run files scan
+        run: |
+          ./occ files:scan admin # We run the scan again to check if the files are successfully removed from the vectordb
+
+      - name: Run indexer cron
+        run: |
+          for i in {1..100}; do 
+            php cron.php & # Starting with stable31 we can use -v here for better visibility
+            wait
+            ./occ context_chat:stats
+          done
+
+      - name: Run the prompts again
         run: |
           ./occ background-job:worker 'OC\TaskProcessing\SynchronousBackgroundJob' &
           ./occ background-job:worker 'OC\TaskProcessing\SynchronousBackgroundJob' &
