@@ -51,45 +51,48 @@ class StorageCrawlJob extends QueuedJob {
 		// Remove current iteration
 		$this->jobList->remove(self::class, $argument);
 
-		$this->diagnosticService->sendJobStart(static::class, $this->getId());
-		$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
-
-		$i = 0;
-		foreach ($this->storageService->getFilesInMount($storageId, $overrideRoot ?? $rootId, $lastFileId, self::BATCH_SIZE) as $fileId) {
-			$queueFile = new QueueFile();
-			$queueFile->setStorageId($storageId);
-			$queueFile->setRootId($rootId);
-			$queueFile->setFileId($fileId);
-			$queueFile->setUpdate(false);
+		try {
+			$this->diagnosticService->sendJobStart(static::class, $this->getId());
 			$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
-			try {
-				$this->queue->insertIntoQueue($queueFile);
-			} catch (Exception $e) {
-				$this->logger->error('[StorageCrawlJob] Failed to add file to queue', [
-					'fileId' => $fileId,
-					'exception' => $e,
+
+			$i = 0;
+			foreach ($this->storageService->getFilesInMount($storageId, $overrideRoot ?? $rootId, $lastFileId, self::BATCH_SIZE) as $fileId) {
+				$queueFile = new QueueFile();
+				$queueFile->setStorageId($storageId);
+				$queueFile->setRootId($rootId);
+				$queueFile->setFileId($fileId);
+				$queueFile->setUpdate(false);
+				$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
+				try {
+					$this->queue->insertIntoQueue($queueFile);
+				} catch (Exception $e) {
+					$this->logger->error('[StorageCrawlJob] Failed to add file to queue', [
+						'fileId' => $fileId,
+						'exception' => $e,
+						'storage_id' => $storageId,
+						'root_id' => $rootId,
+						'override_root' => $overrideRoot,
+						'last_file_id' => $lastFileId
+					]);
+				}
+				$i++;
+			}
+
+			if ($i > 0) {
+				// Schedule next iteration after 5 minutes
+				$this->jobList->scheduleAfter(self::class, $this->time->getTime() + $this->getJobInterval(), [
 					'storage_id' => $storageId,
 					'root_id' => $rootId,
 					'override_root' => $overrideRoot,
-					'last_file_id' => $lastFileId
+					'last_file_id' => $queueFile->getFileId(),
 				]);
+
+				// the last job to set this value will win
+				$this->appConfig->setValueInt(Application::APP_ID, 'last_indexed_file_id', $queueFile->getFileId());
 			}
-			$i++;
+		} finally {
+			$this->diagnosticService->sendJobEnd(static::class, $this->getId());
 		}
-
-		if ($i > 0) {
-			// Schedule next iteration after 5 minutes
-			$this->jobList->scheduleAfter(self::class, $this->time->getTime() + $this->getJobInterval(), [
-				'storage_id' => $storageId,
-				'root_id' => $rootId,
-				'override_root' => $overrideRoot,
-				'last_file_id' => $queueFile->getFileId(),
-			]);
-
-			// the last job to set this value will win
-			$this->appConfig->setValueInt(Application::APP_ID, 'last_indexed_file_id', $queueFile->getFileId());
-		}
-		$this->diagnosticService->sendJobEnd(static::class, $this->getId());
 	}
 
 	protected function getJobInterval(): int {

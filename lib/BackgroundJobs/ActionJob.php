@@ -49,22 +49,20 @@ class ActionJob extends TimedJob {
 			return;
 		}
 
-		$this->diagnosticService->sendJobStart(static::class, $this->getId());
-		$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
 		try {
-			$entities = $this->actionMapper->getFromQueue(static::BATCH_SIZE);
-		} catch (Exception $e) {
-			$this->logger->warning('Error fetching actions in action Job : ' . $e->getMessage(), ['exception' => $e]);
-			$this->diagnosticService->sendJobEnd(static::class, $this->getId());
-			return;
-		}
+			$this->diagnosticService->sendJobStart(static::class, $this->getId());
+			$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
+			try {
+				$entities = $this->actionMapper->getFromQueue(static::BATCH_SIZE);
+			} catch (Exception $e) {
+				$this->logger->warning('Error fetching actions in action Job : ' . $e->getMessage(), ['exception' => $e]);
+				return;
+			}
 
-		if (empty($entities)) {
-			$this->diagnosticService->sendJobEnd(static::class, $this->getId());
-			return;
-		}
+			if (empty($entities)) {
+				return;
+			}
 
-		try {
 			foreach ($entities as $entity) {
 				$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
 
@@ -136,7 +134,8 @@ class ActionJob extends TimedJob {
 		} catch (\Throwable $e) {
 			$this->logger->warning('Error in action Job : ' . $e->getMessage(), ['exception' => $e]);
 			throw $e;
+		} finally {
+			$this->diagnosticService->sendJobEnd(static::class, $this->getId());
 		}
-		$this->diagnosticService->sendJobEnd(static::class, $this->getId());
 	}
 }
