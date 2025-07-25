@@ -776,8 +776,10 @@ jobs:
 
       - name: Remove some files
         run: |
-          cd data/admin/files
-          rm -rf ./admin_manual
+          ./occ files:delete admin/files/admin_manual
+          # cd data/admin/files 
+          # rm -rf ./admin_manual # this + files:scan sadly doesn't work, currently see https://github.com/nextcloud/context_chat/issues/153
+          # ./occ files:scan admin # We run the scan again to check if the files are successfully removed from the vectordb
 
       - name: Run files scan
         run: |
