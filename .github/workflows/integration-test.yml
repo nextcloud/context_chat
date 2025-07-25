@@ -809,7 +809,7 @@ jobs:
         run: |
           OC_PASS=test ./occ user:add --password-from-env -- test
           # share developer_manual to test user
-          curl -X POST -u 'test:test' http://localhost:8080/ocs/v2.php/apps/files_sharing/api/v1/shares?shareType=0&shareWith=test&path=admin/files/developer_manual
+          curl -X POST -u 'test:test' -H 'OCS-APIRequest: true' http://localhost:8080/ocs/v2.php/apps/files_sharing/api/v1/shares?shareType=0&shareWith=test&path=admin/files/developer_manual
 
       - name: Run indexer cron
         run: |
