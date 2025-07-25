@@ -18,6 +18,7 @@ use OCA\ContextChat\Service\DiagnosticService;
 use OCA\ContextChat\Service\LangRopeService;
 use OCA\ContextChat\Service\ProviderConfigService;
 use OCA\ContextChat\Type\Source;
+use OCP\App\IAppManager;
 use OCP\AppFramework\Services\IAppConfig;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\IJobList;
@@ -35,6 +36,7 @@ class SubmitContentJob extends QueuedJob {
 		private Logger $logger,
 		private IAppConfig $appConfig,
 		private DiagnosticService $diagnosticService,
+		private IAppManager $appManager,
 	) {
 		parent::__construct($timeFactory);
 	}
@@ -44,16 +46,28 @@ class SubmitContentJob extends QueuedJob {
 	 * @return void
 	 */
 	protected function run($argument): void {
-		$entities = $this->mapper->getFromQueue(static::BATCH_SIZE);
-		$maxSize = $this->appConfig->getAppValueInt('indexing_max_size', Application::CC_MAX_SIZE);
-
-		if (empty($entities)) {
+		if (!$this->appManager->isInstalled('app_api')) {
+			$this->logger->warning('SubmitContentJob is skipped as app_api is disabled');
 			return;
 		}
 
 		try {
+
 			$this->diagnosticService->sendJobStart(static::class, $this->getId());
 			$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
+
+			try {
+				$entities = $this->mapper->getFromQueue(static::BATCH_SIZE);
+			} catch (Exception $e) {
+				$this->logger->warning('Error fetching queue content items in SubmitContentJob : ' . $e->getMessage(), ['exception' => $e]);
+				return;
+			}
+
+			$maxSize = $this->appConfig->getAppValueInt('indexing_max_size', Application::CC_MAX_SIZE);
+
+			if (empty($entities)) {
+				return;
+			}
 
 			$sources = array_map(function (QueueContentItem $item) use ($maxSize) {
 				$contentSize = mb_strlen($item->getContent(), '8bit');
@@ -105,6 +119,8 @@ class SubmitContentJob extends QueuedJob {
 					}
 				}
 			}
+		} catch (\Throwable $e) {
+			$this->logger->error('[SubmitContentJob] Error in SubmitContentJob : ' . $e->getMessage(), ['exception' => $e]);
 		} finally {
 			$this->diagnosticService->sendJobEnd(static::class, $this->getId());
 			// schedule in 5mins

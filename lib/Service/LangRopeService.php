@@ -274,7 +274,7 @@ class LangRopeService {
 	/**
 	 * @param Source[] $sources
 	 * @return array{loaded_sources: array<string>, sources_to_retry: array<string>}
-	 * @throws RuntimeException
+	 * @throws RuntimeException|RetryIndexException
 	 */
 	public function indexSources(array $sources): array {
 		if (count($sources) === 0) {
