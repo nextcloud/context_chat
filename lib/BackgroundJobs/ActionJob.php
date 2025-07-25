@@ -18,6 +18,7 @@ use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\IJobList;
 use OCP\BackgroundJob\QueuedJob;
+use OCP\IConfig;
 
 class ActionJob extends QueuedJob {
 	private const BATCH_SIZE = 1000;
@@ -30,8 +31,13 @@ class ActionJob extends QueuedJob {
 		private Logger $logger,
 		private DiagnosticService $diagnosticService,
 		private IAppManager $appManager,
+		private IConfig $config,
 	) {
 		parent::__construct($timeFactory);
+	}
+
+	private function getJobInterval(): int {
+		return intval($this->config->getAppValue('context_chat', 'action_job_interval', (string)(5 * 60))); // 5 minutes
 	}
 
 	protected function run($argument): void {
@@ -119,12 +125,12 @@ class ActionJob extends QueuedJob {
 			}
 		} catch (\Throwable $e) {
 			// schedule in 5mins
-			$this->jobList->scheduleAfter(static::class, $this->time->getTime() + 5 * 60);
+			$this->jobList->scheduleAfter(static::class, $this->time->getTime() + $this->getJobInterval());
 			throw $e;
 		}
 
 		// schedule in 5mins
-		$this->jobList->scheduleAfter(static::class, $this->time->getTime() + 5 * 60);
+		$this->jobList->scheduleAfter(static::class, $this->time->getTime() + $this->getJobInterval());
 		$this->diagnosticService->sendJobEnd(static::class, $this->getId());
 	}
 }
