@@ -17,11 +17,11 @@ use OCA\ContextChat\Type\ActionType;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\IJobList;
-use OCP\BackgroundJob\QueuedJob;
+use OCP\BackgroundJob\TimedJob;
 use OCP\DB\Exception;
 use OCP\IConfig;
 
-class ActionJob extends QueuedJob {
+class ActionJob extends TimedJob {
 	private const BATCH_SIZE = 1000;
 
 	public function __construct(
@@ -35,6 +35,8 @@ class ActionJob extends QueuedJob {
 		private IConfig $config,
 	) {
 		parent::__construct($timeFactory);
+		$this->setAllowParallelRuns(false);
+		$this->setInterval($this->getJobInterval());
 	}
 
 	private function getJobInterval(): int {
@@ -133,13 +135,8 @@ class ActionJob extends QueuedJob {
 			}
 		} catch (\Throwable $e) {
 			$this->logger->warning('Error in action Job : ' . $e->getMessage(), ['exception' => $e]);
-			// schedule in 5mins
-			$this->jobList->scheduleAfter(static::class, $this->time->getTime() + $this->getJobInterval());
 			throw $e;
 		}
-
-		// schedule in 5mins
-		$this->jobList->scheduleAfter(static::class, $this->time->getTime() + $this->getJobInterval());
 		$this->diagnosticService->sendJobEnd(static::class, $this->getId());
 	}
 }

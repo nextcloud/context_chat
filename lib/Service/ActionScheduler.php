@@ -40,9 +40,7 @@ class ActionScheduler {
 		// do not catch DB exceptions
 		$this->actionMapper->insertIntoQueue($item);
 
-		if (!$this->jobList->has(ActionJob::class, null)) {
-			$this->jobList->add(ActionJob::class, null);
-		}
+		// no need to schedule job, it's a timed job
 	}
 
 	/**
