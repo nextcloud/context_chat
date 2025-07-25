@@ -781,9 +781,11 @@ jobs:
           # rm -rf ./admin_manual # this + files:scan sadly doesn't work, currently see https://github.com/nextcloud/context_chat/issues/153
           # ./occ files:scan admin # We run the scan again to check if the files are successfully removed from the vectordb
 
-      - name: Run files scan
+      - name: Share some files
         run: |
-          ./occ files:scan admin # We run the scan again to check if the files are successfully removed from the vectordb
+          ./occ user:add --generate-password -- test
+          # share developer_manual to test user
+          curl -X POST http://localhost:8080/ocs/v2.php/apps/files_sharing/api/v1/shares?shareType=0&shareWith=test&path=admin/files/developer_manual
 
       - name: Run indexer cron
         run: |
@@ -797,9 +799,24 @@ jobs:
         run: |
           ./occ background-job:worker 'OC\TaskProcessing\SynchronousBackgroundJob' &
           ./occ background-job:worker 'OC\TaskProcessing\SynchronousBackgroundJob' &
-          ./occ context_chat:prompt admin "Which factors are taken into account for the Ethical AI Rating?"
-          ./occ context_chat:prompt admin "Welche Faktoren beeinflussen das Ethical AI Rating?"
-          ./occ context_chat:search admin "Welche Faktoren beeinflussen das Ethical AI Rating?"
+          OUT1=$(./occ context_chat:prompt admin "Which factors are taken into account for the Ethical AI Rating?")
+          OUT2=$(./occ context_chat:prompt admin "Welche Faktoren beeinflussen das Ethical AI Rating?")
+          OUT3=$(./occ context_chat:search admin "Welche Faktoren beeinflussen das Ethical AI Rating?")
+          echo "$OUT1" | grep -q -v "If all of these points are met, we give a Green label." && echo 'Admin does not see AI overview anymore' || exit 1
+          echo "$OUT2" | grep -q -v "If all of these points are met, we give a Green label." && echo 'Admin does not see AI overview anymore, after german question' || exit 1
+          echo "$OUT3" | grep -q -v "overview.rst" && echo 'Admin does not see AI overview anymore, when using search' || exit 1
+          
+          OUT1=$(./occ context_chat:prompt test "Which factors are taken into account for the Ethical AI Rating?")
+          OUT2=$(./occ context_chat:prompt test "Welche Faktoren beeinflussen das Ethical AI Rating?")
+          OUT3=$(./occ context_chat:search test "Welche Faktoren beeinflussen das Ethical AI Rating?")
+          echo "$OUT1" | grep -q -v "If all of these points are met, we give a Green label." && echo 'Test user does not see AI overview' || exit 1
+          echo "$OUT2" | grep -q -v "If all of these points are met, we give a Green label." && echo 'Test user does not see AI overview' || exit 1
+          echo "$OUT3" | grep -q -v "overview.rst" && echo 'Test user does not see AI overview' || exit 1
+          
+          OUT1=$(./occ context_chat:prompt test "How do I set my TimedJob to be time insensitive?")
+          OUT3=$(./occ context_chat:search test "How do I set my TimedJob to be time insensitive?")
+          echo "$OUT1" | grep -q "This allows the Nextcloud to delay the job until a given nightly time window" && echo 'Test user does see BackgroundJobs docs' || exit 1
+          echo "$OUT3" | grep -q "backgroundjobs.rst" && echo 'Test user does see BackgroundJobs docs' || exit 1
 
       - name: Show nextcloud logs
         if: always()
