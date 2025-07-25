@@ -544,7 +544,25 @@ jobs:
         php-versions: [ '8.1' ]
         databases: [ 'pgsql' ]
         server-versions: [ 'stable30', 'stable31', 'master' ]
-        file-deletion-method: ['occ', 'os']
+        file-deletion-method: [ 'occ', 'os' ]
+        include:
+          - server-versions: stable30
+            file-deletion-method: occ
+            database: pgsql
+            php-versions: 8.1
+          - server-versions: stable31
+            file-deletion-method: occ
+            database: pgsql
+            php-versions: 8.1
+          - server-version: master
+            file-deletion-method: occ
+            database: pgsql
+            php-versions: 8.1
+          - server-version: master
+            file-deletion-method: os
+            database: pgsql
+            php-versions: 8.1
+
 
     name: Integration test with file listener on ${{ matrix.server-versions }} php@${{ matrix.php-versions }} (deleting files using ${{ matrix.file-deletion-method }})
 
