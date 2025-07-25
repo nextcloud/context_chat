@@ -82,7 +82,7 @@ class FsEventService {
 			}
 
 			try {
-				$fileRef = ProviderConfigService::getSourceId($node->getId());
+				$fileRef = ProviderConfigService::getSourceId($file->getId());
 				$this->actionService->deleteSources($fileRef);
 			} catch (InvalidPathException|NotFoundException $e) {
 				$this->logger->warning($e->getMessage(), ['exception' => $e]);
@@ -107,7 +107,7 @@ class FsEventService {
 			if (!$this->allowedMimeType($file)) {
 				continue;
 			}
-			if (!$this->allowedPath($node)) {
+			if (!$this->allowedPath($file)) {
 				continue;
 			}
 
