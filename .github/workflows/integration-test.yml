@@ -545,20 +545,12 @@ jobs:
         databases: [ 'pgsql' ]
         server-versions: [ 'stable30', 'stable31', 'master' ]
         file-deletion-method: [ 'occ', 'os' ]
-        include:
+        exclude:
           - server-versions: stable30
-            file-deletion-method: occ
+            file-deletion-method: os
             database: pgsql
             php-versions: 8.1
           - server-versions: stable31
-            file-deletion-method: occ
-            database: pgsql
-            php-versions: 8.1
-          - server-version: master
-            file-deletion-method: occ
-            database: pgsql
-            php-versions: 8.1
-          - server-version: master
             file-deletion-method: os
             database: pgsql
             php-versions: 8.1
