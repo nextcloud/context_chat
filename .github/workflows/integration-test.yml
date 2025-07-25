@@ -548,11 +548,11 @@ jobs:
         exclude:
           - server-versions: stable30
             file-deletion-method: os
-            database: pgsql
+            databases: pgsql
             php-versions: 8.1
           - server-versions: stable31
             file-deletion-method: os
-            database: pgsql
+            databases: pgsql
             php-versions: 8.1
 
 
