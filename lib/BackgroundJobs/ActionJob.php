@@ -18,6 +18,7 @@ use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\IJobList;
 use OCP\BackgroundJob\QueuedJob;
+use OCP\DB\Exception;
 use OCP\IConfig;
 
 class ActionJob extends QueuedJob {
@@ -48,9 +49,16 @@ class ActionJob extends QueuedJob {
 
 		$this->diagnosticService->sendJobStart(static::class, $this->getId());
 		$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
-		$entities = $this->actionMapper->getFromQueue(static::BATCH_SIZE);
+		try {
+			$entities = $this->actionMapper->getFromQueue(static::BATCH_SIZE);
+		} catch (Exception $e) {
+			$this->logger->warning('Error fetching actions in action Job : ' . $e->getMessage(), ['exception' => $e]);
+			$this->diagnosticService->sendJobEnd(static::class, $this->getId());
+			return;
+		}
 
 		if (empty($entities)) {
+			$this->diagnosticService->sendJobEnd(static::class, $this->getId());
 			return;
 		}
 
@@ -124,6 +132,7 @@ class ActionJob extends QueuedJob {
 				}
 			}
 		} catch (\Throwable $e) {
+			$this->logger->warning('Error in action Job : ' . $e->getMessage(), ['exception' => $e]);
 			// schedule in 5mins
 			$this->jobList->scheduleAfter(static::class, $this->time->getTime() + $this->getJobInterval());
 			throw $e;
