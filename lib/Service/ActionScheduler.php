@@ -9,7 +9,6 @@ declare(strict_types=1);
 
 namespace OCA\ContextChat\Service;
 
-use OCA\ContextChat\BackgroundJobs\ActionJob;
 use OCA\ContextChat\Db\QueueAction;
 use OCA\ContextChat\Db\QueueActionMapper;
 use OCA\ContextChat\Logger;

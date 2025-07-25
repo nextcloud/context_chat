@@ -103,31 +103,31 @@ class IndexerJob extends TimedJob {
 			return;
 		}
 
-		$this->diagnosticService->sendJobStart(static::class, $this->getId());
-		$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
-
-		// Setup Filesystem for a users that can access this mount
-		$mounts = array_values(array_filter($this->userMountCache->getMountsForStorageId($this->storageId), function (ICachedMountInfo $mount) {
-			return $mount->getRootId() === $this->rootId;
-		}));
-
-		if (count($mounts) > 0) {
-			\OC_Util::setupFS($mounts[0]->getUser()->getUID());
-		}
-
 		try {
-			$this->logger->debug('[IndexerJob] Running indexing', ['storageId' => $this->storageId, 'rootId' => $this->rootId]);
-			$this->index($files);
-		} catch (\RuntimeException $e) {
-			$this->logger->warning('[IndexerJob] Temporary problem with indexing', ['exception' => $e, 'storageId' => $this->storageId, 'rootId' => $this->rootId]);
-		} catch (\ErrorException $e) {
-			$this->logger->warning('[IndexerJob]  Problem with indexing', ['exception' => $e, 'storageId' => $this->storageId, 'rootId' => $this->rootId]);
-			$this->logger->info('[IndexerJob] Removing ' . static::class . ' with argument ' . var_export($argument, true) . 'from oc_jobs');
-			$this->jobList->remove(static::class, $argument);
-			throw $e;
-		}
+			$this->diagnosticService->sendJobStart(static::class, $this->getId());
+			$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
 
-		try {
+			// Setup Filesystem for a users that can access this mount
+			$mounts = array_values(array_filter($this->userMountCache->getMountsForStorageId($this->storageId), function (ICachedMountInfo $mount) {
+				return $mount->getRootId() === $this->rootId;
+			}));
+
+			if (count($mounts) > 0) {
+				\OC_Util::setupFS($mounts[0]->getUser()->getUID());
+			}
+
+			try {
+				$this->logger->debug('[IndexerJob] Running indexing', ['storageId' => $this->storageId, 'rootId' => $this->rootId]);
+				$this->index($files);
+			} catch (\RuntimeException $e) {
+				$this->logger->warning('[IndexerJob] Temporary problem with indexing', ['exception' => $e, 'storageId' => $this->storageId, 'rootId' => $this->rootId]);
+			} catch (\ErrorException $e) {
+				$this->logger->warning('[IndexerJob]  Problem with indexing', ['exception' => $e, 'storageId' => $this->storageId, 'rootId' => $this->rootId]);
+				$this->logger->info('[IndexerJob] Removing ' . static::class . ' with argument ' . var_export($argument, true) . 'from oc_jobs');
+				$this->jobList->remove(static::class, $argument);
+				throw $e;
+			}
+
 			// If there is at least one file left in the queue, reschedule this job
 			$files = $this->queue->getFromQueue($this->storageId, $this->rootId, 1);
 			$indexerJobCount = $this->getJobCount(IndexerJob::class);
@@ -138,13 +138,14 @@ class IndexerJob extends TimedJob {
 				$this->setInitialIndexCompletion();
 			} elseif (count($files) === 0) {
 				$this->logger->debug('[IndexerJob] No files left in queue, but we keep the job around to wait for potential StorageCrawlJob instances to finish');
-
 			}
 		} catch (Exception $e) {
 			$this->logger->error('[IndexerJob] Cannot retrieve items from queue', ['exception' => $e, 'storageId' => $this->storageId, 'rootId' => $this->rootId]);
-			return;
+		} catch (\Throwable $e) {
+			$this->logger->error('[IndexerJob] Failure during job run', ['exception' => $e, 'storageId' => $this->storageId, 'rootId' => $this->rootId]);
+		} finally {
+			$this->diagnosticService->sendJobEnd(static::class, $this->getId());
 		}
-		$this->diagnosticService->sendJobEnd(static::class, $this->getId());
 	}
 
 	protected function getBatchSize(): int {
