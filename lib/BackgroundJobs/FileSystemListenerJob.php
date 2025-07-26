@@ -83,19 +83,19 @@ class FileSystemListenerJob extends TimedJob {
 				}
 
 				try {
-					try {
-						switch ($fsEvent->getTypeObject()) {
-							case FsEventType::CREATE:
-								$this->fsEventService->onInsert($node);
-								break;
-							case FsEventType::ACCESS_UPDATE_DECL:
-								$this->fsEventService->onAccessUpdateDecl($node);
-								break;
-						}
-						$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
-					} catch (\RuntimeException $e) {
-						$this->logger->warning('Error handling fs event "' . $fsEvent->getType() . '": ' . $e->getMessage(), ['exception' => $e]);
+					switch ($fsEvent->getTypeObject()) {
+						case FsEventType::CREATE:
+							$this->fsEventService->onInsert($node);
+							break;
+						case FsEventType::ACCESS_UPDATE_DECL:
+							$this->fsEventService->onAccessUpdateDecl($node);
+							break;
 					}
+					$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
+				} catch (\Throwable $e) {
+					$this->logger->warning('Error handling fs event "' . $fsEvent->getType() . '": ' . $e->getMessage(), ['exception' => $e]);
+				}
+				try {
 					$this->fsEventMapper->delete($fsEvent);
 				} catch (Exception $e) {
 					$this->logger->warning('Error deleting fs event "' . $fsEvent->getType() . '": ' . $e->getMessage(), ['exception' => $e]);
