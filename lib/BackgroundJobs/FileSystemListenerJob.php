@@ -16,9 +16,10 @@ use OCA\ContextChat\Service\FsEventService;
 use OCA\ContextChat\Type\FsEventType;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
-use OCP\BackgroundJob\IJobList;
 use OCP\BackgroundJob\TimedJob;
+use OCP\DB\Exception;
 use OCP\Files\IRootFolder;
+use OCP\IConfig;
 
 class FileSystemListenerJob extends TimedJob {
 	private const BATCH_SIZE = 500;
@@ -26,16 +27,20 @@ class FileSystemListenerJob extends TimedJob {
 	public function __construct(
 		ITimeFactory $timeFactory,
 		private FsEventMapper $fsEventMapper,
-		private IJobList $jobList,
 		private Logger $logger,
 		private DiagnosticService $diagnosticService,
 		private IAppManager $appManager,
 		private FsEventService $fsEventService,
 		private IRootFolder $rootFolder,
+		private IConfig $config,
 	) {
 		parent::__construct($timeFactory);
 		$this->allowParallelRuns = false;
-		$this->setInterval(5 * 60); // 5 minutes
+		$this->setInterval($this->getJobInterval());
+	}
+
+	private function getJobInterval(): int {
+		return intval($this->config->getAppValue('context_chat', 'fs_listener_job_interval', (string)(5 * 60))); // 5 minutes
 	}
 
 	protected function run($argument): void {
@@ -44,45 +49,60 @@ class FileSystemListenerJob extends TimedJob {
 			return;
 		}
 
-		$this->diagnosticService->sendJobStart(static::class, $this->getId());
-		$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
-		$fsEvents = $this->fsEventMapper->getFromQueue(static::BATCH_SIZE);
-
-		if (empty($fsEvents)) {
-			return;
-		}
-
-		foreach ($fsEvents as $fsEvent) {
+		try {
+			$this->diagnosticService->sendJobStart(static::class, $this->getId());
 			$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
-
 			try {
-				$node = current($this->rootFolder->getUserFolder($fsEvent->getUserId())->getById($fsEvent->getNodeId()));
-			} catch (\Exception $e) {
-				$this->logger->warning('Error retrieving node for fs event "' . $fsEvent->getType() . '": ' . $e->getMessage(), ['exception' => $e]);
-				$node = false;
-			}
-			if ($node === false) {
-				$this->logger->warning('Node with ID ' . $fsEvent->getNodeId() . ' not found for fs event "' . $fsEvent->getType() . '"');
-				$this->fsEventMapper->delete($fsEvent);
-				continue;
+				$fsEvents = $this->fsEventMapper->getFromQueue(static::BATCH_SIZE);
+			} catch (Exception $e) {
+				$this->logger->warning('Error fetching fs events: ' . $e->getMessage(), ['exception' => $e]);
+				return;
 			}
 
-			try {
-				switch ($fsEvent->getTypeObject()) {
-					case FsEventType::CREATE:
-						$this->fsEventService->onInsert($node);
-						break;
-					case FsEventType::ACCESS_UPDATE_DECL:
-						$this->fsEventService->onAccessUpdateDecl($node);
-						break;
-				}
+			if (empty($fsEvents)) {
+				return;
+			}
+
+			foreach ($fsEvents as $fsEvent) {
 				$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
-				$this->fsEventMapper->delete($fsEvent);
-			} catch (\RuntimeException $e) {
-				$this->logger->warning('Error handling fs event "' . $fsEvent->getType() . '": ' . $e->getMessage(), ['exception' => $e]);
-			}
-		}
 
-		$this->diagnosticService->sendJobEnd(static::class, $this->getId());
+				try {
+					$node = current($this->rootFolder->getUserFolder($fsEvent->getUserId())->getById($fsEvent->getNodeId()));
+				} catch (\Exception $e) {
+					$this->logger->warning('Error retrieving node for fs event "' . $fsEvent->getType() . '": ' . $e->getMessage(), ['exception' => $e]);
+					$node = false;
+				}
+				if ($node === false) {
+					$this->logger->warning('Node with ID ' . $fsEvent->getNodeId() . ' not found for fs event "' . $fsEvent->getType() . '"');
+					try {
+						$this->fsEventMapper->delete($fsEvent);
+					} catch (Exception $e) {
+						$this->logger->warning('Error deleting fs event "' . $fsEvent->getType() . '": ' . $e->getMessage(), ['exception' => $e]);
+					}
+					continue;
+				}
+
+				try {
+					switch ($fsEvent->getTypeObject()) {
+						case FsEventType::CREATE:
+							$this->fsEventService->onInsert($node);
+							break;
+						case FsEventType::ACCESS_UPDATE_DECL:
+							$this->fsEventService->onAccessUpdateDecl($node);
+							break;
+					}
+					$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
+				} catch (\Throwable $e) {
+					$this->logger->warning('Error handling fs event "' . $fsEvent->getType() . '": ' . $e->getMessage(), ['exception' => $e]);
+				}
+				try {
+					$this->fsEventMapper->delete($fsEvent);
+				} catch (Exception $e) {
+					$this->logger->warning('Error deleting fs event "' . $fsEvent->getType() . '": ' . $e->getMessage(), ['exception' => $e]);
+				}
+			}
+		} finally {
+			$this->diagnosticService->sendJobEnd(static::class, $this->getId());
+		}
 	}
 }
