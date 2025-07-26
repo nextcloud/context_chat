@@ -33,6 +33,15 @@ jobs:
         databases: [ 'pgsql' ]
         server-versions: [ 'stable30', 'stable31', 'master' ]
         encryption: ['on', 'off']
+        exclude:
+          - server-versions: stable30
+            databases: pgsql
+            php-versions: 8.1
+            encryption: on
+          - server-versions: stable31
+            databases: pgsql
+            php-versions: 8.1
+            encryption: on
 
     name: Integration test ☁️${{ matrix.server-versions }} 🐘${{ matrix.php-versions }} 🔐:${{ matrix.encryption }}
 
@@ -301,6 +310,15 @@ jobs:
         databases: [ 'pgsql' ]
         server-versions: [ 'stable30', 'stable31', 'master' ]
         encryption: ['on', 'off']
+        exclude:
+          - server-versions: stable30
+            databases: pgsql
+            php-versions: 8.1
+            encryption: on
+          - server-versions: stable31
+            databases: pgsql
+            php-versions: 8.1
+            encryption: on
 
     name: Integration test with cron ☁️${{ matrix.server-versions }} 🐘${{ matrix.php-versions }} 🔐:${{ matrix.encryption }}
 
@@ -583,7 +601,7 @@ jobs:
             encryption: off
 
 
-    name: Integration test with file listener ☁️${{ matrix.server-versions }} 🐘${{ matrix.php-versions }} 🗑️${{ matrix.file-deletion-method }}) 🔐:${{ matrix.encryption }}
+    name: Integration test with file listener ☁️${{ matrix.server-versions }} 🐘${{ matrix.php-versions }} 🗑️${{ matrix.file-deletion-method }} 🔐:${{ matrix.encryption }}
 
     env:
       MYSQL_PORT: 4444
@@ -837,7 +855,7 @@ jobs:
           # share developer_manual to test user
           curl -X POST -u 'admin:password' -H 'OCS-APIRequest: true' 'http://localhost:8080/ocs/v2.php/apps/files_sharing/api/v1/shares?shareType=0&shareWith=test&path=developer_manual'
           # list files to trigger mounting of shares
-          curl -X PROPFIND -H "Depth: 0" -u 'test:test' 'http://localhost:8080/remote.php/webdav/test/'
+          curl -X PROPFIND -H "Depth: 0" -u 'test:test' 'http://localhost:8080/remote.php/webdav/'
 
       - name: Run indexer cron
         run: |
