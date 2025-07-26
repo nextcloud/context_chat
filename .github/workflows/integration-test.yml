@@ -31,7 +31,7 @@ jobs:
       matrix:
         php-versions: [ '8.1' ]
         databases: [ 'pgsql' ]
-        server-versions: [ 'stable30', 'stable31', 'master' ]
+        server-versions: [ 'master' ]
 
     name: Integration test on ${{ matrix.server-versions }} php@${{ matrix.php-versions }}
 
@@ -282,7 +282,7 @@ jobs:
       matrix:
         php-versions: [ '8.1' ]
         databases: [ 'pgsql' ]
-        server-versions: [ 'stable30', 'stable31', 'master' ]
+        server-versions: [ 'master' ]
 
     name: Integration test with cron on ${{ matrix.server-versions }} php@${{ matrix.php-versions }}
 
@@ -454,7 +454,7 @@ jobs:
           # Run cron in speed mode: Set interval to 0 minutes
           ./occ config:app:set --value 30 --type integer context_chat indexing_job_interval # 30 seconds
           ./occ config:app:set --value 10 --type integer context_chat crawl_job_interval # 10 seconds
-          for i in {1..100}; do 
+          for i in {1..100}; do
             php cron.php & # Starting with stable31 we can use -v here for better visibility
             wait
             ./occ context_chat:stats
@@ -521,7 +521,7 @@ jobs:
       matrix:
         php-versions: [ '8.1' ]
         databases: [ 'pgsql' ]
-        server-versions: [ 'stable30', 'stable31', 'master' ]
+        server-versions: [ 'master' ]
 
     name: Integration test with file listener on ${{ matrix.server-versions }} php@${{ matrix.php-versions }}
 
@@ -700,7 +700,7 @@ jobs:
 
       - name: Run indexer cron
         run: |
-          for i in {1..100}; do 
+          for i in {1..100}; do
             php cron.php & # Starting with stable31 we can use -v here for better visibility
             wait
             ./occ context_chat:stats
