@@ -803,6 +803,8 @@ jobs:
           OC_PASS=test ./occ user:add --password-from-env -- test
           # share developer_manual to test user
           curl -X POST -u 'admin:password' -H 'OCS-APIRequest: true' 'http://localhost:8080/ocs/v2.php/apps/files_sharing/api/v1/shares?shareType=0&shareWith=test&path=developer_manual'
+          # list files to trigger mounting of shares
+          curl -X PROPFIND -H "Depth: 0" -u 'test:test' 'http://localhost:8080/remote.php/webdav/test/'
 
       - name: Run indexer cron
         run: |
@@ -816,9 +818,12 @@ jobs:
         run: |
           ./occ background-job:worker 'OC\TaskProcessing\SynchronousBackgroundJob' &
           ./occ background-job:worker 'OC\TaskProcessing\SynchronousBackgroundJob' &
+          
+          set +e
+          
           # Check for user admin: Should be there
           OUT_ADMIN_ENGLISH_PROMPT_AI=$(./occ context_chat:prompt admin "Which factors are taken into account for the Ethical AI Rating?")
-          OUT_ADMIN_ENGLISH_PROMPT_AI=$(./occ context_chat:prompt admin "Welche Faktoren beeinflussen das Ethical AI Rating?")
+          OUT_ADMIN_GERMAN_PROMPT_AI=$(./occ context_chat:prompt admin "Welche Faktoren beeinflussen das Ethical AI Rating?")
           OUT_ADMIN_SEARCH_AI=$(./occ context_chat:search admin "Welche Faktoren beeinflussen das Ethical AI Rating?")
           
           # Check for user test: Shouldn't be there
@@ -833,7 +838,7 @@ jobs:
           set -x
           
           echo "$OUT_ADMIN_ENGLISH_PROMPT_AI"
-          echo "$OUT_ADMIN_ENGLISH_PROMPT_AI"
+          echo "$OUT_ADMIN_GERMAN_PROMPT_AI"
           echo "$OUT_ADMIN_SEARCH_AI"
           echo "$OUT_TEST_ENGLISH_PROMPT_AI"
           echo "$OUT_TEST_GERMAN_PROMPT_AI"
@@ -844,13 +849,13 @@ jobs:
           set +x
           
           echo "$OUT_ADMIN_ENGLISH_PROMPT_AI" | grep -q -v "If all of these points are met, we give a Green label." && echo 'Admin does not see AI overview anymore' || exit 1
-          echo "$OUT_ADMIN_ENGLISH_PROMPT_AI" | grep -q -v "If all of these points are met, we give a Green label." && echo 'Admin does not see AI overview anymore, after german question' || exit 1
+          echo "$OUT_ADMIN_GERMAN_PROMPT_AI" | grep -q -v "If all of these points are met, we give a Green label." && echo 'Admin does not see AI overview anymore, after german question' || exit 1
           echo "$OUT_ADMIN_SEARCH_AI" | grep -q -v "overview.rst" && echo 'Admin does not see AI overview anymore, when using search' || exit 1
           echo "$OUT_TEST_ENGLISH_PROMPT_AI" | grep -q -v "If all of these points are met, we give a Green label." && echo 'Test user does not see AI overview' || exit 1
           echo "$OUT_TEST_GERMAN_PROMPT_AI" | grep -q -v "If all of these points are met, we give a Green label." && echo 'Test user does not see AI overview, after german question' || exit 1
           echo "$OUT_TEST_SEARCH_AI" | grep -q -v "overview.rst" && echo 'Test user does not see AI overview, when using search' || exit 1
-          echo "$OUT_TEST_PROMPT_JOBS" | grep -q "This allows the Nextcloud to delay the job until a given nightly time window" && echo 'Test user does see BackgroundJobs docs' || exit 1
-          echo "$OUT_TEST_SEARCH_JOBS" | grep -q "backgroundjobs.rst" && echo 'Test user does see BackgroundJobs docs' || exit 1
+          echo "$OUT_TEST_PROMPT_JOBS" | grep -q "The ``TimedJob`` has a method ``setInterval`` where you can set the time minimum time in seconds between the jobs (from the constructor)." && echo 'Test user does see BackgroundJobs docs' || exit 1
+          echo "$OUT_TEST_SEARCH_JOBS" | grep -q "backgroundjobs.md" && echo 'Test user does see BackgroundJobs docs' || exit 1
 
       - name: Show nextcloud logs
         if: always()
