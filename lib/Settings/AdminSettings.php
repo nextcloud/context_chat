@@ -6,6 +6,7 @@
  */
 namespace OCA\ContextChat\Settings;
 
+use OCA\ContextChat\Db\FsEventMapper;
 use OCA\ContextChat\Db\QueueContentItemMapper;
 use OCA\ContextChat\Logger;
 use OCA\ContextChat\Service\ActionScheduler;
@@ -30,6 +31,7 @@ class AdminSettings implements ISettings {
 		private LangRopeService $langRopeService,
 		private QueueContentItemMapper $contentQueue,
 		private Logger $logger,
+		private FsEventMapper $fsEventMapper,
 	) {
 	}
 
@@ -59,6 +61,12 @@ class AdminSettings implements ISettings {
 		} catch (Exception $e) {
 			$this->logger->error($e->getMessage(), ['exception' => $e]);
 			$stats['queued_actions_count'] = 0;
+		}
+		try {
+			$stats['queued_fs_events_count'] = $this->fsEventMapper->count();
+		} catch (Exception $e) {
+			$this->logger->error($e->getMessage(), ['exception' => $e]);
+			$stats['queued_fs_events_count'] = 0;
 		}
 		try {
 			$stats['vectordb_document_counts'] = $this->langRopeService->getIndexedDocumentsCounts();
