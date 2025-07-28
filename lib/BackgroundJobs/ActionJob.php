@@ -20,7 +20,7 @@ use OCP\BackgroundJob\IJobList;
 use OCP\BackgroundJob\QueuedJob;
 
 class ActionJob extends QueuedJob {
-	private const BATCH_SIZE = 100;
+	private const BATCH_SIZE = 1000;
 
 	public function __construct(
 		ITimeFactory $timeFactory,
