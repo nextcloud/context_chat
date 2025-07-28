@@ -127,7 +127,6 @@ class FileListener implements IEventListener {
 				$rootId = $event->mountPoint->getRootId();
 				$mountKey = $event->mountPoint->getUser()->getUID() . '-' . $rootId;
 				if (array_key_exists($mountKey, $this->addedMounts) && $this->addedMounts[$mountKey] === true) {
-					$this->fsEventScheduler->retractAccessUpdateDecl($rootId);
 					return;
 				}
 				// Asynchronous, because we potentially recurse and this event needs to be handled fast
