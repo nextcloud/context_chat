@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace OCA\ContextChat\Command;
 
+use OCA\ContextChat\Db\FsEventMapper;
 use OCA\ContextChat\Db\QueueContentItemMapper;
 use OCA\ContextChat\Service\ActionScheduler;
 use OCA\ContextChat\Service\LangRopeService;
@@ -29,6 +30,7 @@ class Statistics extends Command {
 		private StorageService $storageService,
 		private LangRopeService $langRopeService,
 		private QueueContentItemMapper $contentQueue,
+		private FsEventMapper $fsEventMapper,
 	) {
 		parent::__construct();
 	}
@@ -69,6 +71,9 @@ class Statistics extends Command {
 
 		$actionsCount = $this->actionService->count();
 		$output->writeln('Actions in queue: ' . $actionsCount);
+
+		$fsEventsCount = $this->fsEventMapper->count();
+		$output->writeln('File system events in queue: ' . $fsEventsCount);
 		return 0;
 	}
 }

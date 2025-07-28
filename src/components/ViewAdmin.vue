@@ -46,6 +46,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 			<p>&nbsp;</p>
 			<p>{{ t('context_chat', 'Eligible files for indexing: {count}', {count: stats.eligible_files_count}) }}</p>
 			<p>{{ t('context_chat', 'Queued content update actions: {count}', {count: stats.queued_actions_count}) }}</p>
+			<p>{{ t('context_chat', 'Queued File System events: {count}', {count: stats.queued_fs_events_count}) }}</p>
 		</NcSettingsSection>
 		<NcSettingsSection :name="t('context_chat', 'Context Chat Logs')">
 			<div class="horizontal-flex">
