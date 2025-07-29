@@ -235,8 +235,8 @@ jobs:
 
       - name: Run the prompts
         run: |
-          ./occ background-job:worker 'OC\TaskProcessing\SynchronousBackgroundJob' &
-          ./occ background-job:worker 'OC\TaskProcessing\SynchronousBackgroundJob' &
+          ./occ background-job:worker --stop_after=2m 'OC\TaskProcessing\SynchronousBackgroundJob' &
+          ./occ background-job:worker --stop_after=2m 'OC\TaskProcessing\SynchronousBackgroundJob' &
           OUT1=$(./occ context_chat:prompt admin "Which factors are taken into account for the Ethical AI Rating?")
           echo "$OUT1"
           echo '--------------------------------------------------'
@@ -533,8 +533,8 @@ jobs:
 
       - name: Run the prompts
         run: |
-          ./occ background-job:worker 'OC\TaskProcessing\SynchronousBackgroundJob' &
-          ./occ background-job:worker 'OC\TaskProcessing\SynchronousBackgroundJob' &
+          ./occ background-job:worker --stop_after=2m 'OC\TaskProcessing\SynchronousBackgroundJob' &
+          ./occ background-job:worker --stop_after=2m 'OC\TaskProcessing\SynchronousBackgroundJob' &
           OUT1=$(./occ context_chat:prompt admin "Which factors are taken into account for the Ethical AI Rating?")
           echo "$OUT1"
           echo '--------------------------------------------------'
@@ -821,8 +821,8 @@ jobs:
 
       - name: Run the prompts
         run: |
-          ./occ background-job:worker 'OC\TaskProcessing\SynchronousBackgroundJob' &
-          ./occ background-job:worker 'OC\TaskProcessing\SynchronousBackgroundJob' &
+          ./occ background-job:worker --stop_after=2m 'OC\TaskProcessing\SynchronousBackgroundJob' &
+          ./occ background-job:worker --stop_after=2m 'OC\TaskProcessing\SynchronousBackgroundJob' &
           set +e
           
           # Check for user admin: Should be there
@@ -896,8 +896,8 @@ jobs:
 
       - name: Run the prompts again
         run: |
-          ./occ background-job:worker 'OC\TaskProcessing\SynchronousBackgroundJob' &
-          ./occ background-job:worker 'OC\TaskProcessing\SynchronousBackgroundJob' &
+          ./occ background-job:worker --stop_after=2m 'OC\TaskProcessing\SynchronousBackgroundJob' &
+          ./occ background-job:worker --stop_after=2m 'OC\TaskProcessing\SynchronousBackgroundJob' &
           
           set +e
           
