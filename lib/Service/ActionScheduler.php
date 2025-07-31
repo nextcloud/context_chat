@@ -9,7 +9,6 @@ declare(strict_types=1);
 
 namespace OCA\ContextChat\Service;
 
-use OCA\ContextChat\BackgroundJobs\ActionJob;
 use OCA\ContextChat\Db\QueueAction;
 use OCA\ContextChat\Db\QueueActionMapper;
 use OCA\ContextChat\Logger;
@@ -40,9 +39,7 @@ class ActionScheduler {
 		// do not catch DB exceptions
 		$this->actionMapper->insertIntoQueue($item);
 
-		if (!$this->jobList->has(ActionJob::class, null)) {
-			$this->jobList->add(ActionJob::class, null);
-		}
+		// no need to schedule job, it's a timed job
 	}
 
 	/**

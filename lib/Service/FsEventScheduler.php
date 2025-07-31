@@ -46,7 +46,7 @@ class FsEventScheduler {
 	private function scheduleEvent(FsEventType $type, string $userId, int $nodeId): void {
 		$item = new FsEvent();
 		$item->setUserId($userId);
-		$item->setType($type);
+		$item->setType($type->value);
 		$item->setNodeId($nodeId);
 
 		// do not catch DB exceptions

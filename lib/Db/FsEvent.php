@@ -35,10 +35,9 @@ class FsEvent extends Entity {
 
 	public function __construct() {
 		// add types in constructor
-		$this->addType('id', Types::BIGINT);
 		$this->addType('type', Types::STRING);
 		$this->addType('userId', Types::STRING);
-		$this->addType('nodeId', Types::BIGINT);
+		$this->addType('nodeId', 'integer'); // stable30 does not support Types::BIGINT here
 	}
 
 	/**

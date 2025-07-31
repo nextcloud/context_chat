@@ -17,9 +17,11 @@ use OCA\ContextChat\Type\ActionType;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\IJobList;
-use OCP\BackgroundJob\QueuedJob;
+use OCP\BackgroundJob\TimedJob;
+use OCP\DB\Exception;
+use OCP\IConfig;
 
-class ActionJob extends QueuedJob {
+class ActionJob extends TimedJob {
 	private const BATCH_SIZE = 1000;
 
 	public function __construct(
@@ -30,8 +32,15 @@ class ActionJob extends QueuedJob {
 		private Logger $logger,
 		private DiagnosticService $diagnosticService,
 		private IAppManager $appManager,
+		private IConfig $config,
 	) {
 		parent::__construct($timeFactory);
+		$this->setAllowParallelRuns(false);
+		$this->setInterval($this->getJobInterval());
+	}
+
+	private function getJobInterval(): int {
+		return intval($this->config->getAppValue('context_chat', 'action_job_interval', (string)(5 * 60))); // 5 minutes
 	}
 
 	protected function run($argument): void {
@@ -40,15 +49,20 @@ class ActionJob extends QueuedJob {
 			return;
 		}
 
-		$this->diagnosticService->sendJobStart(static::class, $this->getId());
-		$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
-		$entities = $this->actionMapper->getFromQueue(static::BATCH_SIZE);
-
-		if (empty($entities)) {
-			return;
-		}
-
 		try {
+			$this->diagnosticService->sendJobStart(static::class, $this->getId());
+			$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
+			try {
+				$entities = $this->actionMapper->getFromQueue(static::BATCH_SIZE);
+			} catch (Exception $e) {
+				$this->logger->warning('Error fetching actions in action Job : ' . $e->getMessage(), ['exception' => $e]);
+				return;
+			}
+
+			if (empty($entities)) {
+				return;
+			}
+
 			foreach ($entities as $entity) {
 				$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
 
@@ -118,13 +132,10 @@ class ActionJob extends QueuedJob {
 				}
 			}
 		} catch (\Throwable $e) {
-			// schedule in 5mins
-			$this->jobList->scheduleAfter(static::class, $this->time->getTime() + 5 * 60);
+			$this->logger->warning('Error in action Job : ' . $e->getMessage(), ['exception' => $e]);
 			throw $e;
+		} finally {
+			$this->diagnosticService->sendJobEnd(static::class, $this->getId());
 		}
-
-		// schedule in 5mins
-		$this->jobList->scheduleAfter(static::class, $this->time->getTime() + 5 * 60);
-		$this->diagnosticService->sendJobEnd(static::class, $this->getId());
 	}
 }
