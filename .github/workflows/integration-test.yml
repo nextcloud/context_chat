@@ -197,6 +197,7 @@ jobs:
           python3 -u ./main_em.py > em_backend_logs 2>&1 &
           python3 -u ./main.py > backend_logs 2>&1 &
           echo $! > ../pid.txt          # Save the process ID (PID)
+          sleep 60 # Wait for the backend to get ready
 
       - name: Register backend
         run: |
@@ -446,6 +447,7 @@ jobs:
           python3 -u ./main_em.py > em_backend_logs 2>&1 &
           python3 -u ./main.py > backend_logs 2>&1 &
           echo $! > ../pid.txt          # Save the process ID (PID)
+          sleep 60 # Wait for the backend to get ready
 
       - name: Register backend
         run: |
@@ -727,6 +729,7 @@ jobs:
           python3 -u ./main_em.py > em_backend_logs 2>&1 &
           python3 -u ./main.py > backend_logs 2>&1 &
           echo $! > ../pid.txt          # Save the process ID (PID)
+          sleep 60 # Wait for the backend to get ready
 
       - name: Register backend
         run: |
