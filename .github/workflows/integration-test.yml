@@ -1045,3 +1045,18 @@ jobs:
           cat context_chat_backend/em_backend_logs || echo "No embedding server logs"
           echo '--------------------------------------------------'
           tail -v -n +1 context_chat_backend/persistent_storage/logs/* || echo "No logs in logs directory"
+
+  summary:
+    permissions:
+      contents: none
+    runs-on: ubuntu-latest-low
+    needs: [scan-test, cron-test, listener-test]
+
+    if: always()
+
+    # This is the summary, we just avoid to rename it so that branch protection rules still match
+    name: integration-test
+
+    steps:
+      - name: Summary status
+        run: if ${{ needs.scan-test.rest != 'success' && needs.cron-test.result != 'success'  && needs.listener-test.result != 'success' }}; then exit 1; fi
