@@ -180,6 +180,34 @@ jobs:
           cd ..
           rm -rf documentation
 
+      - name: Reduce number of files
+        run: |
+          cd data/admin/files
+          LIMIT=100
+        
+          # Find all files in the directory and its subdirectories
+          FILES=($(find papers/ -type f))
+          
+          # Count the number of files
+          FILE_COUNT=${#FILES[@]}
+          
+          # Check if the current number of files exceeds the limit
+          if [ "$FILE_COUNT" -le "$LIMIT" ]; then
+            echo "No files need to be deleted. Current count: $FILE_COUNT"
+            exit 0
+          fi
+
+          # Calculate how many files to delete
+          FILES_TO_DELETE=$((FILE_COUNT - LIMIT))
+          
+          # Sort files by modification time (oldest first) and delete the oldest ones
+          for FILE in $(ls -t "${FILES[@]}" | tail -n "$FILES_TO_DELETE"); do
+            echo "Deleting: $FILE"
+            rm "$FILE"
+          done
+
+          echo "Deleted $FILES_TO_DELETE files. Current count: $((FILE_COUNT - FILES_TO_DELETE))"
+
       - name: Setup python 3.11
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
@@ -486,6 +514,34 @@ jobs:
           cd ..
           rm -rf documentation
 
+      - name: Reduce number of files
+        run: |
+          cd data/admin/files
+          LIMIT=100
+          
+          # Find all files in the directory and its subdirectories
+          FILES=($(find papers/ -type f))
+          
+          # Count the number of files
+          FILE_COUNT=${#FILES[@]}
+          
+          # Check if the current number of files exceeds the limit
+          if [ "$FILE_COUNT" -le "$LIMIT" ]; then
+            echo "No files need to be deleted. Current count: $FILE_COUNT"
+            exit 0
+          fi
+
+          # Calculate how many files to delete
+          FILES_TO_DELETE=$((FILE_COUNT - LIMIT))
+          
+          # Sort files by modification time (oldest first) and delete the oldest ones
+          for FILE in $(ls -t "${FILES[@]}" | tail -n "$FILES_TO_DELETE"); do
+            echo "Deleting: $FILE"
+            rm "$FILE"
+          done
+
+          echo "Deleted $FILES_TO_DELETE files. Current count: $((FILE_COUNT - FILES_TO_DELETE))"
+
       - name: Run files scan
         run: |
           ./occ files:scan admin # Do the scan before enabling context chat
@@ -782,6 +838,34 @@ jobs:
           find . -type f -name "*.rst" -exec bash -c 'mv "$0" "${0%.rst}.txt"' {} \;
           cd ..
           rm -rf documentation
+
+      - name: Reduce number of files
+        run: |
+          cd data/admin/files
+          LIMIT=100
+          
+          # Find all files in the directory and its subdirectories
+          FILES=($(find papers/ -type f))
+          
+          # Count the number of files
+          FILE_COUNT=${#FILES[@]}
+          
+          # Check if the current number of files exceeds the limit
+          if [ "$FILE_COUNT" -le "$LIMIT" ]; then
+            echo "No files need to be deleted. Current count: $FILE_COUNT"
+            exit 0
+          fi
+
+          # Calculate how many files to delete
+          FILES_TO_DELETE=$((FILE_COUNT - LIMIT))
+          
+          # Sort files by modification time (oldest first) and delete the oldest ones
+          for FILE in $(ls -t "${FILES[@]}" | tail -n "$FILES_TO_DELETE"); do
+            echo "Deleting: $FILE"
+            rm "$FILE"
+          done
+
+          echo "Deleted $FILES_TO_DELETE files. Current count: $((FILE_COUNT - FILES_TO_DELETE))"
 
       - name: Run files scan
         run: |
