@@ -10,6 +10,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [4.4.1] - 2025-07-31
+
+### Fixed
+* Ensure that array key exists before accessing (#146) @kesselb
+* Reduce DB load and cron load (#149) @kyteinsky
+* fix(FsEventMapper): Fix deleteByContent (#150) @marcelklehr
+* add info.xml entry for FileSystemListenerJob bg job (#151) @kyteinsky
+* fix(ActionJob): Increase batch size (#154) @marcelklehr
+* fix: Add Fs events to stats (#155) @marcelklehr
+* fix(FileListener): Do not retract update when duplicated events are emitted (#156) @marcelklehr
+* More tests and hardenings (#152) @marcelklehr
+
+
 ## [4.4.0] - 2025-07-21
 
 ### Added

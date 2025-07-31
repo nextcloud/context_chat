@@ -22,7 +22,7 @@ Setup background job workers as described here: https://docs.nextcloud.com/serve
 Note:
 Refer to the [Context Chat Backend's readme](https://github.com/nextcloud/context_chat_backend/?tab=readme-ov-file) and the [AppAPI's documentation](https://cloud-py-api.github.io/app_api/) for help with setup of AppAPI's deploy daemon.
 ]]></description>
-    <version>4.4.0</version>
+    <version>4.4.1</version>
     <licence>agpl</licence>
     <author>Julien Veyssier</author>
     <author>Anupam Kumar</author>
