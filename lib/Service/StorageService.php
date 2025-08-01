@@ -338,11 +338,7 @@ class StorageService {
 		$filesGen = $this->getFilesInMount($mount->getNumericStorageId(), $node->getId(), 0, 0);
 
 		foreach ($filesGen as $fileId) {
-			$node = current($this->rootFolder->getById($fileId));
-			if (!$node instanceof File) {
-				continue;
-			}
-			yield $node;
+			yield $fileId;
 		}
 	}
 

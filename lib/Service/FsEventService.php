@@ -11,8 +11,10 @@ use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\Db\QueueFile;
 use OCA\ContextChat\Logger;
 use OCP\DB\Exception;
+use OCP\Files\File;
 use OCP\Files\Folder;
 use OCP\Files\InvalidPathException;
+use OCP\Files\IRootFolder;
 use OCP\Files\Node;
 use OCP\Files\NotFoundException;
 
@@ -24,6 +26,7 @@ class FsEventService {
 		private ActionScheduler $actionService,
 		private StorageService $storageService,
 		private \OCP\Share\IManager $shareManager,
+		private IRootFolder $rootFolder,
 	) {
 
 	}
@@ -36,33 +39,14 @@ class FsEventService {
 
 			$files = $this->storageService->getAllFilesInFolder($node);
 		} else {
-			$files = [$node];
+			$files = [$node->getId()];
 		}
 
-		foreach ($files as $file) {
-			if (!$this->allowedMimeType($file)) {
-				continue;
-			}
-			try {
-				$fileRef = ProviderConfigService::getSourceId($file->getId());
-				$fileUserIds = $this->storageService->getUsersForFileId($file->getId());
+		foreach ($files as $fileId) {
+			$fileRef = ProviderConfigService::getSourceId($fileId);
+			$fileUserIds = $this->storageService->getUsersForFileId($fileId);
 
-				if (class_exists('OCP\Files\Config\Event\UserMountAddedEvent')) {
-					$userIds = $fileUserIds;
-				} else {
-					// todo: Remove this once we no longer support Nextcloud 31
-					$shareAccessList = $this->shareManager->getAccessList($file, true, true);
-					/** @var string[] $shareUserIds */
-					$shareUserIds = array_keys($shareAccessList['users']);
-					$userIds = array_values(array_unique(array_merge($shareUserIds, $fileUserIds)));
-				}
-
-				$this->actionService->updateAccessDeclSource($userIds, $fileRef);
-			} catch (InvalidPathException|NotFoundException $e) {
-				$this->logger->warning('Cannot get file id for declarative access update:' . $e->getMessage(), [
-					'exception' => $e
-				]);
-			}
+			$this->actionService->updateAccessDeclSource($fileUserIds, $fileRef);
 		}
 	}
 
@@ -73,17 +57,13 @@ class FsEventService {
 			}
 			$files = $this->storageService->getAllFilesInFolder($node);
 		} else {
-			$files = [$node];
+			$files = [$node->getId()];
 		}
 
 		$fileRefs = [];
-		foreach ($files as $file) {
-			if (!$this->allowedMimeType($file)) {
-				continue;
-			}
-
+		foreach ($files as $fileId) {
 			try {
-				$fileRefs[] = ProviderConfigService::getSourceId($file->getId());
+				$fileRefs[] = ProviderConfigService::getSourceId($fileId);
 			} catch (InvalidPathException|NotFoundException $e) {
 				$this->logger->warning($e->getMessage(), ['exception' => $e]);
 			}
@@ -101,17 +81,14 @@ class FsEventService {
 			}
 			$files = $this->storageService->getAllFilesInFolder($node);
 		} else {
-			$files = [$node];
+			$files = [$node->getId()];
 		}
 
-		foreach ($files as $file) {
-			if (!$this->allowedMimeType($file)) {
+		foreach ($files as $fileId) {
+			$file = current($this->rootFolder->getById($fileId));
+			if (!$file instanceof File) {
 				continue;
 			}
-			if (!$this->allowedPath($file)) {
-				continue;
-			}
-
 			$queueFile = new QueueFile();
 			if ($file->getMountPoint()->getNumericStorageId() === null) {
 				return;

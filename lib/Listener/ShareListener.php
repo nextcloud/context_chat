@@ -65,14 +65,11 @@ class ShareListener implements IEventListener {
 
 			if ($node->getType() === FileInfo::TYPE_FOLDER) {
 				$files = $this->storageService->getAllFilesInFolder($node);
-				foreach ($files as $file) {
-					if (!$file instanceof File) {
-						continue;
-					}
+				foreach ($files as $fileId) {
 					$this->actionService->updateAccess(
 						UpdateAccessOp::ALLOW,
 						$userIds,
-						ProviderConfigService::getSourceId($file->getId()),
+						ProviderConfigService::getSourceId($fileId),
 					);
 				}
 			} else {
@@ -129,10 +126,10 @@ class ShareListener implements IEventListener {
 
 			if ($node instanceof Folder) {
 				$files = $this->storageService->getAllFilesInFolder($node);
-				foreach ($files as $file) {
+				foreach ($files as $fileId) {
 					$this->actionService->updateAccessDeclSource(
 						$userIds,
-						ProviderConfigService::getSourceId($file->getId()),
+						ProviderConfigService::getSourceId($fileId),
 					);
 				}
 			} else {
