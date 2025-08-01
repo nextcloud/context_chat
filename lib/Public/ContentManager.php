@@ -242,7 +242,7 @@ class ContentManager {
 		$this->collectAllContentProviders();
 
 		$providerKey = ProviderConfigService::getConfigKey($appId, $providerId);
-		$this->actionService->deleteSources(...array_map(function (string $itemId) use ($providerKey) {
+		$this->actionService->deleteSources(array_map(function (string $itemId) use ($providerKey) {
 			return ProviderConfigService::getSourceId($itemId, $providerKey);
 		}, $itemIds));
 	}
