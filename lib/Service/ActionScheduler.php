@@ -17,7 +17,7 @@ use OCA\ContextChat\Type\UpdateAccessOp;
 use OCP\BackgroundJob\IJobList;
 
 class ActionScheduler {
-	private const BATCH_SIZE = 500;
+	public const BATCH_SIZE = 500;
 
 	public function __construct(
 		private IJobList $jobList,
@@ -46,7 +46,7 @@ class ActionScheduler {
 	 * @param string[] $sourceIds
 	 * @return void
 	 */
-	public function deleteSources(string ...$sourceIds): void {
+	public function deleteSources(array $sourceIds): void {
 		// batch sourceIds into self::BATCH_SIZE chunks
 		$batches = array_chunk($sourceIds, self::BATCH_SIZE);
 

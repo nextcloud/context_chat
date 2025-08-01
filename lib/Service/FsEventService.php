@@ -76,7 +76,10 @@ class FsEventService {
 				$this->logger->warning($e->getMessage(), ['exception' => $e]);
 			}
 		}
-		$this->actionService->deleteSources(...$fileRefs);
+		$batches = array_chunk($fileRefs, ActionScheduler::BATCH_SIZE);
+		foreach ($batches as $batch) {
+			$this->actionService->deleteSources($batch);
+		}
 	}
 
 	public function onInsert(Node $node, bool $recurse = true, bool $update = false): void {
