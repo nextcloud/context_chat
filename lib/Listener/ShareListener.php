@@ -64,8 +64,8 @@ class ShareListener implements IEventListener {
 			}
 
 			if ($node->getType() === FileInfo::TYPE_FOLDER) {
-				$files = $this->storageService->getAllFilesInFolder($node);
-				foreach ($files as $fileId) {
+				$fileIds = $this->storageService->getAllFilesInFolder($node);
+				foreach ($fileIds as $fileId) {
 					$this->actionService->updateAccess(
 						UpdateAccessOp::ALLOW,
 						$userIds,
@@ -125,8 +125,8 @@ class ShareListener implements IEventListener {
 			$userIds = array_values(array_unique(array_merge($realFileUserIds, $shareUserIds)));
 
 			if ($node instanceof Folder) {
-				$files = $this->storageService->getAllFilesInFolder($node);
-				foreach ($files as $fileId) {
+				$fileIds = $this->storageService->getAllFilesInFolder($node);
+				foreach ($fileIds as $fileId) {
 					$this->actionService->updateAccessDeclSource(
 						$userIds,
 						ProviderConfigService::getSourceId($fileId),

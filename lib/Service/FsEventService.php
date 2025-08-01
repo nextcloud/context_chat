@@ -37,12 +37,16 @@ class FsEventService {
 				return;
 			}
 
-			$files = $this->storageService->getAllFilesInFolder($node);
+			$fileIds = $this->storageService->getAllFilesInFolder($node);
 		} else {
-			$files = [$node->getId()];
+			try {
+				$fileIds = [$node->getId()];
+			} catch (InvalidPathException|NotFoundException $e) {
+				return;
+			}
 		}
 
-		foreach ($files as $fileId) {
+		foreach ($fileIds as $fileId) {
 			$fileRef = ProviderConfigService::getSourceId($fileId);
 			$fileUserIds = $this->storageService->getUsersForFileId($fileId);
 
@@ -55,13 +59,17 @@ class FsEventService {
 			if (!$recurse) {
 				return;
 			}
-			$files = $this->storageService->getAllFilesInFolder($node);
+			$fileIds = $this->storageService->getAllFilesInFolder($node);
 		} else {
-			$files = [$node->getId()];
+			try {
+				$fileIds = [$node->getId()];
+			} catch (InvalidPathException|NotFoundException $e) {
+				return;
+			}
 		}
 
 		$fileRefs = [];
-		foreach ($files as $fileId) {
+		foreach ($fileIds as $fileId) {
 			try {
 				$fileRefs[] = ProviderConfigService::getSourceId($fileId);
 			} catch (InvalidPathException|NotFoundException $e) {
@@ -79,12 +87,16 @@ class FsEventService {
 			if (!$recurse) {
 				return;
 			}
-			$files = $this->storageService->getAllFilesInFolder($node);
+			$fileIds = $this->storageService->getAllFilesInFolder($node);
 		} else {
-			$files = [$node->getId()];
+			try {
+				$fileIds = [$node->getId()];
+			} catch (InvalidPathException|NotFoundException $e) {
+				return;
+			}
 		}
 
-		foreach ($files as $fileId) {
+		foreach ($fileIds as $fileId) {
 			$file = current($this->rootFolder->getById($fileId));
 			if (!$file instanceof File) {
 				continue;
