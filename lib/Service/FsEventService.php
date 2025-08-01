@@ -76,18 +76,19 @@ class FsEventService {
 			$files = [$node];
 		}
 
+		$fileRefs = [];
 		foreach ($files as $file) {
 			if (!$this->allowedMimeType($file)) {
 				continue;
 			}
 
 			try {
-				$fileRef = ProviderConfigService::getSourceId($file->getId());
-				$this->actionService->deleteSources($fileRef);
+				$fileRefs[] = ProviderConfigService::getSourceId($file->getId());
 			} catch (InvalidPathException|NotFoundException $e) {
 				$this->logger->warning($e->getMessage(), ['exception' => $e]);
 			}
 		}
+		$this->actionService->deleteSources(...$fileRefs);
 	}
 
 	public function onInsert(Node $node, bool $recurse = true, bool $update = false): void {
