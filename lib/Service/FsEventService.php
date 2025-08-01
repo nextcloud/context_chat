@@ -89,6 +89,9 @@ class FsEventService {
 			if (!$file instanceof File) {
 				continue;
 			}
+			if (!$this->allowedPath($file)) {
+				continue;
+			}
 			$queueFile = new QueueFile();
 			if ($file->getMountPoint()->getNumericStorageId() === null) {
 				return;
