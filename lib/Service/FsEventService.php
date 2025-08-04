@@ -25,7 +25,6 @@ class FsEventService {
 		private QueueService $queue,
 		private ActionScheduler $actionService,
 		private StorageService $storageService,
-		private \OCP\Share\IManager $shareManager,
 		private IRootFolder $rootFolder,
 	) {
 
@@ -39,6 +38,9 @@ class FsEventService {
 
 			$fileIds = $this->storageService->getAllFilesInFolder($node);
 		} else {
+			if (!$this->allowedMimeType($node)) {
+				return;
+			}
 			try {
 				$fileIds = [$node->getId()];
 			} catch (InvalidPathException|NotFoundException $e) {
@@ -61,6 +63,9 @@ class FsEventService {
 			}
 			$fileIds = $this->storageService->getAllFilesInFolder($node);
 		} else {
+			if (!$this->allowedMimeType($node)) {
+				return;
+			}
 			try {
 				$fileIds = [$node->getId()];
 			} catch (InvalidPathException|NotFoundException $e) {
@@ -92,6 +97,9 @@ class FsEventService {
 			}
 			$fileIds = $this->storageService->getAllFilesInFolder($node);
 		} else {
+			if (!$this->allowedMimeType($node)) {
+				return;
+			}
 			try {
 				$fileIds = [$node->getId()];
 			} catch (InvalidPathException|NotFoundException $e) {
