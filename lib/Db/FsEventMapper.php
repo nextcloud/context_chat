@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace OCA\ContextChat\Db;
 
+use OCP\AppFramework\Db\Entity;
 use OCP\AppFramework\Db\QBMapper;
 use OCP\DB\Exception;
 use OCP\DB\QueryBuilder\IQueryBuilder;
@@ -25,6 +26,24 @@ class FsEventMapper extends QBMapper {
 
 	public function __construct(IDBConnection $db) {
 		parent::__construct($db, 'context_chat_fs_events', FsEvent::class);
+	}
+
+	#[\Override]
+	public function insert(Entity $entity): Entity {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('*')
+			->from($this->getTableName())
+			->setMaxResults(1)
+			->where(
+				$qb->expr()->eq('user_id', $qb->createNamedParameter($entity->getUserId())),
+				$qb->expr()->eq('node_id', $qb->createNamedParameter($entity->getNodeId(), IQueryBuilder::PARAM_INT)),
+				$qb->expr()->eq('type', $qb->createNamedParameter($entity->getType()))
+			);
+		$entities = $this->findEntities($qb);
+		if (empty($entities)) {
+			return parent::insert($entity);
+		}
+		return $entities[0];
 	}
 
 	/**
