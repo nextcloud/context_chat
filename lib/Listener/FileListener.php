@@ -133,7 +133,7 @@ class FileListener implements IEventListener {
 				$this->fsEventScheduler->onAccessUpdateDecl($rootId);
 			}
 		} catch (InvalidPathException|Exception|NotFoundException $e) {
-			$this->logger->warning($e->getMessage(), ['exception' => $e]);
+			$this->logger->warning('Error in fs event listener: ' . $e->getMessage(), ['exception' => $e]);
 		}
 	}
 }

@@ -13,6 +13,7 @@ use OCA\ContextChat\BackgroundJobs\IndexerJob;
 use OCA\ContextChat\Db\QueueFile;
 use OCA\ContextChat\Db\QueueMapper;
 use OCP\BackgroundJob\IJobList;
+use OCP\DB\Exception;
 
 class QueueService {
 
@@ -82,6 +83,9 @@ class QueueService {
 		$this->queueMapper->removeFromQueue($files);
 	}
 
+	/**
+	 * @throws Exception
+	 */
 	public function clearQueue(): void {
 		$this->queueMapper->clearQueue();
 	}
