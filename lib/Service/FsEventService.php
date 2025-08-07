@@ -47,12 +47,21 @@ class FsEventService {
 				return;
 			}
 		}
+		foreach ($fileIds as $file) {
+			try {
+				$fileRef = ProviderConfigService::getSourceId($file->getId());
+				$userIds = $this->storageService->getUsersForFileId($file->getId());
 
-		foreach ($fileIds as $fileId) {
-			$fileRef = ProviderConfigService::getSourceId($fileId);
-			$fileUserIds = $this->storageService->getUsersForFileId($fileId);
-
-			$this->actionService->updateAccessDeclSource($fileUserIds, $fileRef);
+				$this->actionService->updateAccessDeclSource($userIds, $fileRef);
+			} catch (InvalidPathException|NotFoundException $e) {
+				$this->logger->warning('Cannot get file id for declarative access update:' . $e->getMessage(), [
+					'exception' => $e
+				]);
+			} catch (Exception $e) {
+				$this->logger->warning('Failed to insert declarative access update into DB:' . $e->getMessage(), [
+					'exception' => $e
+				]);
+			}
 		}
 	}
 
@@ -77,7 +86,7 @@ class FsEventService {
 		foreach ($fileIds as $fileId) {
 			try {
 				$fileRefs[] = ProviderConfigService::getSourceId($fileId);
-			} catch (InvalidPathException|NotFoundException $e) {
+			} catch (InvalidPathException|NotFoundException|Exception $e) {
 				$this->logger->warning($e->getMessage(), ['exception' => $e]);
 			}
 		}

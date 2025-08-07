@@ -16,6 +16,7 @@ use OCA\ContextChat\Logger;
 use OCA\ContextChat\Service\ActionScheduler;
 use OCA\ContextChat\Service\ProviderConfigService;
 use OCP\BackgroundJob\IJobList;
+use OCP\DB\Exception;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\Server;
 use Psr\Container\ContainerExceptionInterface;
@@ -100,7 +101,11 @@ class ContentManager {
 			$dbItem->setLastModified($item->lastModified);
 			$dbItem->setUsers(implode(',', $item->users));
 
-			$this->mapper->insert($dbItem);
+			try {
+				$this->mapper->insert($dbItem);
+			} catch (Exception $e) {
+				$this->logger->error($e->getMessage(), ['exception' => $e]);
+			}
 		}
 
 		if (!$this->jobList->has(SubmitContentJob::class, null)) {
@@ -122,11 +127,15 @@ class ContentManager {
 	public function removeContentForUsers(string $appId, string $providerId, string $itemId, array $users): void {
 		$this->collectAllContentProviders();
 
-		$this->actionService->updateAccess(
-			UpdateAccessOp::DENY,
-			$users,
-			ProviderConfigService::getSourceId($itemId, ProviderConfigService::getConfigKey($appId, $providerId)),
-		);
+		try {
+			$this->actionService->updateAccess(
+				UpdateAccessOp::DENY,
+				$users,
+				ProviderConfigService::getSourceId($itemId, ProviderConfigService::getConfigKey($appId, $providerId)),
+			);
+		} catch (Exception $e) {
+			$this->logger->error($e->getMessage(), ['exception' => $e]);
+		}
 	}
 
 	/**
@@ -142,11 +151,15 @@ class ContentManager {
 	 */
 	public function removeAllContentForUsers(string $appId, string $providerId, array $users): void {
 		$this->collectAllContentProviders();
-		$this->actionService->updateAccessProvider(
-			UpdateAccessOp::DENY,
-			$users,
-			ProviderConfigService::getConfigKey($appId, $providerId),
-		);
+		try {
+			$this->actionService->updateAccessProvider(
+				UpdateAccessOp::DENY,
+				$users,
+				ProviderConfigService::getConfigKey($appId, $providerId),
+			);
+		} catch (Exception $e) {
+			$this->logger->error($e->getMessage(), ['exception' => $e]);
+		}
 	}
 
 	/**
@@ -166,11 +179,15 @@ class ContentManager {
 	public function updateAccess(string $appId, string $providerId, string $itemId, string $op, array $userIds): void {
 		$this->collectAllContentProviders();
 
-		$this->actionService->updateAccess(
-			$op,
-			$userIds,
-			ProviderConfigService::getSourceId($itemId, ProviderConfigService::getConfigKey($appId, $providerId)),
-		);
+		try {
+			$this->actionService->updateAccess(
+				$op,
+				$userIds,
+				ProviderConfigService::getSourceId($itemId, ProviderConfigService::getConfigKey($appId, $providerId)),
+			);
+		} catch (Exception $e) {
+			$this->logger->error($e->getMessage(), ['exception' => $e]);
+		}
 	}
 
 	/**
@@ -187,11 +204,15 @@ class ContentManager {
 	public function updateAccessProvider(string $appId, string $providerId, string $op, array $userIds): void {
 		$this->collectAllContentProviders();
 
-		$this->actionService->updateAccessProvider(
-			$op,
-			$userIds,
-			ProviderConfigService::getConfigKey($appId, $providerId),
-		);
+		try {
+			$this->actionService->updateAccessProvider(
+				$op,
+				$userIds,
+				ProviderConfigService::getConfigKey($appId, $providerId),
+			);
+		} catch (Exception $e) {
+			$this->logger->error($e->getMessage(), ['exception' => $e]);
+		}
 	}
 
 	/**
@@ -209,10 +230,14 @@ class ContentManager {
 	public function updateAccessDeclarative(string $appId, string $providerId, string $itemId, array $userIds): void {
 		$this->collectAllContentProviders();
 
-		$this->actionService->updateAccessDeclSource(
-			$userIds,
-			ProviderConfigService::getSourceId($itemId, ProviderConfigService::getConfigKey($appId, $providerId)),
-		);
+		try {
+			$this->actionService->updateAccessDeclSource(
+				$userIds,
+				ProviderConfigService::getSourceId($itemId, ProviderConfigService::getConfigKey($appId, $providerId)),
+			);
+		} catch (Exception $e) {
+			$this->logger->error($e->getMessage(), ['exception' => $e]);
+		}
 	}
 
 	/**
@@ -226,7 +251,11 @@ class ContentManager {
 	 */
 	public function deleteProvider(string $appId, string $providerId): void {
 		$this->collectAllContentProviders();
-		$this->actionService->deleteProvider(ProviderConfigService::getConfigKey($appId, $providerId));
+		try {
+			$this->actionService->deleteProvider(ProviderConfigService::getConfigKey($appId, $providerId));
+		} catch (Exception $e) {
+			$this->logger->error($e->getMessage(), ['exception' => $e]);
+		}
 	}
 
 	/**
@@ -242,8 +271,12 @@ class ContentManager {
 		$this->collectAllContentProviders();
 
 		$providerKey = ProviderConfigService::getConfigKey($appId, $providerId);
-		$this->actionService->deleteSources(array_map(function (string $itemId) use ($providerKey) {
-			return ProviderConfigService::getSourceId($itemId, $providerKey);
-		}, $itemIds));
+		try {
+			$this->actionService->deleteSources(array_map(function (string $itemId) use ($providerKey) {
+				return ProviderConfigService::getSourceId($itemId, $providerKey);
+			}, $itemIds));
+		} catch (Exception $e) {
+			$this->logger->error($e->getMessage(), ['exception' => $e]);
+		}
 	}
 }
