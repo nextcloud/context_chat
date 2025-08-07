@@ -60,6 +60,9 @@ class Statistics extends Command {
 		$queueCount = $this->queueService->count();
 		$output->writeln('Files in indexing queue: ' . $queueCount);
 
+		$queueNewCount = $this->queueService->countNewFiles();
+		$output->writeln('New files in indexing queue (without updates): ' . $queueNewCount);
+
 		$queuedDocumentsCount = $this->contentQueue->count();
 		$output->writeln('Queued documents (without files):' . var_export($queuedDocumentsCount, true));
 

@@ -124,11 +124,14 @@ class QueueMapper extends QBMapper {
 	/**
 	 * @throws \OCP\DB\Exception
 	 */
-	public function count() : int {
+	public function count(bool $onlyNewFiles = false) : int {
 		$qb = $this->db->getQueryBuilder();
-		$result = $qb->select($qb->func()->count('id'))
-			->from($this->getTableName())
-			->executeQuery();
+		$qb->select($qb->func()->count('id'))
+			->from($this->getTableName());
+		if ($onlyNewFiles) {
+			$qb->andWhere($qb->expr()->eq('update', $qb->createPositionalParameter(false, IQueryBuilder::PARAM_BOOL)));
+		}
+		$result = $qb->executeQuery();
 		if (($cnt = $result->fetchOne()) !== false) {
 			return (int)$cnt;
 		}
