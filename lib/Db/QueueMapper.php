@@ -32,11 +32,13 @@ class QueueMapper extends QBMapper {
 
 	/**
 	 * @param int $storageId
+	 * @param int $rootId
 	 * @param int $n
+	 * @param bool $onlyNewFiles
 	 * @return list<QueueFile>
-	 * @throws \OCP\DB\Exception
+	 * @throws Exception
 	 */
-	public function getFromQueue(int $storageId, int $rootId, int $n) : array {
+	public function getFromQueue(int $storageId, int $rootId, int $n, bool $onlyNewFiles = false) : array {
 		$qb = $this->db->getQueryBuilder();
 		$qb->select(QueueFile::$columns)
 			->from($this->getTableName())
@@ -44,6 +46,10 @@ class QueueMapper extends QBMapper {
 			->andWhere($qb->expr()->eq('root_id', $qb->createPositionalParameter($rootId, IQueryBuilder::PARAM_INT)))
 			->setMaxResults($n)
 			->orderBy('id', 'ASC');
+
+		if ($onlyNewFiles) {
+			$qb->andWhere($qb->expr()->eq('update', $qb->createPositionalParameter(false, IQueryBuilder::PARAM_BOOL)));
+		}
 
 		return $this->findEntities($qb);
 	}
