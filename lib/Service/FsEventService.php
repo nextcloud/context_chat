@@ -47,10 +47,10 @@ class FsEventService {
 				return;
 			}
 		}
-		foreach ($fileIds as $file) {
+		foreach ($fileIds as $fileId) {
 			try {
-				$fileRef = ProviderConfigService::getSourceId($file->getId());
-				$userIds = $this->storageService->getUsersForFileId($file->getId());
+				$fileRef = ProviderConfigService::getSourceId($fileId);
+				$userIds = $this->storageService->getUsersForFileId($fileId);
 
 				$this->actionService->updateAccessDeclSource($userIds, $fileRef);
 			} catch (InvalidPathException|NotFoundException $e) {
