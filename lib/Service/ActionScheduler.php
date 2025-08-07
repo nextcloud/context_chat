@@ -15,6 +15,7 @@ use OCA\ContextChat\Logger;
 use OCA\ContextChat\Type\ActionType;
 use OCA\ContextChat\Type\UpdateAccessOp;
 use OCP\BackgroundJob\IJobList;
+use OCP\DB\Exception;
 
 class ActionScheduler {
 	public const BATCH_SIZE = 500;
@@ -27,9 +28,10 @@ class ActionScheduler {
 	}
 
 	/**
-	 * @param ActionType::* $type
+	 * @param string $type
 	 * @param string $payload
 	 * @return void
+	 * @throws Exception
 	 */
 	private function scheduleAction(string $type, string $payload): void {
 		$item = new QueueAction();
@@ -45,6 +47,7 @@ class ActionScheduler {
 	/**
 	 * @param string[] $sourceIds
 	 * @return void
+	 * @throws Exception
 	 */
 	public function deleteSources(array $sourceIds): void {
 		// batch sourceIds into self::BATCH_SIZE chunks
@@ -63,6 +66,7 @@ class ActionScheduler {
 	/**
 	 * @param string $providerKey
 	 * @return void
+	 * @throws Exception
 	 */
 	public function deleteProvider(string $providerKey): void {
 		$payload = json_encode(['providerId' => $providerKey]);
@@ -76,6 +80,7 @@ class ActionScheduler {
 	/**
 	 * @param string $userId
 	 * @return void
+	 * @throws Exception
 	 */
 	public function deleteUser(string $userId): void {
 		$payload = json_encode(['userId' => $userId]);
@@ -91,6 +96,7 @@ class ActionScheduler {
 	 * @param string[] $userIds
 	 * @param string $sourceId
 	 * @return void
+	 * @throws Exception
 	 */
 	public function updateAccess(string $op, array $userIds, string $sourceId): void {
 		if (count($userIds) === 0) {
@@ -110,6 +116,7 @@ class ActionScheduler {
 	 * @param string[] $userIds
 	 * @param string $providerId
 	 * @return void
+	 * @throws Exception
 	 */
 	public function updateAccessProvider(string $op, array $userIds, string $providerId): void {
 		if (count($userIds) === 0) {
@@ -128,6 +135,7 @@ class ActionScheduler {
 	 * @param string[] $userIds
 	 * @param string $sourceId
 	 * @return void
+	 * @throws Exception
 	 */
 	public function updateAccessDeclSource(array $userIds, string $sourceId): void {
 		if (count($userIds) === 0) {

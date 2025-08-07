@@ -113,6 +113,9 @@ class QueueMapper extends QBMapper {
 		return $file;
 	}
 
+	/**
+	 * @throws Exception
+	 */
 	public function clearQueue(): void {
 		$qb = $this->db->getQueryBuilder();
 		$qb->delete($this->getTableName())->executeStatement();
