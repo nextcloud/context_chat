@@ -96,4 +96,11 @@ class QueueService {
 	public function count(): int {
 		return $this->queueMapper->count();
 	}
+
+	/**
+	 * @throws \OCP\DB\Exception
+	 */
+	public function countNewFiles(): int {
+		return $this->queueMapper->count(true);
+	}
 }

@@ -82,6 +82,12 @@ class AdminSettings implements ISettings {
 			$queued_files_count = 0;
 		}
 		try {
+			$stats['queued_new_files_count'] = $this->queueService->countNewFiles();
+		} catch (Exception $e) {
+			$this->logger->error($e->getMessage(), ['exception' => $e]);
+			$stats['queued_new_files_count'] = 0;
+		}
+		try {
 			$stats['queued_documents_counts'] = $this->contentQueue->count();
 			$stats['queued_documents_counts'][ProviderConfigService::getDefaultProviderKey()] = $queued_files_count;
 		} catch (Exception $e) {
