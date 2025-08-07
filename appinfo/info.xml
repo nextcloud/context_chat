@@ -58,6 +58,9 @@ Refer to the [Context Chat Backend's readme](https://github.com/nextcloud/contex
         <install>
             <step>OCA\ContextChat\Repair\AppInstallStep</step>
         </install>
+        <live-migration>
+            <step>OCA\ContextChat\Migration\RemoveDuplicateFsEvents</step>
+        </live-migration>
     </repair-steps>
 
     <settings>
