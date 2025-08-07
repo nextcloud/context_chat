@@ -59,7 +59,12 @@ class QueueService {
 	 * @throws \OCP\DB\Exception
 	 */
 	public function getFromQueue(int $storageId, int $rootId, int $batchSize): array {
-		return $this->queueMapper->getFromQueue($storageId, $rootId, $batchSize);
+		$nonUpdates = $this->queueMapper->getFromQueue($storageId, $rootId, $batchSize, true);
+		if (empty($nonUpdates)) {
+			return $this->queueMapper->getFromQueue($storageId, $rootId, $batchSize, false);
+		}
+
+		return $nonUpdates;
 	}
 
 	public function existsQueueFileId(int $fileId): bool {
