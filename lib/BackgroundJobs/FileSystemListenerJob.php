@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace OCA\ContextChat\BackgroundJobs;
 
+use OC\Files\SetupManager;
 use OCA\ContextChat\Db\FsEventMapper;
 use OCA\ContextChat\Logger;
 use OCA\ContextChat\Service\DiagnosticService;
@@ -111,7 +112,8 @@ class FileSystemListenerJob extends TimedJob {
 					}
 				}
 				// Tear down to avoid memory leaks
-				\OC_Util::tearDownFS();
+				$setupManager = \OCP\Server::get(SetupManager::class);
+				$setupManager->tearDown();
 			}
 		} finally {
 			$this->diagnosticService->sendJobEnd(static::class, $this->getId());
