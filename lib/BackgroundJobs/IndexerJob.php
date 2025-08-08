@@ -205,6 +205,11 @@ class IndexerJob extends TimedJob {
 						'storageId' => $this->storageId,
 						'rootId' => $this->rootId
 					]);
+					try {
+						$this->queue->removeFromQueue([$queueFile]);
+					} catch (Exception $e) {
+						$this->logger->warning('[IndexerJob] Could not remove file from queue', ['exception' => $e, 'storageId' => $this->storageId, 'rootId' => $this->rootId]);
+					}
 					continue;
 				}
 
