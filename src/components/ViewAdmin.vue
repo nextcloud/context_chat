@@ -5,9 +5,11 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 <template>
 	<div id="context_chat">
-		<NcSettingsSection :name="t('context_chat', 'Status')">
+		<NcSettingsSection :name="t('context_chat', 'Context Chat Status')">
 			<NcNoteCard v-if="stats.initial_indexing_complete" show-alert type="success">
-				{{ t('context_chat', 'The initial indexing run finished at: {date}.', {date: showDate(stats.intial_indexing_completed_at)}) }}
+				{{
+					t('context_chat', 'The initial indexing run finished at: {date}.', {date: showDate(stats.intial_indexing_completed_at)})
+				}}
 			</NcNoteCard>
 			<NcNoteCard v-else type="warning">
 				{{ t('context_chat', 'The initial indexing is still running.') }}

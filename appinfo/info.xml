@@ -62,6 +62,5 @@ Refer to the [Context Chat Backend's readme](https://github.com/nextcloud/contex
 
     <settings>
         <admin>OCA\ContextChat\Settings\AdminSettings</admin>
-        <admin-section>OCA\ContextChat\Settings\AdminSection</admin-section>
     </settings>
 </info>
