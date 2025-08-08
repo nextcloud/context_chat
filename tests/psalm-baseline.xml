@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-  - SPDX-FileCopyrightText: 2023 Nextcloud GmbH and Nextcloud contributors
-  - SPDX-License-Identifier: AGPL-3.0-or-later
--->
 <files psalm-version="6.13.0@70cdf647255a1362b426bb0f522a85817b8c791c">
   <file src="lib/BackgroundJobs/FileSystemListenerJob.php">
     <UndefinedClass>
-      <code><![CDATA[\OC_Util]]></code>
+      <code><![CDATA[SetupManager]]></code>
     </UndefinedClass>
+    <UndefinedDocblockClass>
+      <code><![CDATA[$setupManager]]></code>
+      <code><![CDATA[\OCP\Server::get(SetupManager::class)]]></code>
+    </UndefinedDocblockClass>
   </file>
   <file src="lib/BackgroundJobs/IndexerJob.php">
     <UndefinedClass>
