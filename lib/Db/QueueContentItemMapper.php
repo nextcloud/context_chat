@@ -35,6 +35,7 @@ class QueueContentItemMapper extends QBMapper {
 		$qb = $this->db->getQueryBuilder();
 		$qb->select(QueueContentItem::$columns)
 			->from($this->getTableName())
+			->orderBy('id', 'ASC')
 			->setMaxResults($limit);
 
 		return $this->findEntities($qb);

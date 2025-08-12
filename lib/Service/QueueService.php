@@ -13,6 +13,7 @@ use OCA\ContextChat\BackgroundJobs\IndexerJob;
 use OCA\ContextChat\Db\QueueFile;
 use OCA\ContextChat\Db\QueueMapper;
 use OCP\BackgroundJob\IJobList;
+use OCP\DB\Exception;
 
 class QueueService {
 
@@ -59,7 +60,12 @@ class QueueService {
 	 * @throws \OCP\DB\Exception
 	 */
 	public function getFromQueue(int $storageId, int $rootId, int $batchSize): array {
-		return $this->queueMapper->getFromQueue($storageId, $rootId, $batchSize);
+		$nonUpdates = $this->queueMapper->getFromQueue($storageId, $rootId, $batchSize, true);
+		if (empty($nonUpdates)) {
+			return $this->queueMapper->getFromQueue($storageId, $rootId, $batchSize, false);
+		}
+
+		return $nonUpdates;
 	}
 
 	public function existsQueueFileId(int $fileId): bool {
@@ -77,6 +83,9 @@ class QueueService {
 		$this->queueMapper->removeFromQueue($files);
 	}
 
+	/**
+	 * @throws Exception
+	 */
 	public function clearQueue(): void {
 		$this->queueMapper->clearQueue();
 	}
@@ -86,5 +95,12 @@ class QueueService {
 	 */
 	public function count(): int {
 		return $this->queueMapper->count();
+	}
+
+	/**
+	 * @throws \OCP\DB\Exception
+	 */
+	public function countNewFiles(): int {
+		return $this->queueMapper->count(true);
 	}
 }

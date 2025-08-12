@@ -27,13 +27,17 @@ class FsEventScheduler {
 	}
 
 	/**
-	 * @throws Exception
+	 * @throws NotFoundException
 	 */
 	private function getOwnerIdForNode(Node $node): string {
 		if ($node->getOwner()) {
 			return $node->getOwner()->getUID();
 		}
-		$ownerId = $this->storageService->getOwnerForFileId($node->getId());
+		try {
+			$ownerId = $this->storageService->getOwnerForFileId($node->getId());
+		} catch (InvalidPathException|NotFoundException $e) {
+			throw new NotFoundException('Cannot get owner for node ID ' . $node->getId(), previous: $e);
+		}
 		if ($ownerId !== false) {
 			return $ownerId;
 		}

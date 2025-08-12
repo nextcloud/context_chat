@@ -45,7 +45,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 					<td v-if="stats.vectordb_document_counts">
 						{{ stats.vectordb_document_counts[providerId] }}
 						<template v-if="providerId === 'files__default'">
-							{{ t('context_chat', '(out of {count} sent)', {count: stats.indexed_files_count}) }}
+							{{ t('context_chat', '({new} unseen files; {count} files sent)', {count: stats.indexed_files_count, new: stats.queued_new_files_count}) }}
 						</template>
 					</td>
 					<td v-else>

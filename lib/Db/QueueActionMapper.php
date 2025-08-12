@@ -35,6 +35,7 @@ class QueueActionMapper extends QBMapper {
 		$qb = $this->db->getQueryBuilder();
 		$qb->select(QueueAction::$columns)
 			->from($this->getTableName())
+			->orderBy('id', 'ASC')
 			->setMaxResults($limit);
 
 		return $this->findEntities($qb);
