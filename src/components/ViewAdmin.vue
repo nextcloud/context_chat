@@ -5,9 +5,12 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 <template>
 	<div id="context_chat">
-		<NcSettingsSection :name="t('context_chat', 'Status')">
+		<NcSettingsSection :name="t('context_chat', 'Context Chat')">
+			<h3>{{ t('context_chat', 'Indexing Status') }}</h3>
 			<NcNoteCard v-if="stats.initial_indexing_complete" show-alert type="success">
-				{{ t('context_chat', 'The initial indexing run finished at: {date}.', {date: showDate(stats.intial_indexing_completed_at)}) }}
+				{{
+					t('context_chat', 'The initial indexing run finished at: {date}.', {date: showDate(stats.intial_indexing_completed_at)})
+				}}
 			</NcNoteCard>
 			<NcNoteCard v-else type="warning">
 				{{ t('context_chat', 'The initial indexing is still running.') }}
@@ -18,8 +21,15 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 			<NcNoteCard v-else type="warning">
 				{{ t('context_chat', 'The Context Chat Backend app is not installed or not responsing.') }}
 			</NcNoteCard>
-			<NcNoteCard v-if="stats.initial_indexing_complete && stats.eligible_files_count > stats.vectordb_document_counts['files__default'] * 1.2" type="warning">
-				{{ t('context_chat', 'Less files were indexed than expected. Only {percent}% files out of {eligibleCount} are in the VectorDB.', {percent: Math.round((stats.vectordb_document_counts['files__default'] / stats.eligible_files_count) * 100), eligibleCount: stats.eligible_files_count}) }}
+			<NcNoteCard
+				v-if="stats.initial_indexing_complete && stats.eligible_files_count > stats.vectordb_document_counts['files__default'] * 1.2"
+				type="warning">
+				{{
+					t('context_chat', 'Less files were indexed than expected. Only {percent}% files out of {eligibleCount} are in the VectorDB.', {
+						percent: Math.round((stats.vectordb_document_counts['files__default'] / stats.eligible_files_count) * 100),
+						eligibleCount: stats.eligible_files_count
+					})
+				}}
 			</NcNoteCard>
 			<table>
 				<thead>
@@ -47,8 +57,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 			<p>{{ t('context_chat', 'Eligible files for indexing: {count}', {count: stats.eligible_files_count}) }}</p>
 			<p>{{ t('context_chat', 'Queued content update actions: {count}', {count: stats.queued_actions_count}) }}</p>
 			<p>{{ t('context_chat', 'Queued File System events: {count}', {count: stats.queued_fs_events_count}) }}</p>
-		</NcSettingsSection>
-		<NcSettingsSection :name="t('context_chat', 'Context Chat Logs')">
+			<h3>{{ t('context_chat', 'Download Logs') }}</h3>
 			<div class="horizontal-flex">
 				<NcButton :href="downloadURLNextcloudLogs">
 					{{ t('context_chat', 'Download the PHP App logs') }}
