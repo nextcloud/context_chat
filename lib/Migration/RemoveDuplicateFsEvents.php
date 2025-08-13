@@ -30,6 +30,7 @@ class RemoveDuplicateFsEvents implements IRepairStep {
 	#[\Override]
 	public function run(IOutput $output): void {
 		try {
+			$this->db->beginTransaction();
 			// Get the lowest ID for each combination of type, user_id, and node_id
 			$subQuery = $this->db->getQueryBuilder();
 			$subQuery->selectAlias($subQuery->func()->min('id'), 'id')
@@ -53,7 +54,9 @@ class RemoveDuplicateFsEvents implements IRepairStep {
 				->where($qb->expr()->notIn('id', $qb->createFunction('(' . $sql . ')')));
 
 			$qb->executeStatement();
+			$this->db->commit();
 		} catch (\Throwable $e) {
+			$this->db->rollBack();
 			$output->warning('Failed to automatically remove duplicate fs events for context_chat.');
 			$this->logger->error('Failed to automatically remove duplicate fs events for context_chat', ['exception' => $e]);
 		}
