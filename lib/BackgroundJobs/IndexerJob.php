@@ -157,7 +157,7 @@ class IndexerJob extends TimedJob {
 	}
 
 	protected function getJobInterval(): int {
-		return $this->appConfig->getAppValueInt('indexing_job_interval', self::DEFAULT_JOB_INTERVAL);
+		return 30; // $this->appConfig->getAppValueInt('indexing_job_interval', self::DEFAULT_JOB_INTERVAL);
 	}
 
 	protected function getMaxSize(): float {

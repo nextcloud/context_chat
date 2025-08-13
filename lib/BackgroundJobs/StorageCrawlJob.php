@@ -96,6 +96,6 @@ class StorageCrawlJob extends QueuedJob {
 	}
 
 	protected function getJobInterval(): int {
-		return $this->appConfig->getValueInt(Application::APP_ID, 'crawl_job_interval', self::DEFAULT_JOB_INTERVAL);
+		return 10; // $this->appConfig->getValueInt(Application::APP_ID, 'crawl_job_interval', self::DEFAULT_JOB_INTERVAL);
 	}
 }

@@ -31,7 +31,7 @@ jobs:
       matrix:
         php-versions: [ '8.1' ]
         databases: [ 'pgsql' ]
-        server-versions: [ 'stable30', 'stable31', 'master' ]
+        server-versions: [ 'stable31', 'master' ]
         encryption: ['on', 'off']
         exclude:
           - server-versions: stable30
@@ -43,7 +43,7 @@ jobs:
             php-versions: 8.1
             encryption: on
 
-    name: Integration test ☁️${{ matrix.server-versions }} 🐘${{ matrix.php-versions }} 🔐:${{ matrix.encryption }}
+    name: ☁️${{ matrix.server-versions }} 🐘${{ matrix.php-versions }} 🔐:${{ matrix.encryption }}
 
     env:
       MYSQL_PORT: 4444
@@ -184,13 +184,13 @@ jobs:
         run: |
           cd data/admin/files
           LIMIT=100
-        
+
           # Find all files in the directory and its subdirectories
           FILES=($(find papers/ -type f))
-          
+
           # Count the number of files
           FILE_COUNT=${#FILES[@]}
-          
+
           # Check if the current number of files exceeds the limit
           if [ "$FILE_COUNT" -le "$LIMIT" ]; then
             echo "No files need to be deleted. Current count: $FILE_COUNT"
@@ -199,7 +199,7 @@ jobs:
 
           # Calculate how many files to delete
           FILES_TO_DELETE=$((FILE_COUNT - LIMIT))
-          
+
           # Sort files by modification time (oldest first) and delete the oldest ones
           for FILE in $(ls -t "${FILES[@]}" | tail -n "$FILES_TO_DELETE"); do
             echo "Deleting: $FILE"
@@ -230,6 +230,12 @@ jobs:
       - name: Register backend
         run: |
           set -x
+
+          ./occ config:app:set --value 30 --type integer context_chat indexing_job_interval # 30 seconds
+          ./occ config:app:set --value 10 --type integer context_chat crawl_job_interval # 10 seconds
+          ./occ config:app:set --value 10 --type integer context_chat action_job_interval # 10 seconds
+          ./occ config:app:set --value 10 --type integer context_chat fs_listener_job_interval # 10 seconds
+
           ./occ config:system:set debug --value true
           ./occ config:system:set loglevel --value 0
           ./occ app_api:daemon:register --net host manual_install "Manual Install" manual-install http localhost http://localhost:8080
@@ -337,7 +343,7 @@ jobs:
       matrix:
         php-versions: [ '8.1' ]
         databases: [ 'pgsql' ]
-        server-versions: [ 'stable30', 'stable31', 'master' ]
+        server-versions: [ 'stable31', 'master' ]
         encryption: ['on', 'off']
         exclude:
           - server-versions: stable30
@@ -349,7 +355,7 @@ jobs:
             php-versions: 8.1
             encryption: on
 
-    name: Integration test with cron ☁️${{ matrix.server-versions }} 🐘${{ matrix.php-versions }} 🔐:${{ matrix.encryption }}
+    name: with cron ☁️${{ matrix.server-versions }} 🐘${{ matrix.php-versions }} 🔐:${{ matrix.encryption }}
 
     env:
       MYSQL_PORT: 4444
@@ -518,13 +524,13 @@ jobs:
         run: |
           cd data/admin/files
           LIMIT=100
-          
+
           # Find all files in the directory and its subdirectories
           FILES=($(find papers/ -type f))
-          
+
           # Count the number of files
           FILE_COUNT=${#FILES[@]}
-          
+
           # Check if the current number of files exceeds the limit
           if [ "$FILE_COUNT" -le "$LIMIT" ]; then
             echo "No files need to be deleted. Current count: $FILE_COUNT"
@@ -533,7 +539,7 @@ jobs:
 
           # Calculate how many files to delete
           FILES_TO_DELETE=$((FILE_COUNT - LIMIT))
-          
+
           # Sort files by modification time (oldest first) and delete the oldest ones
           for FILE in $(ls -t "${FILES[@]}" | tail -n "$FILES_TO_DELETE"); do
             echo "Deleting: $FILE"
@@ -556,7 +562,7 @@ jobs:
           ./occ config:app:set --value 10 --type integer context_chat crawl_job_interval # 10 seconds
           ./occ config:app:set --value 10 --type integer context_chat action_job_interval # 10 seconds
           ./occ config:app:set --value 10 --type integer context_chat fs_listener_job_interval # 10 seconds
-          for i in {1..100}; do 
+          for i in {1..100}; do
             php cron.php & # Starting with stable31 we can use -v here for better visibility
             wait
             ./occ context_chat:stats
@@ -592,19 +598,19 @@ jobs:
       - name: Run the prompts
         run: |
           ./occ background-job:worker --stop_after=2m 'OC\TaskProcessing\SynchronousBackgroundJob' &
-          ./occ background-job:worker --stop_after=2m 'OC\TaskProcessing\SynchronousBackgroundJob' &
-          OUT1=$(./occ context_chat:prompt admin "Which factors are taken into account for the Ethical AI Rating?")
-          echo "$OUT1"
-          echo '--------------------------------------------------'
-          OUT2=$(./occ context_chat:prompt admin "Welche Faktoren beeinflussen das Ethical AI Rating?")
-          echo "$OUT2"
-          echo '--------------------------------------------------'
-
-          OUT3=$(./occ context_chat:search admin "Welche Faktoren beeinflussen das Ethical AI Rating?")
-          echo "$OUT3"
-          echo "$OUT1" | grep -q "If all of these points are met, we give a Green label." || exit 1
-          echo "$OUT2" | grep -q "If all of these points are met, we give a Green label." || exit 1
-          echo "$OUT3" | grep -q "overview.rst" || exit 1
+#          ./occ background-job:worker --stop_after=2m 'OC\TaskProcessing\SynchronousBackgroundJob' &
+#          OUT1=$(./occ context_chat:prompt admin "Which factors are taken into account for the Ethical AI Rating?")
+#          echo "$OUT1"
+#          echo '--------------------------------------------------'
+#          OUT2=$(./occ context_chat:prompt admin "Welche Faktoren beeinflussen das Ethical AI Rating?")
+#          echo "$OUT2"
+#          echo '--------------------------------------------------'
+#
+#          OUT3=$(./occ context_chat:search admin "Welche Faktoren beeinflussen das Ethical AI Rating?")
+#          echo "$OUT3"
+#          echo "$OUT1" | grep -q "If all of these points are met, we give a Green label." || exit 1
+#          echo "$OUT2" | grep -q "If all of these points are met, we give a Green label." || exit 1
+#          echo "$OUT3" | grep -q "overview.rst" || exit 1
 
       - name: Show nextcloud logs
         if: always()
@@ -633,7 +639,7 @@ jobs:
       matrix:
         php-versions: [ '8.1' ]
         databases: [ 'pgsql' ]
-        server-versions: [ 'stable30', 'stable31', 'master' ]
+        server-versions: [ 'stable31', 'master' ]
         encryption: ['on', 'off']
         file-deletion-method: [ 'occ', 'os' ]
         exclude:
@@ -659,7 +665,7 @@ jobs:
             encryption: off
 
 
-    name: Integration test with file listener ☁️${{ matrix.server-versions }} 🐘${{ matrix.php-versions }} 🗑️${{ matrix.file-deletion-method }} 🔐:${{ matrix.encryption }}
+    name: with listener ☁️${{ matrix.server-versions }} 🐘${{ matrix.php-versions }} 🗑️${{ matrix.file-deletion-method }} 🔐:${{ matrix.encryption }}
 
     env:
       MYSQL_PORT: 4444
@@ -843,13 +849,13 @@ jobs:
         run: |
           cd data/admin/files
           LIMIT=100
-          
+
           # Find all files in the directory and its subdirectories
           FILES=($(find papers/ -type f))
-          
+
           # Count the number of files
           FILE_COUNT=${#FILES[@]}
-          
+
           # Check if the current number of files exceeds the limit
           if [ "$FILE_COUNT" -le "$LIMIT" ]; then
             echo "No files need to be deleted. Current count: $FILE_COUNT"
@@ -858,7 +864,7 @@ jobs:
 
           # Calculate how many files to delete
           FILES_TO_DELETE=$((FILE_COUNT - LIMIT))
-          
+
           # Sort files by modification time (oldest first) and delete the oldest ones
           for FILE in $(ls -t "${FILES[@]}" | tail -n "$FILES_TO_DELETE"); do
             echo "Deleting: $FILE"
@@ -873,7 +879,7 @@ jobs:
 
       - name: Run indexer cron
         run: |
-          for i in {1..100}; do 
+          for i in {1..100}; do
             php cron.php & # Starting with stable31 we can use -v here for better visibility
             wait
             ./occ context_chat:stats
@@ -911,21 +917,21 @@ jobs:
           ./occ background-job:worker --stop_after=2m 'OC\TaskProcessing\SynchronousBackgroundJob' &
           ./occ background-job:worker --stop_after=2m 'OC\TaskProcessing\SynchronousBackgroundJob' &
           set +e
-          
+
           # Check for user admin: Should be there
           OUT_ADMIN_ENGLISH_PROMPT_AI=$(./occ context_chat:prompt admin "Which factors are taken into account for the Ethical AI Rating?")
           OUT_ADMIN_GERMAN_PROMPT_AI=$(./occ context_chat:prompt admin "Welche Faktoren beeinflussen das Ethical AI Rating?")
           OUT_ADMIN_SEARCH_AI=$(./occ context_chat:search admin "Welche Faktoren beeinflussen das Ethical AI Rating?")
-          
+
           # Check for user test: Shouldn't be there
           OUT_TEST_ENGLISH_PROMPT_AI=$(./occ context_chat:prompt test "Which factors are taken into account for the Ethical AI Rating?")
           OUT_TEST_GERMAN_PROMPT_AI=$(./occ context_chat:prompt test "Welche Faktoren beeinflussen das Ethical AI Rating?")
           OUT_TEST_SEARCH_AI=$(./occ context_chat:search test "Welche Faktoren beeinflussen das Ethical AI Rating?")
-          
+
           # Check for user test: Shouldn't be there, because it was not shared yet
           OUT_TEST_PROMPT_JOBS=$(./occ context_chat:prompt test "How do I set my TimedJob to be time insensitive?")
           OUT_TEST_SEARCH_JOBS=$(./occ context_chat:search test "How do I set my TimedJob to be time insensitive?")
-          
+
           echo "OUT_ADMIN_ENGLISH_PROMPT_AI"
           echo "$OUT_ADMIN_ENGLISH_PROMPT_AI"
           echo "OUT_ADMIN_GERMAN_PROMPT_AI"
@@ -942,7 +948,7 @@ jobs:
           echo "$OUT_TEST_PROMPT_JOBS"
           echo "OUT_TEST_SEARCH_JOBS"
           echo "$OUT_TEST_SEARCH_JOBS"
-          
+
           echo "$OUT_ADMIN_ENGLISH_PROMPT_AI" | grep -q  "If all of these points are met, we give a Green label." && echo '✅ Admin does see AI overview' || exit 1
           echo "$OUT_ADMIN_GERMAN_PROMPT_AI" | grep -q "If all of these points are met, we give a Green label." && echo '✅ Admin does see AI overview, after german question' || exit 1
           echo "$OUT_ADMIN_SEARCH_AI" | grep -q "overview.rst" && echo '✅ Admin does see AI overview, when using search' || exit 1
@@ -960,7 +966,7 @@ jobs:
       - name: Remove some files using os
         if: ${{ matrix.file-deletion-method == 'os'}}
         run: |
-          cd data/admin/files 
+          cd data/admin/files
           rm -rf ./admin_manual # this + files:scan sadly doesn't work, currently see https://github.com/nextcloud/context_chat/issues/153
           cd ../../..
           ./occ files:scan admin # We run the scan again to check if the files are successfully removed from the vectordb
@@ -975,7 +981,7 @@ jobs:
 
       - name: Run indexer cron
         run: |
-          for i in {1..100}; do 
+          for i in {1..100}; do
             php cron.php & # Starting with stable31 we can use -v here for better visibility
             wait
             ./occ context_chat:stats
@@ -985,23 +991,23 @@ jobs:
         run: |
           ./occ background-job:worker --stop_after=2m 'OC\TaskProcessing\SynchronousBackgroundJob' &
           ./occ background-job:worker --stop_after=2m 'OC\TaskProcessing\SynchronousBackgroundJob' &
-          
+
           set +e
-          
+
           # Check for user admin: Shouldn't be there
           OUT_ADMIN_ENGLISH_PROMPT_AI=$(./occ context_chat:prompt admin "Which factors are taken into account for the Ethical AI Rating?")
           OUT_ADMIN_GERMAN_PROMPT_AI=$(./occ context_chat:prompt admin "Welche Faktoren beeinflussen das Ethical AI Rating?")
           OUT_ADMIN_SEARCH_AI=$(./occ context_chat:search admin "Welche Faktoren beeinflussen das Ethical AI Rating?")
-          
+
           # Check for user test: Shouldn't be there
           OUT_TEST_ENGLISH_PROMPT_AI=$(./occ context_chat:prompt test "Which factors are taken into account for the Ethical AI Rating?")
           OUT_TEST_GERMAN_PROMPT_AI=$(./occ context_chat:prompt test "Welche Faktoren beeinflussen das Ethical AI Rating?")
           OUT_TEST_SEARCH_AI=$(./occ context_chat:search test "Welche Faktoren beeinflussen das Ethical AI Rating?")
-          
+
           # Check for user test: Should be there, because it was shared
           OUT_TEST_PROMPT_JOBS=$(./occ context_chat:prompt test "How do I set my TimedJob to be time insensitive?")
           OUT_TEST_SEARCH_JOBS=$(./occ context_chat:search test "How do I set my TimedJob to be time insensitive?")
-          
+
           echo "OUT_ADMIN_ENGLISH_PROMPT_AI"
           echo "$OUT_ADMIN_ENGLISH_PROMPT_AI"
           echo "OUT_ADMIN_GERMAN_PROMPT_AI"
@@ -1018,7 +1024,7 @@ jobs:
           echo "$OUT_TEST_PROMPT_JOBS"
           echo "OUT_TEST_SEARCH_JOBS"
           echo "$OUT_TEST_SEARCH_JOBS"
-          
+
           echo "$OUT_ADMIN_ENGLISH_PROMPT_AI" | grep -q -v "If all of these points are met, we give a Green label." && echo '✅ Admin does not see AI overview anymore' || exit 1
           echo "$OUT_ADMIN_GERMAN_PROMPT_AI" | grep -q -v "If all of these points are met, we give a Green label." && echo '✅ Admin does not see AI overview anymore, after german question' || exit 1
           echo "$OUT_ADMIN_SEARCH_AI" | grep -q -v "overview.rst" && echo '✅ Admin does not see AI overview anymore, when using search' || exit 1

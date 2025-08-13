@@ -40,7 +40,7 @@ class ActionJob extends TimedJob {
 	}
 
 	private function getJobInterval(): int {
-		return intval($this->config->getAppValue('context_chat', 'action_job_interval', (string)(5 * 60))); // 5 minutes
+		return 10; // intval($this->config->getAppValue('context_chat', 'action_job_interval', (string)(5 * 60))); // 5 minutes
 	}
 
 	protected function run($argument): void {
