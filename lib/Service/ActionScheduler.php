@@ -28,7 +28,7 @@ class ActionScheduler {
 	}
 
 	/**
-	 * @param string $type
+	 * @param string $type ActionType::* The type of action to schedule
 	 * @param string $payload
 	 * @return void
 	 * @throws Exception

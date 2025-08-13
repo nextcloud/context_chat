@@ -65,6 +65,7 @@ class StorageCrawlJob extends QueuedJob {
 				$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
 				try {
 					$this->queue->insertIntoQueue($queueFile);
+					$i++;
 				} catch (Exception $e) {
 					$this->logger->error('[StorageCrawlJob] Failed to add file to queue', [
 						'fileId' => $fileId,
@@ -75,7 +76,6 @@ class StorageCrawlJob extends QueuedJob {
 						'last_file_id' => $lastFileId
 					]);
 				}
-				$i++;
 			}
 
 			if ($i > 0) {

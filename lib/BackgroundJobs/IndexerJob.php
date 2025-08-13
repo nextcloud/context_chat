@@ -297,15 +297,16 @@ class IndexerJob extends TimedJob {
 			return;
 		}
 		try {
-			$queuedFilesCount = $this->queue->count();
+			$queuedNewFilesCount = $this->queue->countNewFiles();
 		} catch (Exception $e) {
 			$this->logger->warning('Could not count indexed files', ['exception' => $e]);
 			return;
 		}
 		$crawlJobCount = $this->getJobCount(StorageCrawlJob::class);
 
-		// if any storage crawler jobs are still running or there are still files in the queue, we are still crawling
-		if ($crawlJobCount > 0 || $queuedFilesCount > 0) {
+		// if any storage crawler jobs are still running or there are still new files in the queue,
+		// we are still indexing files that were never indexed before.
+		if ($crawlJobCount > 0 || $queuedNewFilesCount > 0) {
 			return;
 		}
 
