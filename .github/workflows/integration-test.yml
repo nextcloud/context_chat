@@ -32,16 +32,7 @@ jobs:
         php-versions: [ '8.1' ]
         databases: [ 'pgsql' ]
         server-versions: [ 'stable31', 'master' ]
-        encryption: ['on', 'off']
-        exclude:
-          - server-versions: stable30
-            databases: pgsql
-            php-versions: 8.1
-            encryption: on
-          - server-versions: stable31
-            databases: pgsql
-            php-versions: 8.1
-            encryption: on
+        encryption: ['off']
 
     name: ☁️${{ matrix.server-versions }} 🐘${{ matrix.php-versions }} 🔐:${{ matrix.encryption }}
 
@@ -344,16 +335,7 @@ jobs:
         php-versions: [ '8.1' ]
         databases: [ 'pgsql' ]
         server-versions: [ 'stable31', 'master' ]
-        encryption: ['on', 'off']
-        exclude:
-          - server-versions: stable30
-            databases: pgsql
-            php-versions: 8.1
-            encryption: on
-          - server-versions: stable31
-            databases: pgsql
-            php-versions: 8.1
-            encryption: on
+        encryption: ['off']
 
     name: with cron ☁️${{ matrix.server-versions }} 🐘${{ matrix.php-versions }} 🔐:${{ matrix.encryption }}
 
@@ -640,24 +622,9 @@ jobs:
         php-versions: [ '8.1' ]
         databases: [ 'pgsql' ]
         server-versions: [ 'stable31', 'master' ]
-        encryption: ['on', 'off']
+        encryption: ['off']
         file-deletion-method: [ 'occ', 'os' ]
         exclude:
-          - server-versions: stable30
-            file-deletion-method: os
-            databases: pgsql
-            php-versions: 8.1
-            encryption: on
-          - server-versions: stable31
-            file-deletion-method: os
-            databases: pgsql
-            php-versions: 8.1
-            encryption: on
-          - server-versions: stable30
-            file-deletion-method: os
-            databases: pgsql
-            php-versions: 8.1
-            encryption: off
           - server-versions: stable31
             file-deletion-method: os
             databases: pgsql

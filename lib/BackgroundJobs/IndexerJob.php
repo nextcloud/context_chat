@@ -149,11 +149,11 @@ class IndexerJob extends TimedJob {
 	}
 
 	protected function getBatchSize(): int {
-		return $this->appConfig->getAppValueInt('indexing_batch_size', self::DEFAULT_BATCH_SIZE);
+		return self::DEFAULT_BATCH_SIZE; // $this->appConfig->getAppValueInt('indexing_batch_size', self::DEFAULT_BATCH_SIZE);
 	}
 
 	protected function getMaxIndexingTime(): int {
-		return $this->appConfig->getAppValueInt('indexing_max_time', self::DEFAULT_MAX_INDEXING_TIME);
+		return self::DEFAULT_MAX_INDEXING_TIME; // $this->appConfig->getAppValueInt('indexing_max_time', self::DEFAULT_MAX_INDEXING_TIME);
 	}
 
 	protected function getJobInterval(): int {
@@ -161,7 +161,7 @@ class IndexerJob extends TimedJob {
 	}
 
 	protected function getMaxSize(): float {
-		return (float)$this->appConfig->getAppValueInt('indexing_max_size', Application::CC_MAX_SIZE);
+		return (float)Application::CC_MAX_SIZE; // $this->appConfig->getAppValueInt('indexing_max_size', Application::CC_MAX_SIZE);
 	}
 
 	/**
