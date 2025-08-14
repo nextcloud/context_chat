@@ -91,9 +91,9 @@ class IndexerJob extends TimedJob {
 
 		$this->storageId = $argument['storageId'];
 		$this->rootId = $argument['rootId'];
-		if ($this->appConfig->getAppValue('auto_indexing', 'true') === 'false') {
-			return;
-		}
+//		if ($this->appConfig->getAppValue('auto_indexing', 'true') === 'false') {
+//			return;
+//		}
 		$this->diagnosticService->sendJobTrigger(static::class, $this->getId());
 		$this->setInitialIndexCompletion();
 		try {
