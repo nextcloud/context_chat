@@ -24,6 +24,13 @@ use OCP\IConfig;
 
 class FileSystemListenerJob extends TimedJob {
 	private const BATCH_SIZE = 500;
+	private const FATAL_DB_ERRORS = [
+		\OCP\DB\Exception::REASON_CONNECTION_LOST,
+		\OCP\DB\Exception::REASON_DEADLOCK,
+		\OCP\DB\Exception::REASON_DRIVER,
+		\OCP\DB\Exception::REASON_SERVER,
+		\OCP\DB\Exception::REASON_LOCK_WAIT_TIMEOUT,
+	];
 
 	public function __construct(
 		ITimeFactory $timeFactory,
@@ -77,7 +84,7 @@ class FileSystemListenerJob extends TimedJob {
 					$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
 
 					try {
-						$node = current($this->rootFolder->getUserFolder($fsEvent->getUserId())->getById($fsEvent->getNodeId()));
+						$node = current($this->rootFolder->getUserFolder($userId)->getById($fsEvent->getNodeId()));
 					} catch (\Exception $e) {
 						$this->logger->warning('Error retrieving node for fs event "' . $fsEvent->getType() . '": ' . $e->getMessage(), ['exception' => $e]);
 						$node = false;
@@ -102,15 +109,24 @@ class FileSystemListenerJob extends TimedJob {
 								break;
 						}
 						$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
+					} catch (\OCP\DB\Exception $e) {
+						$this->logger->warning('DB error encountered while handling fs event "' . $fsEvent->getType() . '": ' . $e->getMessage(), ['exception' => $e]);
+						if (in_array($e->getReason(), self::FATAL_DB_ERRORS, true)) {
+							$this->logger->error('Fatal DB error encountered while handling fs event "' . $fsEvent->getType() . '": ' . $e->getMessage(), ['exception' => $e]);
+							// Re-throw the exception to stop the job
+							throw $e;
+						}
 					} catch (\Throwable $e) {
 						$this->logger->warning('Error handling fs event "' . $fsEvent->getType() . '": ' . $e->getMessage(), ['exception' => $e]);
 					}
+
 					try {
 						$this->fsEventMapper->delete($fsEvent);
 					} catch (Exception $e) {
 						$this->logger->warning('Error deleting fs event "' . $fsEvent->getType() . '": ' . $e->getMessage(), ['exception' => $e]);
 					}
 				}
+
 				// Tear down to avoid memory leaks
 				$setupManager = \OCP\Server::get(SetupManager::class);
 				$setupManager->tearDown();
