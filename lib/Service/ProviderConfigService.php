@@ -19,6 +19,24 @@ class ProviderConfigService {
 	) {
 	}
 
+	/**
+	 * Get the item ID from a source ID.
+	 *
+	 * @param string $sourceId
+	 * @param string|null $providerId
+	 * @return ?string null returned if the sourceId is not in the expected format
+	 */
+	public static function getItemId(string $sourceId, ?string $providerId = null): ?string {
+		if ($providerId === null || $providerId === '' || !str_starts_with($sourceId, $providerId . ': ')) {
+			$parts = explode(': ', $sourceId, 2);
+			if (count($parts) !== 2) {
+				return null;
+			}
+			return $parts[1];
+		}
+		return substr($sourceId, strlen($providerId) + 2);
+	}
+
 	public static function getSourceId(int|string $nodeId, ?string $providerId = null): string {
 		return ($providerId ?? self::getDefaultProviderKey()) . ': ' . $nodeId;
 	}

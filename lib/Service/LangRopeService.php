@@ -298,15 +298,11 @@ class LangRopeService {
 		}, $sources);
 
 		$response = $this->requestToExApp('/loadSources', 'PUT', $params, 'multipart/form-data');
-		if (!isset($response['loaded_sources'])) {
-			return ['loaded_sources' => [], 'sources_to_retry' => []];
-		}
-		if (isset($response['sources_to_retry'])) {
-			if (!is_array($response['sources_to_retry'])) {
-				throw new RuntimeException('Error during request to Context Chat Backend (ExApp): Expected array value for sources_to_retry');
-			}
-		} else {
-			return ['loaded_sources' => $response['loaded_sources'], 'sources_to_retry' => []];
+		if (
+			!isset($response['loaded_sources']) || !is_array($response['loaded_sources'])
+			|| !isset($response['sources_to_retry']) || !is_array($response['sources_to_retry'])
+		) {
+			throw new RuntimeException('Error during request to Context Chat Backend (ExApp): Expected keys "loaded_sources" and "sources_to_retry" in response. Please upgrade the Context Chat Backend app to the latest version.');
 		}
 		return ['loaded_sources' => $response['loaded_sources'], 'sources_to_retry' => $response['sources_to_retry']];
 	}
