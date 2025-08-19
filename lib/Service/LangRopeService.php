@@ -183,8 +183,9 @@ class LangRopeService {
 	 */
 	public function getIndexedDocumentsCounts(): array {
 		$response = $this->requestToExApp('/countIndexedDocuments', 'POST');
-		if (!isset($response['files__default'])) {
-			return [];
+		if (!isset($response[ProviderConfigService::getDefaultProviderKey()])) {
+			throw new \RuntimeException("Malformed indexed documents count response from Context Chat Backend (ExApp): '"
+				. ProviderConfigService::getDefaultProviderKey() . "' key is missing");
 		}
 		return $response;
 	}

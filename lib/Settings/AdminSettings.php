@@ -55,7 +55,7 @@ class AdminSettings implements ISettings {
 			$this->logger->error($e->getMessage(), ['exception' => $e]);
 			$stats['eligible_files_count'] = 0;
 		}
-		$stats['indexed_files_count'] = Util::numericToNumber($this->appConfig->getAppValueString('indexed_files_count', '0'));
+		$stats['recorded_indexed_files_count'] = Util::numericToNumber($this->appConfig->getAppValueString('indexed_files_count', '0'));
 		try {
 			$stats['queued_actions_count'] = $this->actionService->count();
 		} catch (Exception $e) {
@@ -72,6 +72,7 @@ class AdminSettings implements ISettings {
 			$stats['vectordb_document_counts'] = $this->langRopeService->getIndexedDocumentsCounts();
 			$stats['backend_available'] = true;
 		} catch (\RuntimeException $e) {
+			$this->logger->error($e->getMessage(), ['exception' => $e]);
 			$stats['backend_available'] = false;
 			$stats['vectordb_document_counts'] = [ ProviderConfigService::getDefaultProviderKey() => 0 ];
 		}
