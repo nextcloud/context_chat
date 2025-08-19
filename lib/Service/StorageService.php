@@ -108,6 +108,8 @@ class StorageService {
 			$qb->andWhere($qb->expr()->eq('filecache.storage', $qb->createNamedParameter($storageId, IQueryBuilder::PARAM_INT)));
 			$qb
 				->andWhere($qb->expr()->like('filecache.path', $qb->createNamedParameter($path . '%')))
+				->andWhere($qb->expr()->notLike('filecache.path', $qb->createNamedParameter('files_versions/%')))
+				->andWhere($qb->expr()->notLike('filecache.path', $qb->createNamedParameter('files_trashbin/%')))
 				->andWhere($qb->expr()->eq('filecache.storage', $qb->createNamedParameter($storageId)))
 				->andWhere($qb->expr()->in('filecache.mimetype', $qb->createNamedParameter($mimeTypes, IQueryBuilder::PARAM_INT_ARRAY)))
 				->andWhere($qb->expr()->lte('filecache.size', $qb->createNamedParameter(Application::CC_MAX_SIZE, IQueryBuilder::PARAM_INT)))
