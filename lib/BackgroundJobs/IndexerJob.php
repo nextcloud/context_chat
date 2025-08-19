@@ -24,7 +24,6 @@ use OCP\AppFramework\Services\IAppConfig;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\IJobList;
 use OCP\BackgroundJob\TimedJob;
-use OCP\DB\Exception;
 use OCP\Files\Config\ICachedMountInfo;
 use OCP\Files\Config\IUserMountCache;
 use OCP\Files\File;
@@ -79,7 +78,7 @@ class IndexerJob extends TimedJob {
 	/**
 	 * @param array{storageId: int, rootId: int} $argument
 	 * @return void
-	 * @throws Exception
+	 * @throws \OCP\DB\Exception
 	 * @throws \ErrorException
 	 * @throws \Throwable
 	 */
@@ -98,7 +97,7 @@ class IndexerJob extends TimedJob {
 		$this->setInitialIndexCompletion();
 		try {
 			$files = $this->queue->getFromQueue($this->storageId, $this->rootId, $this->getBatchSize());
-		} catch (Exception $e) {
+		} catch (\OCP\DB\Exception $e) {
 			$this->logger->error('[IndexerJob] Cannot retrieve items from  queue', ['exception' => $e, 'storageId' => $this->storageId, 'rootId' => $this->rootId]);
 			return;
 		}
@@ -139,7 +138,7 @@ class IndexerJob extends TimedJob {
 			} elseif (count($files) === 0) {
 				$this->logger->debug('[IndexerJob] No files left in queue, but we keep the job around to wait for potential StorageCrawlJob instances to finish');
 			}
-		} catch (Exception $e) {
+		} catch (\OCP\DB\Exception $e) {
 			$this->logger->error('[IndexerJob] Cannot retrieve items from queue', ['exception' => $e, 'storageId' => $this->storageId, 'rootId' => $this->rootId]);
 		} catch (\Throwable $e) {
 			$this->logger->error('[IndexerJob] Failure during job run', ['exception' => $e, 'storageId' => $this->storageId, 'rootId' => $this->rootId]);
@@ -250,14 +249,11 @@ class IndexerJob extends TimedJob {
 					$this->logger->info('[IndexerJob] Indexed ' . count($loadSourcesResult['loaded_sources']) . ' files', [
 						'storageId' => $this->storageId,
 						'rootId' => $this->rootId,
-						'loadedSources' => json_encode($loadSourcesResult['loaded_sources']),
-						'sourcesToRetry' => json_encode($loadSourcesResult['sources_to_retry']),
+						'loadedSources' => $loadSourcesResult['loaded_sources'],
+						'sourcesToRetry' => $loadSourcesResult['sources_to_retry'],
 						'timeTaken' => time() - $innerStartTime,
 						'totalSize' => $size,
-						'sources' => json_encode(array_map(fn (Source $source) => [
-							'reference' => $source->reference,
-							'type' => $source->type,
-						], $sources)),
+						'sources' => $this->exportFileSources(array_map(fn (Source $source) => $source->reference, $sources)),
 					]);
 					// track sent files count
 					$this->diagnosticService->sendIndexedFiles(count($loadSourcesResult['loaded_sources']));
@@ -265,6 +261,15 @@ class IndexerJob extends TimedJob {
 					$sourcesToRetry = array_merge($sourcesToRetry, $loadSourcesResult['sources_to_retry']);
 				} catch (RetryIndexException $e) {
 					$this->logger->debug('At least one source is already being processed from another request, trying again soon', ['exception' => $e, 'storageId' => $this->storageId, 'rootId' => $this->rootId]);
+					$sourcesToRetry = array_merge($sourcesToRetry, array_map(fn (Source $source) => $source->reference, $sources));
+				} catch (\Exception $e) {
+					$this->logger->error('[IndexerJob] Error while indexing sources', [
+						'exception' => $e,
+						'storageId' => $this->storageId,
+						'rootId' => $this->rootId,
+						'sources' => $this->exportFileSources(array_map(fn (Source $source) => $source->reference, $sources)),
+					]);
+					// If we have an error, we retry all sources in the next run
 					$sourcesToRetry = array_merge($sourcesToRetry, array_map(fn (Source $source) => $source->reference, $sources));
 				} finally {
 					// reset buffer
@@ -295,21 +300,10 @@ class IndexerJob extends TimedJob {
 			'nFilesInvalidOrEmpty' => count($emptyInvalidSources),
 			'filesInvalidOrEmpty' => $this->exportFileSources($emptyInvalidSources),
 			'nRetryQFiles' => count($retryQFiles),
-			'retryQFiles' => $this->exportFileSources(array_map(fn (QueueFile $f) => $f->getFileId(), $retryQFiles)),
+			'retryQFiles' => $this->exportFileSources(
+				array_map(fn (QueueFile $f) => ProviderConfigService::getSourceId($f->getFileId()), $retryQFiles)
+			),
 		]);
-
-		if (count($emptyInvalidSources) > 0) {
-			$this->logger->info('[IndexerJob] Invalid or empty files that were not indexed (n=' . count($emptyInvalidSources) . ')', [
-				'storageId' => $this->storageId,
-				'rootId' => $this->rootId,
-			]);
-		}
-
-		if (count($sourcesToRetry) > 0) {
-			$this->logger->info('[IndexerJob] Files that were not indexed but will be retried (n=' . count($sourcesToRetry) . ')', [
-				'storageId' => $this->storageId, 'rootId' => $this->rootId,
-			]);
-		}
 
 		try {
 			$this->queue->removeFromQueue($visitedQFiles);
@@ -317,7 +311,7 @@ class IndexerJob extends TimedJob {
 			foreach ($retryQFiles as $queueFile) {
 				$this->queue->insertIntoQueue($queueFile);
 			}
-		} catch (Exception $e) {
+		} catch (\OCP\DB\Exception $e) {
 			$this->logger->error('[IndexerJob] Could not prepare file queue for next iteration',
 				['exception' => $e, 'storageId' => $this->storageId, 'rootId' => $this->rootId]);
 		}
@@ -356,8 +350,12 @@ class IndexerJob extends TimedJob {
 	}
 
 	private function exportFileSources(array $sources): array {
-		return array_map(function ($sourceId) {
-			$id = (int)(explode(' ', $sourceId)[1]);
+		$defaultProviderKey = ProviderConfigService::getDefaultProviderKey();
+		return array_map(function ($sourceId) use ($defaultProviderKey) {
+			$id = intval(ProviderConfigService::getItemId($sourceId, $defaultProviderKey));
+			if ($id === 0) {
+				return $sourceId . ': <not found>';
+			}
 			$node = $this->rootFolder->getFirstNodeById($id);
 			if ($node === null) {
 				return $id . ': <not found>';
