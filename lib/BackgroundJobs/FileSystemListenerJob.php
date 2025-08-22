@@ -71,65 +71,96 @@ class FileSystemListenerJob extends TimedJob {
 				return;
 			}
 
-			$eventsByUser = [];
+			$lastUserId = $fsEvents[0]->getUserId();
 			foreach ($fsEvents as $fsEvent) {
-				if (!isset($eventsByUser[$fsEvent->getUserId()])) {
-					$eventsByUser[$fsEvent->getUserId()] = [];
+				$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
+
+				// Tear down to avoid memory leaks and OOMs
+				// The fs event table is sorted by user ID, so we only need to tear down when the user ID changes
+				if ($fsEvent->getUserId() !== $lastUserId) {
+					$lastUserId = $fsEvent->getUserId();
+					$setupManager = \OCP\Server::get(SetupManager::class);
+					$setupManager->tearDown();
 				}
-				$eventsByUser[$fsEvent->getUserId()][] = $fsEvent;
-			}
 
-			foreach ($eventsByUser as $userId => $events) {
-				foreach ($events as $fsEvent) {
-					$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
-
-					try {
-						$node = current($this->rootFolder->getUserFolder($userId)->getById($fsEvent->getNodeId()));
-					} catch (\Exception $e) {
-						$this->logger->warning('Error retrieving node for fs event "' . $fsEvent->getType() . '": ' . $e->getMessage(), ['exception' => $e]);
-						$node = false;
-					}
-					if ($node === false) {
-						$this->logger->warning('Node with ID ' . $fsEvent->getNodeId() . ' not found for fs event "' . $fsEvent->getType() . '"');
-						try {
-							$this->fsEventMapper->delete($fsEvent);
-						} catch (Exception $e) {
-							$this->logger->warning('Error deleting fs event "' . $fsEvent->getType() . '": ' . $e->getMessage(), ['exception' => $e]);
-						}
-						continue;
-					}
-
-					try {
-						switch ($fsEvent->getTypeObject()) {
-							case FsEventType::CREATE:
-								$this->fsEventService->onInsert($node);
-								break;
-							case FsEventType::ACCESS_UPDATE_DECL:
-								$this->fsEventService->onAccessUpdateDecl($node);
-								break;
-						}
-						$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
-					} catch (\OCP\DB\Exception $e) {
-						$this->logger->warning('DB error encountered while handling fs event "' . $fsEvent->getType() . '": ' . $e->getMessage(), ['exception' => $e]);
-						if (in_array($e->getReason(), self::FATAL_DB_ERRORS, true)) {
-							$this->logger->error('Fatal DB error encountered while handling fs event "' . $fsEvent->getType() . '": ' . $e->getMessage(), ['exception' => $e]);
-							// Re-throw the exception to stop the job
-							throw $e;
-						}
-					} catch (\Throwable $e) {
-						$this->logger->warning('Error handling fs event "' . $fsEvent->getType() . '": ' . $e->getMessage(), ['exception' => $e]);
-					}
-
+				try {
+					$node = current($this->rootFolder->getUserFolder($fsEvent->getUserId())->getById($fsEvent->getNodeId()));
+				} catch (\Exception $e) {
+					$this->logger->warning('Error retrieving node for fs event' . $e->getMessage(), [
+						'exception' => $e,
+						'userId' => $fsEvent->getUserId(),
+						'nodeId' => $fsEvent->getNodeId(),
+						'type' => $fsEvent->getType(),
+					]);
+					$node = false;
+				}
+				if ($node === false) {
+					$this->logger->warning('Node with ID ' . $fsEvent->getNodeId() . ' not found for fs event "' . $fsEvent->getType() . '"', [
+						'userId' => $fsEvent->getUserId(),
+						'nodeId' => $fsEvent->getNodeId(),
+						'type' => $fsEvent->getType(),
+					]);
 					try {
 						$this->fsEventMapper->delete($fsEvent);
 					} catch (Exception $e) {
-						$this->logger->warning('Error deleting fs event "' . $fsEvent->getType() . '": ' . $e->getMessage(), ['exception' => $e]);
+						$this->logger->warning('Error deleting fs event' . $e->getMessage(), [
+							'exception' => $e,
+							'userId' => $fsEvent->getUserId(),
+							'nodeId' => $fsEvent->getNodeId(),
+							'type' => $fsEvent->getType(),
+						]);
 					}
+					continue;
 				}
 
-				// Tear down to avoid memory leaks
-				$setupManager = \OCP\Server::get(SetupManager::class);
-				$setupManager->tearDown();
+				try {
+					switch ($fsEvent->getTypeObject()) {
+						case FsEventType::CREATE:
+							$this->fsEventService->onInsert($node);
+							break;
+						case FsEventType::ACCESS_UPDATE_DECL:
+							$this->fsEventService->onAccessUpdateDecl($node);
+							break;
+					}
+					$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
+				} catch (\OCP\DB\Exception $e) {
+					$this->logger->warning('DB error encountered while handling fs event' . $e->getMessage(), [
+						'exception' => $e,
+						'userId' => $fsEvent->getUserId(),
+						'nodeId' => $fsEvent->getNodeId(),
+						'type' => $fsEvent->getType(),
+					]);
+					if (in_array($e->getReason(), self::FATAL_DB_ERRORS, true)) {
+						$this->logger->error('Fatal DB error encountered while handling fs event' . $e->getMessage());
+						// Re-throw the exception to stop the job
+						throw $e;
+					}
+				} catch (\Throwable $e) {
+					$this->logger->warning('Error handling fs event' . $e->getMessage(), [
+						'exception' => $e,
+						'userId' => $fsEvent->getUserId(),
+						'nodeId' => $fsEvent->getNodeId(),
+						'type' => $fsEvent->getType(),
+					]);
+				}
+
+				try {
+					$this->fsEventMapper->deleteAllMatches($fsEvent);
+				} catch (\OCP\DB\Exception $e) {
+					$this->logger->warning('DB error encountered while deleting fs event' . $e->getMessage(), [
+						'exception' => $e,
+						'userId' => $fsEvent->getUserId(),
+						'nodeId' => $fsEvent->getNodeId(),
+						'type' => $fsEvent->getType(),
+					]);
+					if (in_array($e->getReason(), self::FATAL_DB_ERRORS, true)) {
+						$this->logger->error('Fatal DB error encountered while deleting fs event' . $e->getMessage());
+						// Re-throw the exception to stop the job
+						throw $e;
+					}
+				} catch (\Throwable) {
+					// logged in FsEventMapper
+				}
 			}
 		} finally {
 			$this->diagnosticService->sendJobEnd(static::class, $this->getId());
