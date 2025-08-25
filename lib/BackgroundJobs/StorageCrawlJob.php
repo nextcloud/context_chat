@@ -55,7 +55,8 @@ class StorageCrawlJob extends QueuedJob {
 			$this->diagnosticService->sendJobStart(static::class, $this->getId());
 			$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
 
-			$i = 0;
+			$mountFilesCount = 0;
+			$lastSuccessfulFileId = -1;
 			foreach ($this->storageService->getFilesInMount($storageId, $overrideRoot ?? $rootId, $lastFileId, self::BATCH_SIZE) as $fileId) {
 				$queueFile = new QueueFile();
 				$queueFile->setStorageId($storageId);
@@ -65,7 +66,7 @@ class StorageCrawlJob extends QueuedJob {
 				$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
 				try {
 					$this->queue->insertIntoQueue($queueFile);
-					$i++;
+					$lastSuccessfulFileId = $fileId;
 				} catch (Exception $e) {
 					$this->logger->error('[StorageCrawlJob] Failed to add file to queue', [
 						'fileId' => $fileId,
@@ -76,9 +77,10 @@ class StorageCrawlJob extends QueuedJob {
 						'last_file_id' => $lastFileId
 					]);
 				}
+				$mountFilesCount++;
 			}
 
-			if ($i > 0) {
+			if ($mountFilesCount > 0) {
 				// Schedule next iteration after 5 minutes
 				$this->jobList->scheduleAfter(self::class, $this->time->getTime() + $this->getJobInterval(), [
 					'storage_id' => $storageId,
@@ -87,8 +89,10 @@ class StorageCrawlJob extends QueuedJob {
 					'last_file_id' => $queueFile->getFileId(),
 				]);
 
-				// the last job to set this value will win
-				$this->appConfig->setValueInt(Application::APP_ID, 'last_indexed_file_id', $queueFile->getFileId());
+				if ($lastSuccessfulFileId !== -1) {
+					// the last job to set this value will win
+					$this->appConfig->setValueInt(Application::APP_ID, 'last_indexed_file_id', $lastSuccessfulFileId);
+				}
 			}
 		} finally {
 			$this->diagnosticService->sendJobEnd(static::class, $this->getId());
