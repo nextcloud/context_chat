@@ -7,7 +7,6 @@
 
 namespace OCA\ContextChat\Service;
 
-use OCA\ContextChat\Db\FsEvent;
 use OCA\ContextChat\Db\FsEventMapper;
 use OCA\ContextChat\Type\FsEventType;
 use OCP\BackgroundJob\IJobList;
@@ -27,13 +26,17 @@ class FsEventScheduler {
 	}
 
 	/**
-	 * @throws Exception
+	 * @throws NotFoundException
 	 */
 	private function getOwnerIdForNode(Node $node): string {
 		if ($node->getOwner()) {
 			return $node->getOwner()->getUID();
 		}
-		$ownerId = $this->storageService->getOwnerForFileId($node->getId());
+		try {
+			$ownerId = $this->storageService->getOwnerForFileId($node->getId());
+		} catch (InvalidPathException|NotFoundException $e) {
+			throw new NotFoundException('Cannot get owner for node ID ' . $node->getId(), previous: $e);
+		}
 		if ($ownerId !== false) {
 			return $ownerId;
 		}
@@ -44,20 +47,15 @@ class FsEventScheduler {
 	 * @throws Exception
 	 */
 	private function scheduleEvent(FsEventType $type, string $userId, int $nodeId): void {
-		$item = new FsEvent();
-		$item->setUserId($userId);
-		$item->setType($type->value);
-		$item->setNodeId($nodeId);
-
 		// do not catch DB exceptions
-		$this->fsEventMapper->insert($item);
+		$this->fsEventMapper->insertRow($type->value, $userId, $nodeId);
 	}
 
 	/**
 	 * @throws Exception
 	 */
 	private function retractEvent(FsEventType $type, string $ownerId, int $nodeId) {
-		$this->fsEventMapper->deleteByContent($type, $ownerId, $nodeId);
+		$this->fsEventMapper->deleteByContent($type->value, $ownerId, $nodeId);
 	}
 
 	/**

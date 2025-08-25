@@ -183,8 +183,13 @@ class LangRopeService {
 	 */
 	public function getIndexedDocumentsCounts(): array {
 		$response = $this->requestToExApp('/countIndexedDocuments', 'POST');
-		if (!isset($response['files__default'])) {
+		if ($response === []) {
+			// No documents indexed yet
 			return [];
+		}
+		if (!isset($response[ProviderConfigService::getDefaultProviderKey()])) {
+			throw new \RuntimeException("Malformed indexed documents count response from Context Chat Backend (ExApp): '"
+				. ProviderConfigService::getDefaultProviderKey() . "' key is missing, response: " . strval(json_encode($response)));
 		}
 		return $response;
 	}
@@ -297,15 +302,11 @@ class LangRopeService {
 		}, $sources);
 
 		$response = $this->requestToExApp('/loadSources', 'PUT', $params, 'multipart/form-data');
-		if (!isset($response['loaded_sources'])) {
-			return ['loaded_sources' => [], 'sources_to_retry' => []];
-		}
-		if (isset($response['sources_to_retry'])) {
-			if (!is_array($response['sources_to_retry'])) {
-				throw new RuntimeException('Error during request to Context Chat Backend (ExApp): Expected array value for sources_to_retry');
-			}
-		} else {
-			return ['loaded_sources' => $response['loaded_sources'], 'sources_to_retry' => []];
+		if (
+			!isset($response['loaded_sources']) || !is_array($response['loaded_sources'])
+			|| !isset($response['sources_to_retry']) || !is_array($response['sources_to_retry'])
+		) {
+			throw new RuntimeException('Error during request to Context Chat Backend (ExApp): Expected keys "loaded_sources" and "sources_to_retry" in response. Please upgrade the Context Chat Backend app to the latest version.');
 		}
 		return ['loaded_sources' => $response['loaded_sources'], 'sources_to_retry' => $response['sources_to_retry']];
 	}
