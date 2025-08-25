@@ -264,9 +264,9 @@ jobs:
 
       - name: Run the prompts
         run: |
-          ./occ background-job:worker 'OC\TaskProcessing\SynchronousBackgroundJob' &
+          ./occ background-job:worker -v 'OC\TaskProcessing\SynchronousBackgroundJob' &
           WORKER1_PID=$!
-          ./occ background-job:worker 'OC\TaskProcessing\SynchronousBackgroundJob' &
+          ./occ background-job:worker -v 'OC\TaskProcessing\SynchronousBackgroundJob' &
           WORKER2_PID=$!
           OUT1=$(./occ context_chat:prompt admin "Which factors are taken into account for the Ethical AI Rating?")
           echo "$OUT1"
@@ -596,9 +596,9 @@ jobs:
 
       - name: Run the prompts
         run: |
-          ./occ background-job:worker 'OC\TaskProcessing\SynchronousBackgroundJob' &
+          ./occ background-job:worker -v 'OC\TaskProcessing\SynchronousBackgroundJob' &
           WORKER1_PID=$!
-          ./occ background-job:worker 'OC\TaskProcessing\SynchronousBackgroundJob' &
+          ./occ background-job:worker -v 'OC\TaskProcessing\SynchronousBackgroundJob' &
           WORKER2_PID=$!
           OUT1=$(./occ context_chat:prompt admin "Which factors are taken into account for the Ethical AI Rating?")
           echo "$OUT1"
@@ -918,9 +918,9 @@ jobs:
 
       - name: Run the prompts
         run: |
-          ./occ background-job:worker 'OC\TaskProcessing\SynchronousBackgroundJob' &
+          ./occ background-job:worker -v 'OC\TaskProcessing\SynchronousBackgroundJob' &
           WORKER1_PID=$!
-          ./occ background-job:worker 'OC\TaskProcessing\SynchronousBackgroundJob' &
+          ./occ background-job:worker -v 'OC\TaskProcessing\SynchronousBackgroundJob' &
           WORKER2_PID=$!
           set +e
           
@@ -998,9 +998,9 @@ jobs:
 
       - name: Run the prompts again
         run: |
-          ./occ background-job:worker 'OC\TaskProcessing\SynchronousBackgroundJob' &
+          ./occ background-job:worker -v 'OC\TaskProcessing\SynchronousBackgroundJob' &
           WORKER1_PID=$!
-          ./occ background-job:worker 'OC\TaskProcessing\SynchronousBackgroundJob' &
+          ./occ background-job:worker -v 'OC\TaskProcessing\SynchronousBackgroundJob' &
           WORKER2_PID=$!
           
           set +e
