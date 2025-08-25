@@ -324,7 +324,7 @@ class IndexerJob extends TimedJob {
 		try {
 			$queuedNewFilesCount = $this->queue->countNewFiles();
 		} catch (\OCP\DB\Exception $e) {
-			$this->logger->warning('Could not count indexed files', ['exception' => $e]);
+			$this->logger->warning('Could not count queued new files', ['exception' => $e]);
 			return;
 		}
 		$crawlJobCount = $this->getJobCount(StorageCrawlJob::class);
