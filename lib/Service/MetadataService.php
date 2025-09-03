@@ -100,17 +100,27 @@ class MetadataService {
 		$userFolder = $this->rootFolder->getUserFolder($userId);
 		$nodes = $userFolder->getById(intval($id));
 		if (count($nodes) < 1) {
-			throw new \InvalidArgumentException("Invalid node id $id");
+			// show a deleted file icon instead of failing the entire request
+			return [
+				'id' => $sourceId,
+				'label' => $this->l10n->t('Deleted file'),
+				'icon' => $this->urlGenerator->getAbsoluteURL($this->urlGenerator->imagePath('core', 'filetypes/file.svg')),
+				'url' => $this->urlGenerator->linkToRouteAbsolute('files.View.showFile', ['fileid' => $id]),
+			];
 		}
 
+		$user = $this->userManager->get($userId);
+		$assistantEnabled = $this->appManager->isEnabledForUser('assistant', $user);
 		$node = $nodes[0];
 		return [
 			'id' => $sourceId,
 			'label' => $node->getName(),
 			'icon' => $node->getType() == FileInfo::TYPE_FOLDER
-				// ? $this->urlGenerator->getAbsoluteURL($this->urlGenerator->linkToRoute('/apps/theming/img/core/filetypes/folder.svg')
-				? $this->urlGenerator->getAbsoluteURL($this->urlGenerator->imagePath('core', 'folder.svg'))
-				: $this->urlGenerator->linkToRouteAbsolute('assistant.preview.getFileImage', ['id' => $id, 'x' => 24, 'y' => 24]),
+				?  $this->urlGenerator->getAbsoluteURL($this->urlGenerator->imagePath('core', 'filetypes/folder.svg'))
+				: ($assistantEnabled
+					?  $this->urlGenerator->linkToRouteAbsolute('assistant.preview.getFileImage', ['id' => $id, 'x' => 24, 'y' => 24])
+					: $this->urlGenerator->getAbsoluteURL($this->urlGenerator->imagePath('core', 'filetypes/file.svg'))
+				),
 			'url' => $this->urlGenerator->linkToRouteAbsolute('files.View.showFile', ['fileid' => $id]),
 		];
 	}
