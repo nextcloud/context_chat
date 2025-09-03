@@ -290,6 +290,7 @@ class IndexerJob extends TimedJob {
 			'storageId' => $this->storageId,
 			'rootId' => $this->rootId,
 			'nFilesProcessed' => count($files),
+			'nFilesEligible' => count($allSourceIds),
 			'nFilesLoaded' => count($loadedSources),
 			'nFilesToRetry' => count($sourcesToRetry),
 			'nFilesInvalidOrEmpty' => count($emptyInvalidSources),
@@ -297,6 +298,7 @@ class IndexerJob extends TimedJob {
 			'filesProcessed' => $this->exportFileSources(
 				array_map(fn (QueueFile $f) => ProviderConfigService::getSourceId($f->getFileId()), $files)
 			),
+			'filesEligible' => $this->exportFileSources($allSourceIds),
 			'filesLoaded' => $this->exportFileSources($loadedSources),
 			'filesToRetry' => $this->exportFileSources($sourcesToRetry),
 			'filesInvalidOrEmpty' => $this->exportFileSources($emptyInvalidSources),
