@@ -10,8 +10,10 @@ declare(strict_types=1);
 namespace OCA\ContextChat\Repair;
 
 use OCA\ContextChat\AppInfo\Application;
+use OCA\ContextChat\BackgroundJobs\SchedulerJob;
 use OCA\ContextChat\Logger;
 use OCA\ContextChat\Service\ProviderConfigService;
+use OCP\BackgroundJob\IJobList;
 use OCP\IAppConfig;
 use OCP\IConfig;
 use OCP\Migration\IOutput;
@@ -23,6 +25,7 @@ class AppInstallStep implements IRepairStep {
 		private Logger $logger,
 		private IAppConfig $appConfig,
 		private IConfig $config,
+		private IJobList $jobList,
 	) {
 	}
 
@@ -43,5 +46,7 @@ class AppInstallStep implements IRepairStep {
 		$providerConfigService = new ProviderConfigService($this->config);
 		/** @psalm-suppress ArgumentTypeCoercion, UndefinedClass  */
 		$providerConfigService->updateProvider('files', 'default', '', true);
+
+		$this->jobList->add(SchedulerJob::class);
 	}
 }
