@@ -10,6 +10,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [4.5.0-beta.1] - 2025-09-09
+
+### Fixed
+* handle files deleted in NC but not in CCB (#169) @kyteinsky
+* Don't trigger a reindex on app update (#170) @marcelklehr
+
+
 ## [4.5.0-beta.0] - 2025-08-29
 
 ### Added
