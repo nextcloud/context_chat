@@ -233,7 +233,7 @@ class IndexerJob extends TimedJob {
 			$sources[] = new Source(
 				$userIds,
 				ProviderConfigService::getSourceId($file->getId()),
-				$file->getInternalPath(),
+				$file->getInternalPath() ?: $file->getPath() ?: $file->getName(),
 				$fileHandle,
 				$file->getMtime(),
 				$file->getMimeType(),
