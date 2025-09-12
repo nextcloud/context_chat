@@ -10,6 +10,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+
+## [4.5.0-beta.2] - 2025-09-12
+
+### Changed
+* bump max NC version to 33
+
+### Fixed
+* fallback for empty file paths in Source construction (#172) @kyteinsky
+
+
 ## [4.5.0-beta.1] - 2025-09-09
 
 ### Fixed
