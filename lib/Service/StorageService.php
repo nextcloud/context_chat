@@ -18,7 +18,6 @@ use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\Files\Cache\IFileAccess;
 use OCP\Files\Config\ICachedMountInfo;
 use OCP\Files\Config\IUserMountCache;
-use OCP\Files\File;
 use OCP\Files\Folder;
 use OCP\Files\IMimeTypeLoader;
 use OCP\Files\IRootFolder;
@@ -51,7 +50,7 @@ class StorageService {
 	}
 
 	/**
-	 * @throws Exception
+	 * @throws \OCP\DB\Exception
 	 */
 	public function countFiles(): int {
 		$totalCount = 0;
