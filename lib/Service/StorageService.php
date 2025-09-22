@@ -13,7 +13,7 @@ namespace OCA\ContextChat\Service;
 use OC\Files\Cache\CacheQueryBuilder;
 use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\Logger;
-use OCP\DB\Exception;
+use OCP\DB\Exception as DBException;
 use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\Files\Cache\IFileAccess;
 use OCP\Files\Config\ICachedMountInfo;
@@ -50,7 +50,7 @@ class StorageService {
 	}
 
 	/**
-	 * @throws \OCP\DB\Exception
+	 * @throws DBException
 	 */
 	public function countFiles(): int {
 		$totalCount = 0;
@@ -74,7 +74,7 @@ class StorageService {
 			/** @var array{path:string}|false $root */
 			$root = $result->fetch();
 			$result->closeCursor();
-		} catch (Exception $e) {
+		} catch (DBException $e) {
 			$this->logger->error('Could not fetch storage root', ['exception' => $e]);
 			return 0;
 		}
@@ -114,7 +114,7 @@ class StorageService {
 				->andWhere($qb->expr()->lte('filecache.size', $qb->createNamedParameter(Application::CC_MAX_SIZE, IQueryBuilder::PARAM_INT)))
 				->andWhere($qb->expr()->gt('filecache.size', $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT)));
 			$result = $qb->executeQuery();
-		} catch (Exception $e) {
+		} catch (DBException $e) {
 			$this->logger->error('Could not count files in mount: storage=' . $storageId . ' root=' . $rootId, ['exception' => $e]);
 			return 0;
 		}
@@ -135,7 +135,7 @@ class StorageService {
 
 	/**
 	 * @return \Generator<array{root_id: int, overridden_root: int, storage_id: int}>
-	 * @throws \OCP\DB\Exception
+	 * @throws DBException
 	 */
 	public function getMounts(): \Generator {
 		if (!$this->isFileAccessAvailable()) {
@@ -147,7 +147,7 @@ class StorageService {
 
 	/**
 	 * @return \Generator<array{root_id: int, overridden_root: int, storage_id: int}>
-	 * @throws \OCP\DB\Exception
+	 * @throws DBException
 	 */
 	private function getMountsOld(): \Generator {
 		$qb = $this->db->getQueryBuilder();
@@ -180,7 +180,7 @@ class StorageService {
 					if ($root !== false) {
 						$overrideRoot = (int)$root['fileid'];
 					}
-				} catch (Exception $e) {
+				} catch (DBException $e) {
 					$this->logger->error('Could not fetch home storage files root for storage ' . $storageId, ['exception' => $e]);
 					continue;
 				}
@@ -239,7 +239,7 @@ class StorageService {
 			/** @var array{path:string}|false $root */
 			$root = $result->fetch();
 			$result->closeCursor();
-		} catch (Exception $e) {
+		} catch (DBException $e) {
 			$this->logger->error('Could not fetch storage root', ['exception' => $e]);
 			return;
 		}
@@ -279,7 +279,7 @@ class StorageService {
 			}
 			$files = $qb->orderBy('filecache.fileid', 'ASC')
 				->executeQuery();
-		} catch (Exception $e) {
+		} catch (DBException $e) {
 			$this->logger->error('Could not fetch files', ['exception' => $e]);
 			return;
 		}
