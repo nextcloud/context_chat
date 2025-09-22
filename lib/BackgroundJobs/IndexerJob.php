@@ -47,6 +47,7 @@ class IndexerJob extends TimedJob {
 
 	public const DEFAULT_JOB_INTERVAL = 30 * 60;
 	public const DEFAULT_MAX_INDEXING_TIME = 30 * 60;
+	private const INDEX_COMPLETION_THRESHOLD = 0.02; // 2%
 
 	// Assuming a backend capacity of 50 files per minute we can send 1500 files in half an hour
 	// Specifying a higher number here will still be overruled by the max indexing time
@@ -325,15 +326,21 @@ class IndexerJob extends TimedJob {
 		}
 		try {
 			$queuedNewFilesCount = $this->queue->countNewFiles();
+			$eligibleFilesCount = $this->storageService->countFiles();
+			// if the new files in the queue are less than 2% of the total eligible files, we consider the
+			// initial indexing complete this allows for some margin of error in case some files were
+			// added while we were indexing but still ensures that we have indexed the vast majority of
+			// files at least once
+			$thresholdCount = (float)$eligibleFilesCount * self::INDEX_COMPLETION_THRESHOLD;
 		} catch (\OCP\DB\Exception $e) {
-			$this->logger->warning('Could not count queued new files', ['exception' => $e]);
+			$this->logger->warning('Could not count queued new files or total eligible files', ['exception' => $e]);
 			return;
 		}
 		$crawlJobCount = $this->getJobCount(StorageCrawlJob::class);
 
 		// if any storage crawler jobs are still running or there are still new files in the queue,
 		// we are still indexing files that were never indexed before.
-		if ($crawlJobCount > 0 || $queuedNewFilesCount > 0) {
+		if ($crawlJobCount > 0 || $queuedNewFilesCount > $thresholdCount) {
 			return;
 		}
 
