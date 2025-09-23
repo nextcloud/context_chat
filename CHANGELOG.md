@@ -11,6 +11,48 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 
+## [4.5.0] - 2025-09-23
+
+### Changed
+* stable release of the 4.5.0-beta series
+* bump max NC version to 33
+* perf: Schedule deletion in chunks + Don't create Node objects in a loop (#159) @marcelklehr
+* chore(settings): Move settings into assistant section (#162) @lukasdotcom
+* tests: background-job:worker -vv (#161) @marcelklehr
+
+### Fixed
+* fallback for empty file paths in Source construction (#172) @kyteinsky
+* handle files deleted in NC but not in CCB (#169) @kyteinsky
+* Don't trigger a reindex on app update (#170) @marcelklehr
+* fix(makefile): Don't add stubs directory to release (#160) @marcelklehr
+* fix(QueueMappers): Ensure the queues are FIFO, prioritize (#161) @marcelklehr
+* fix: improve error handling (#161) @marcelklehr
+* fix(FsEventMapper): Prevent inserting duplicates (#161) @marcelklehr
+* fix(FileSystemListenerJob): Prevent OOM by working per user and tearing down FS in between (#161) @marcelklehr
+* fix(FileSystemListenerJob) Use SetupManager to tear down fs (#161) @marcelklehr
+* fix: Add RemoveDuplicateFsEvents repair step (#161) @marcelklehr
+* tests: Kill workers manually after each test case (#161) @marcelklehr
+* fix: Add comments to RemoveDuplicateFsEvents (#161) @marcelklehr
+* fix(IndexerJob): Make sure too large files are removed from queue (#161) @marcelklehr
+* fix(REUSE): Add copyright to psalm-baseline.xml (#161) @marcelklehr
+* fix: consider only new files for first indexing complete check (#161) @kyteinsky
+* wrap remove duplicate fs events db query in a transaction (#161) @kyteinsky
+* fix: adjustments to admin stats page (#161) @kyteinsky
+* fix: remove unopenable files from queue + add more logs (#161) @kyteinsky
+* fix: exclude trashbin and versions from total file estimate (#161) @kyteinsky
+* fix: improve logging and exception handling (#161) @kyteinsky
+* fix: handle empty list returned in ccb doc count (#161) @kyteinsky
+* fix: better db error handling in fs listener job (#161) @kyteinsky
+* do not deduplicate the fs events table at once (#161) @kyteinsky
+* fix: progressive de-duplication instead of all at once (#161) @kyteinsky
+* fix(IndexerJob): Fix warning message (#161) @marcelklehr
+* fix: only set last_indexed_file_id for the last successful file (#161) @kyteinsky
+* fix: Use MissingIndicesEvent instead of migration (#1661) @marcelklehr
+
+### Added
+* feat: Add stats entry for queued unseen files (#161) @marcelklehr
+
+
 ## [4.5.0-beta.2] - 2025-09-12
 
 ### Changed
