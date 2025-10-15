@@ -29,15 +29,14 @@ jobs:
       # do not stop on another job's failure
       fail-fast: false
       matrix:
-        php-versions: [ '8.1' ]
+        php-versions: [ '8.1', '8.2' ]
         databases: [ 'pgsql' ]
         server-versions: [ 'stable32', 'master' ]
         encryption: ['on', 'off']
         exclude:
-          - server-versions: stable32
+          - server-versions: master
             databases: pgsql
             php-versions: 8.1
-            encryption: on
 
     name: Integration test ☁️${{ matrix.server-versions }} 🐘${{ matrix.php-versions }} 🔐:${{ matrix.encryption }}
 
@@ -336,15 +335,14 @@ jobs:
       # do not stop on another job's failure
       fail-fast: false
       matrix:
-        php-versions: [ '8.1' ]
+        php-versions: [ '8.1', '8.2' ]
         databases: [ 'pgsql' ]
         server-versions: [ 'stable32', 'master' ]
         encryption: ['on', 'off']
         exclude:
-          - server-versions: stable32
+          - server-versions: master
             databases: pgsql
             php-versions: 8.1
-            encryption: on
 
     name: Integration test with cron ☁️${{ matrix.server-versions }} 🐘${{ matrix.php-versions }} 🔐:${{ matrix.encryption }}
 
@@ -633,22 +631,18 @@ jobs:
       # do not stop on another job's failure
       fail-fast: false
       matrix:
-        php-versions: [ '8.1' ]
+        php-versions: [ '8.1', '8.2' ]
         databases: [ 'pgsql' ]
         server-versions: [ 'stable32', 'master' ]
         encryption: ['on', 'off']
         file-deletion-method: [ 'occ', 'os' ]
         exclude:
-          - server-versions: stable32
-            file-deletion-method: os
+          - server-versions: master
             databases: pgsql
             php-versions: 8.1
-            encryption: on
-          - server-versions: stable32
-            file-deletion-method: os
+          - server-versions: master
             databases: pgsql
             php-versions: 8.1
-            encryption: off
 
 
     name: Integration test with file listener ☁️${{ matrix.server-versions }} 🐘${{ matrix.php-versions }} 🗑️${{ matrix.file-deletion-method }} 🔐:${{ matrix.encryption }}
