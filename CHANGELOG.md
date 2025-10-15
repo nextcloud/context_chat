@@ -10,6 +10,23 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [5.0.0] - 2025-10-15
+
+The public Content Manager API has been replaced and extended with the OCP API.
+For more details, see the [Nextcloud developer documentation](https://docs.nextcloud.com/server/latest/developer_manual/digging_deeper/context_chat.html).
+
+### Changed
+* extend OCP API for public classes (#139) @edward-ly
+* bump minimum Nextcloud version to 32 (#139) @edward-ly
+* composer update (#184) @kyteinsky
+
+### Added
+* add isContextChatAvailable method to ContentManager (#139) @edward-ly
+* add public API change notice (#139) @edward-ly
+
+### Fixed
+* update docblock parameter types (#139) @edward-ly
+
 
 ## [4.5.0] - 2025-09-23
 
