@@ -1,55 +1,55 @@
 {
-	"name": "context_chat",
-	"version": "1.0.0",
-	"description": "ContextChat",
-	"main": "index.js",
-	"directories": {
-		"test": "tests"
-	},
-	"scripts": {
-		"build": "NODE_ENV=production vite --mode production build",
-		"dev": "NODE_ENV=development vite --mode development build",
-		"watch": "NODE_ENV=development vite --mode development build --watch",
-		"lint": "eslint --ext .js,.vue src",
-		"lint:fix": "eslint --ext .js,.vue src --fix",
-		"stylelint": "stylelint src/**/*.vue src/**/*.scss src/**/*.css",
-		"stylelint:fix": "stylelint src/**/*.vue src/**/*.scss src/**/*.css --fix"
-	},
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/nextcloud/context_chat"
-	},
-	"keywords": [
-		"ai"
-	],
-	"author": "Julien Veyssier",
-	"license": "AGPL-3.0-or-later",
-	"bugs": {
-		"url": "https://github.com/nextcloud/context_chat/issues"
-	},
-	"homepage": "https://github.com/nextcloud/context_chat",
-	"browserslist": [
-		"extends @nextcloud/browserslist-config"
-	],
-	"engines": {
-		"node": "^22",
-		"npm": "^10"
-	},
-	"type": "module",
-	"dependencies": {
-		"@nextcloud/initial-state": "^2.2.0",
-		"@nextcloud/router": "^3.0.1",
-		"@nextcloud/vue": "^9.0.0-rc.9",
-		"humanize-duration": "^3.32.1",
-		"vue": "^3.5.17"
-	},
-	"devDependencies": {
-		"@nextcloud/babel-config": "^1.2.0",
-		"@nextcloud/browserslist-config": "^3.0.1",
-		"@nextcloud/eslint-config": "^8.4.2",
-		"@nextcloud/stylelint-config": "^3.1.0",
-		"@nextcloud/vite-config": "^2.3.5",
-		"vite-plugin-eslint": "^1.8.1",
-		"vite-plugin-stylelint": "^6.0.0"
-	}
+  "name": "context_chat",
+  "version": "1.0.0",
+  "description": "ContextChat",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "build": "NODE_ENV=production vite --mode production build",
+    "dev": "NODE_ENV=development vite --mode development build",
+    "watch": "NODE_ENV=development vite --mode development build --watch",
+    "lint": "eslint --ext .js,.vue src",
+    "lint:fix": "eslint --ext .js,.vue src --fix",
+    "stylelint": "stylelint src/**/*.vue src/**/*.scss src/**/*.css",
+    "stylelint:fix": "stylelint src/**/*.vue src/**/*.scss src/**/*.css --fix"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nextcloud/context_chat"
+  },
+  "keywords": [
+    "ai"
+  ],
+  "author": "Julien Veyssier",
+  "license": "AGPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/nextcloud/context_chat/issues"
+  },
+  "homepage": "https://github.com/nextcloud/context_chat",
+  "browserslist": [
+    "extends @nextcloud/browserslist-config"
+  ],
+  "engines": {
+    "node": "^24.0.0",
+    "npm": "^11.3.0"
+  },
+  "type": "module",
+  "dependencies": {
+    "@nextcloud/initial-state": "^2.2.0",
+    "@nextcloud/router": "^3.0.1",
+    "@nextcloud/vue": "^9.0.0-rc.9",
+    "humanize-duration": "^3.32.1",
+    "vue": "^3.5.17"
+  },
+  "devDependencies": {
+    "@nextcloud/babel-config": "^1.2.0",
+    "@nextcloud/browserslist-config": "^3.0.1",
+    "@nextcloud/eslint-config": "^8.4.2",
+    "@nextcloud/stylelint-config": "^3.1.0",
+    "@nextcloud/vite-config": "^2.3.5",
+    "vite-plugin-eslint": "^1.8.1",
+    "vite-plugin-stylelint": "^6.0.0"
+  }
 }
