@@ -1,0 +1,6 @@
+{ "translations": {
+    "Prompt" : "Προτροπή",
+    "Sources" : "Πηγές",
+    "Generated response" : "Δημιουργημένη απάντηση"
+},"pluralForm" :"nplurals=2; plural=(n != 1);"
+}

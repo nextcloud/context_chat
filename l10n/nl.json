@@ -1,0 +1,9 @@
+{ "translations": {
+    "Prompt" : "Prompt",
+    "Sources" : "Bronnen",
+    "Context Chat" : "Context Chat",
+    "Generated response" : "Gegenereerd antwoord",
+    "never" : "geen",
+    "{time} ago" : "{time} geleden"
+},"pluralForm" :"nplurals=2; plural=(n != 1);"
+}

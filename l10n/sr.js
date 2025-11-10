@@ -1,0 +1,12 @@
+OC.L10N.register(
+    "context_chat",
+    {
+    "Prompt" : "Захтев за унос",
+    "Sources" : "Извори",
+    "Context Chat" : "Контекст чет",
+    "Ask a question about your data." : "Поставља питање у вези са вашим подацима.",
+    "Generated response" : "Генерисани одговор",
+    "never" : "никад",
+    "{time} ago" : "Пре {time}"
+},
+"nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);");

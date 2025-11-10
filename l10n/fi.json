@@ -1,0 +1,6 @@
+{ "translations": {
+    "Prompt" : "Kehote",
+    "Sources" : "Lähteet",
+    "Generated response" : "Luotu vastaus"
+},"pluralForm" :"nplurals=2; plural=(n != 1);"
+}

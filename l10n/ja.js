@@ -1,0 +1,10 @@
+OC.L10N.register(
+    "context_chat",
+    {
+    "Prompt" : "プロンプト",
+    "Sources" : "ソース",
+    "Ask a question about your data." : "データについて質問する。",
+    "Generated response" : "生成された応答",
+    "{time} ago" : "{time} 前"
+},
+"nplurals=1; plural=0;");
