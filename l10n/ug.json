@@ -1,0 +1,7 @@
+{ "translations": {
+    "Prompt" : "تېز",
+    "Sources" : "مەنبە",
+    "never" : "ھەرگىز",
+    "{time} ago" : "{time} ago"
+},"pluralForm" :"nplurals=2; plural=(n != 1);"
+}

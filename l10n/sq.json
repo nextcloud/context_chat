@@ -1,0 +1,5 @@
+{ "translations": {
+    "never" : "kurrë",
+    "{time} ago" : "{time} më parë"
+},"pluralForm" :"nplurals=2; plural=(n != 1);"
+}

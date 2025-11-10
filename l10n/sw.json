@@ -1,0 +1,9 @@
+{ "translations": {
+    "Prompt" : "Haraka",
+    "Sources" : "Vyanzo",
+    "Context Chat" : "Gumzo la Muktadha",
+    "Ask a question about your data." : "Uliza swali kuhusu data yako.",
+    "Generated response" : "Jibu linalozalishwa",
+    "never" : "kamwe"
+},"pluralForm" :"nplurals=2; plural=(n != 1);"
+}

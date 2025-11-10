@@ -1,0 +1,7 @@
+{ "translations": {
+    "Prompt" : "Prompt",
+    "Sources" : "Sources",
+    "Ask a question about your data." : "Ask a question about your data.",
+    "Generated response" : "Generated response"
+},"pluralForm" :"nplurals=2; plural=(n != 1);"
+}

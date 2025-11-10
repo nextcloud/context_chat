@@ -1,0 +1,6 @@
+{ "translations": {
+    "Prompt" : "Sisendvorm",
+    "Ask a question about your data." : "Küsi oma andmete kohta.",
+    "Generated response" : "Loodud vastus"
+},"pluralForm" :"nplurals=2; plural=(n != 1);"
+}

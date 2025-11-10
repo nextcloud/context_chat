@@ -1,0 +1,7 @@
+{ "translations": {
+    "Prompt" : "Indicación",
+    "Sources" : "Orixes",
+    "Ask a question about your data." : "Formule unha pregunta sobre os seus datos.",
+    "Generated response" : "Resposta xerada"
+},"pluralForm" :"nplurals=2; plural=(n != 1);"
+}
