@@ -3,7 +3,10 @@ OC.L10N.register(
     {
     "Prompt" : "Leid",
     "Sources" : "Foinsí",
+    "Context Chat" : "Comhrá Comhthéacs",
     "Ask a question about your data." : "Cuir ceist faoi do shonraí.",
-    "Generated response" : "Freagra ginte"
+    "Generated response" : "Freagra ginte",
+    "never" : "riamh",
+    "{time} ago" : "{time} ó shin"
 },
 "nplurals=5; plural=(n==1 ? 0 : n==2 ? 1 : n<7 ? 2 : n<11 ? 3 : 4);");

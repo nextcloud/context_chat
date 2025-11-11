@@ -1,7 +1,17 @@
 OC.L10N.register(
     "context_chat",
     {
+    "Deleted file" : "Datei löschen",
     "Prompt" : "Prompt",
-    "Sources" : "Quellen"
+    "Sources" : "Quellen",
+    "Context Chat" : "Kontext-Chat",
+    "Ask a question about your data." : "Stelle eine Frage zu deinen Daten.",
+    "Generated response" : "Erzeugte Antwort",
+    "never" : "nie",
+    "{time} ago" : "{time} her",
+    "({count} sent)" : "({count} gesendet)",
+    "Download Logs" : "Protokolldateien herunterladen",
+    "Official documentation" : "Offizielle Dokumentation",
+    "_({count} new file)_::_({count} new files)_" : ["({count} neue Datei)","({count} neue Dateien)"]
 },
 "nplurals=2; plural=(n != 1);");
