@@ -1,6 +1,8 @@
 { "translations": {
     "Prompt" : "Kehote",
     "Sources" : "Lähteet",
-    "Generated response" : "Luotu vastaus"
+    "Generated response" : "Luotu vastaus",
+    "never" : "ei koskaan",
+    "{time} ago" : "{time} sitten"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"
 }

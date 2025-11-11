@@ -3,6 +3,8 @@ OC.L10N.register(
     {
     "Prompt" : "درخواست",
     "Sources" : "منابع",
-    "Generated response" : "پاسخ تولید شده"
+    "Generated response" : "پاسخ تولید شده",
+    "never" : "هرگز",
+    "{time} ago" : "{time} قبل"
 },
 "nplurals=2; plural=(n > 1);");

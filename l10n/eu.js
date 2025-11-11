@@ -3,6 +3,8 @@ OC.L10N.register(
     {
     "Prompt" : "Galdera",
     "Sources" : "Iturriak",
-    "Generated response" : "Sortutako erantzuna"
+    "Generated response" : "Sortutako erantzuna",
+    "never" : "inoiz ez",
+    "{time} ago" : "Duela {time}"
 },
 "nplurals=2; plural=(n != 1);");

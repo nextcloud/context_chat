@@ -1,6 +1,15 @@
 { "translations": {
+    "Deleted file" : "Datei löschen",
     "Prompt" : "Prompt",
     "Sources" : "Quellen",
-    "Generated response" : "Erzeugte Antwort"
+    "Context Chat" : "Kontext-Chat",
+    "Ask a question about your data." : "Stellen Sie eine Frage zu Ihren Daten.",
+    "Generated response" : "Erzeugte Antwort",
+    "never" : "Niemals",
+    "{time} ago" : "{time} her",
+    "({count} sent)" : "({count} gesendet)",
+    "Download Logs" : "Protokolldateien herunterladen",
+    "Official documentation" : "Offizielle Dokumentation",
+    "_({count} new file)_::_({count} new files)_" : ["({count} neue Datei)","({count} neue Dateien)"]
 },"pluralForm" :"nplurals=2; plural=(n != 1);"
 }
