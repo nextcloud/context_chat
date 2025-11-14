@@ -15,11 +15,10 @@ use OCA\ContextChat\Service\DiagnosticService;
 use OCA\ContextChat\Service\LangRopeService;
 use OCA\ContextChat\Type\ActionType;
 use OCP\App\IAppManager;
+use OCP\AppFramework\Services\IAppConfig;
 use OCP\AppFramework\Utility\ITimeFactory;
-use OCP\BackgroundJob\IJobList;
 use OCP\BackgroundJob\TimedJob;
 use OCP\DB\Exception;
-use OCP\IConfig;
 
 class ActionJob extends TimedJob {
 	private const BATCH_SIZE = 1000;
@@ -28,11 +27,10 @@ class ActionJob extends TimedJob {
 		ITimeFactory $timeFactory,
 		private LangRopeService $networkService,
 		private QueueActionMapper $actionMapper,
-		private IJobList $jobList,
 		private Logger $logger,
 		private DiagnosticService $diagnosticService,
 		private IAppManager $appManager,
-		private IConfig $config,
+		private IAppConfig $appConfig,
 	) {
 		parent::__construct($timeFactory);
 		$this->setAllowParallelRuns(false);
@@ -40,11 +38,11 @@ class ActionJob extends TimedJob {
 	}
 
 	private function getJobInterval(): int {
-		return intval($this->config->getAppValue('context_chat', 'action_job_interval', (string)(5 * 60))); // 5 minutes
+		return intval($this->appConfig->getAppValueString('action_job_interval', (string)(5 * 60), true)); // 5 minutes
 	}
 
 	protected function run($argument): void {
-		if (!$this->appManager->isInstalled('app_api')) {
+		if (!$this->appManager->isEnabledForAnyone('app_api')) {
 			$this->logger->warning('ActionJob is skipped as app_api is disabled');
 			return;
 		}

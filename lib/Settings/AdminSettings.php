@@ -41,12 +41,12 @@ class AdminSettings implements ISettings {
 	public function getForm(): TemplateResponse {
 		$stats = [];
 
-		$stats['installed_at'] = $this->appConfig->getAppValueInt('installed_time', 0);
-		if ($this->appConfig->getAppValueInt('last_indexed_time', 0) === 0) {
+		$stats['installed_at'] = $this->appConfig->getAppValueInt('installed_time', 0, true);
+		if ($this->appConfig->getAppValueInt('last_indexed_time', 0, true) === 0) {
 			$stats['initial_indexing_complete'] = false;
 		} else {
 			$stats['initial_indexing_complete'] = true;
-			$stats['intial_indexing_completed_at'] = $this->appConfig->getAppValueInt('last_indexed_time', 0);
+			$stats['intial_indexing_completed_at'] = $this->appConfig->getAppValueInt('last_indexed_time', 0, true);
 		}
 
 		try {
@@ -55,7 +55,9 @@ class AdminSettings implements ISettings {
 			$this->logger->error($e->getMessage(), ['exception' => $e]);
 			$stats['eligible_files_count'] = 0;
 		}
-		$stats['recorded_indexed_files_count'] = Util::numericToNumber($this->appConfig->getAppValueString('indexed_files_count', '0'));
+		$stats['recorded_indexed_files_count'] = Util::numericToNumber(intval(
+			$this->appConfig->getAppValueString('indexed_files_count', '0', false)
+		));
 		try {
 			$stats['queued_actions_count'] = $this->actionService->count();
 		} catch (Exception $e) {

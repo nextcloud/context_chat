@@ -18,10 +18,8 @@ use OCA\ContextChat\Service\ProviderConfigService;
 use OCA\ContextChat\Service\StorageService;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
-use OCP\Files\File;
 use OCP\Files\FileInfo;
 use OCP\Files\Folder;
-use OCP\Files\IRootFolder;
 use OCP\Files\Node;
 use OCP\IGroupManager;
 use OCP\Share\Events\ShareCreatedEvent;
@@ -37,7 +35,6 @@ class ShareListener implements IEventListener {
 		private Logger $logger,
 		private StorageService $storageService,
 		private IManager $shareManager,
-		private IRootFolder $rootFolder,
 		private ActionScheduler $actionService,
 		private IGroupManager $groupManager,
 	) {
