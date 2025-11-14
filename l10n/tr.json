@@ -1,0 +1,10 @@
+{ "translations": {
+    "Prompt" : "İstem",
+    "Sources" : "Kaynaklar",
+    "Context Chat" : "Bağlamsal sohbet",
+    "Ask a question about your data." : "Verileriniz hakkında bir soru sorun.",
+    "Generated response" : "Üretilen yanıt",
+    "never" : "asla",
+    "{time} ago" : "{time} önce"
+},"pluralForm" :"nplurals=2; plural=(n > 1);"
+}

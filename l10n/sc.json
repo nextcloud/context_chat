@@ -1,0 +1,6 @@
+{ "translations": {
+    "Sources" : "Fontes",
+    "never" : "mai",
+    "{time} ago" : "{time} a immoe"
+},"pluralForm" :"nplurals=2; plural=(n != 1);"
+}

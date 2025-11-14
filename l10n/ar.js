@@ -1,0 +1,12 @@
+OC.L10N.register(
+    "context_chat",
+    {
+    "Prompt" : "المُطالبة prompt",
+    "Sources" : "المصادر",
+    "Context Chat" : "دردشة سياقية",
+    "Ask a question about your data." : "إسأل سؤالاً بخصوص بياناتك.",
+    "Generated response" : "الاستجابة الناتجة",
+    "never" : "أبداً",
+    "{time} ago" : "{time} مضت"
+},
+"nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5;");
