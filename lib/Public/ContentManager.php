@@ -7,22 +7,22 @@
 
 namespace OCA\ContextChat\Public;
 
-use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\BackgroundJobs\InitialContentImportJob;
 use OCA\ContextChat\BackgroundJobs\SubmitContentJob;
 use OCA\ContextChat\Db\QueueContentItem;
 use OCA\ContextChat\Db\QueueContentItemMapper;
 use OCA\ContextChat\Event\ContentProviderRegisterEvent;
 use OCA\ContextChat\Logger;
+use OCA\ContextChat\Public\IContentProvider as OCAIContentProvider;
 use OCA\ContextChat\Service\ActionScheduler;
 use OCA\ContextChat\Service\ProviderConfigService;
+use OCP\AppFramework\Services\IAppConfig;
 use OCP\BackgroundJob\IJobList;
 use OCP\ContextChat\ContentItem;
 use OCP\ContextChat\IContentManager;
-use OCP\ContextChat\IContentProvider;
+use OCP\ContextChat\IContentProvider as OCPIContentProvider;
 use OCP\DB\Exception;
 use OCP\EventDispatcher\IEventDispatcher;
-use OCP\IConfig;
 use OCP\Server;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
@@ -30,7 +30,7 @@ use Psr\Container\NotFoundExceptionInterface;
 class ContentManager implements IContentManager {
 	public function __construct(
 		private IJobList $jobList,
-		private IConfig $config,
+		private IAppConfig $appConfig,
 		private ProviderConfigService $providerConfig,
 		private QueueContentItemMapper $mapper,
 		private ActionScheduler $actionService,
@@ -46,13 +46,13 @@ class ContentManager implements IContentManager {
 	 * @since 4.6.0
 	 */
 	public function isContextChatAvailable(): bool {
-		return $this->config->getAppValue(Application::APP_ID, 'backend_init', 'false') === 'true';
+		return $this->appConfig->getAppValueString('backend_init', 'false', true) === 'true';
 	}
 
 	/**
 	 * @param string $appId
 	 * @param string $providerId
-	 * @param class-string<IContentProvider> $providerClass
+	 * @param class-string<OCAIContentProvider|OCPIContentProvider> $providerClass
 	 * @return void
 	 * @since 2.2.2
 	 */

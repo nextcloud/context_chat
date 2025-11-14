@@ -16,9 +16,9 @@ use OCA\ContextChat\BackgroundJobs\InitialContentImportJob;
 use OCA\ContextChat\BackgroundJobs\SchedulerJob;
 use OCA\ContextChat\BackgroundJobs\StorageCrawlJob;
 use OCA\ContextChat\BackgroundJobs\SubmitContentJob;
+use OCP\AppFramework\Services\IAppConfig;
 use OCP\BackgroundJob\IJobList;
 use OCP\DB\Exception;
-use OCP\IConfig;
 use OCP\IDBConnection;
 use OCP\Migration\IOutput;
 use OCP\Migration\SimpleMigrationStep;
@@ -28,7 +28,7 @@ class Version4000Date20241108004215 extends SimpleMigrationStep {
 	public function __construct(
 		private IDBConnection $db,
 		private IJobList $jobList,
-		private IConfig $config,
+		private IAppConfig $appConfig,
 	) {
 	}
 
@@ -77,7 +77,8 @@ class Version4000Date20241108004215 extends SimpleMigrationStep {
 		}
 		$output->advance(1);
 
-		$this->config->setAppValue(Application::APP_ID, 'providers', '');
+		// todo: maybe migrations also need to use the newer app config service?
+		$this->appConfig->setAppValueString('providers', '', true);
 		$output->advance(1);
 
 		$this->jobList->add(SchedulerJob::class);

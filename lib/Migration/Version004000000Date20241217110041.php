@@ -10,16 +10,15 @@ declare(strict_types=1);
 namespace OCA\ContextChat\Migration;
 
 use Closure;
-use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\BackgroundJobs\IndexerJob;
 use OCA\ContextChat\BackgroundJobs\InitialContentImportJob;
 use OCA\ContextChat\BackgroundJobs\SchedulerJob;
 use OCA\ContextChat\BackgroundJobs\StorageCrawlJob;
 use OCA\ContextChat\BackgroundJobs\SubmitContentJob;
+use OCP\AppFramework\Services\IAppConfig;
 use OCP\BackgroundJob\IJobList;
 use OCP\DB\Exception;
 use OCP\DB\ISchemaWrapper;
-use OCP\IConfig;
 use OCP\IDBConnection;
 use OCP\Migration\IOutput;
 use OCP\Migration\SimpleMigrationStep;
@@ -29,7 +28,7 @@ class Version004000000Date20241217110041 extends SimpleMigrationStep {
 	public function __construct(
 		private IDBConnection $db,
 		private IJobList $jobList,
-		private IConfig $config,
+		private IAppConfig $appConfig,
 	) {
 	}
 
@@ -96,7 +95,7 @@ class Version004000000Date20241217110041 extends SimpleMigrationStep {
 		}
 		$output->advance(1);
 
-		$this->config->setAppValue(Application::APP_ID, 'providers', '');
+		$this->appConfig->setAppValueString('providers', '', true);
 		$output->advance(1);
 
 		$this->jobList->add(SchedulerJob::class);
