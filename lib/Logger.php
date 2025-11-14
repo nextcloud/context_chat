@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace OCA\ContextChat;
 
-use OCA\ContextChat\AppInfo\Application;
+use OCP\AppFramework\Services\IAppConfig;
 use OCP\IConfig;
 use OCP\Log\ILogFactory;
 use Psr\Log\LoggerInterface;
@@ -26,6 +26,7 @@ class Logger {
 	public function __construct(
 		ILogFactory $logFactory,
 		private IConfig $config,
+		private IAppConfig $appConfig,
 	) {
 		$logFilepath = $this->getLogFilepath();
 		$this->parentLogger = $logFactory->getCustomPsrLogger($logFilepath, 'file', 'Nextcloud Context Chat');
@@ -33,8 +34,8 @@ class Logger {
 
 	public function getLogFilepath(): string {
 		$default = $this->config->getSystemValue('datadirectory', \OC::$SERVERROOT . '/data') . '/context_chat.log';
-		// Legacy way was appconfig, now it's paralleled with the normal log config
-		return $this->config->getAppValue(Application::APP_ID, 'logfile', $default);
+		// todo: Legacy way was appconfig, now it's paralleled with the normal log config (?)
+		return $this->appConfig->getAppValueString('logfile', $default, true);
 	}
 
 	public function emergency(Stringable|string $message, array $context = []): void {

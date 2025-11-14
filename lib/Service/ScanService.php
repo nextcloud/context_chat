@@ -49,7 +49,7 @@ class ScanService {
 	 * @return \Generator<Source>
 	 */
 	public function scanDirectory(array $mimeTypeFilter, Folder $directory): \Generator {
-		$maxSize = (float)$this->appConfig->getAppValueInt('indexing_max_size', Application::CC_MAX_SIZE);
+		$maxSize = (float)$this->appConfig->getAppValueInt('indexing_max_size', Application::CC_MAX_SIZE, true);
 		$sources = [];
 		$size = 0.0;
 

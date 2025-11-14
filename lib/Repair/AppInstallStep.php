@@ -9,13 +9,11 @@ declare(strict_types=1);
 
 namespace OCA\ContextChat\Repair;
 
-use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\BackgroundJobs\SchedulerJob;
 use OCA\ContextChat\Logger;
 use OCA\ContextChat\Service\ProviderConfigService;
+use OCP\AppFramework\Services\IAppConfig;
 use OCP\BackgroundJob\IJobList;
-use OCP\IAppConfig;
-use OCP\IConfig;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 
@@ -24,7 +22,6 @@ class AppInstallStep implements IRepairStep {
 	public function __construct(
 		private Logger $logger,
 		private IAppConfig $appConfig,
-		private IConfig $config,
 		private IJobList $jobList,
 	) {
 	}
@@ -37,13 +34,12 @@ class AppInstallStep implements IRepairStep {
 	 * @param IOutput $output
 	 */
 	public function run(IOutput $output): void {
-		if ($this->appConfig->getValueInt(Application::APP_ID, 'installed_time', 0, false) === 0) {
+		if ($this->appConfig->getAppValueInt('installed_time', 0, true) === 0) {
 			$this->logger->info('Setting up Context Chat for the first time');
-			$this->appConfig->setValueInt(Application::APP_ID, 'installed_time', time(), false);
+			$this->appConfig->setAppValueInt('installed_time', time(), true);
 		}
 
-		// todo: migrate to IAppConfig
-		$providerConfigService = new ProviderConfigService($this->config);
+		$providerConfigService = new ProviderConfigService($this->appConfig);
 		/** @psalm-suppress ArgumentTypeCoercion, UndefinedClass  */
 		$providerConfigService->updateProvider('files', 'default', '', true);
 

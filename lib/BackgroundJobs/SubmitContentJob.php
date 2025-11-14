@@ -46,7 +46,7 @@ class SubmitContentJob extends QueuedJob {
 	 * @return void
 	 */
 	protected function run($argument): void {
-		if (!$this->appManager->isInstalled('app_api')) {
+		if (!$this->appManager->isEnabledForAnyone('app_api')) {
 			$this->logger->warning('SubmitContentJob is skipped as app_api is disabled');
 			return;
 		}
@@ -63,7 +63,7 @@ class SubmitContentJob extends QueuedJob {
 				return;
 			}
 
-			$maxSize = $this->appConfig->getAppValueInt('indexing_max_size', Application::CC_MAX_SIZE);
+			$maxSize = $this->appConfig->getAppValueInt('indexing_max_size', Application::CC_MAX_SIZE, true);
 
 			if (empty($entities)) {
 				return;
