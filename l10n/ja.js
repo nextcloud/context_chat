@@ -1,7 +1,9 @@
 OC.L10N.register(
     "context_chat",
     {
+    "Sources referenced to generate the above response:" : "上記の応答を生成するために参照した情報源：",
     "Deleted file" : "ファイルを削除",
+    "Nextcloud Assistant Context Chat Provider" : "Nextcloud Assistant コンテキストチャットプロバイダー",
     "Context Chat search" : "コンテキストチャット検索",
     "Search with Context Chat." : "コンテキスト チャットで検索します。",
     "Prompt" : "プロンプト",
@@ -23,10 +25,14 @@ OC.L10N.register(
     "never" : "なし",
     "{time} ago" : "{time} 前",
     "Indexing Status" : "インデックスステータス",
+    "The initial indexing is still running." : "初期インデックス作成はまだ実行中です。",
     "The Context Chat Backend app is installed and responsive." : "Context Chat Backend アプリがインストールされ、応答します。",
     "Content provider" : "コンテンツプロバイダー",
     "({count} sent)" : "（ {count}送信済み）",
+    "Eligible files for indexing: {count}" : "インデックス作成対象ファイル: {count}",
     "Download Logs" : "ログのダウンロード",
+    "Download the PHP App logs" : " PHP Appログをダウンロード",
+    "Download the Ex-App Backend logs" : "ExAppバックエンドログをダウンロード",
     "Official documentation" : "公式ドキュメント"
 },
 "nplurals=1; plural=0;");
