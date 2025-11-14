@@ -34,7 +34,6 @@ class Logger {
 
 	public function getLogFilepath(): string {
 		$default = $this->config->getSystemValue('datadirectory', \OC::$SERVERROOT . '/data') . '/context_chat.log';
-		// todo: Legacy way was appconfig, now it's paralleled with the normal log config (?)
 		return $this->appConfig->getAppValueString('logfile', $default, true);
 	}
 
