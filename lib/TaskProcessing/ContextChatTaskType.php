@@ -60,7 +60,7 @@ class ContextChatTaskType implements ITaskType {
 			),
 			'scopeType' => new ShapeDescriptor(
 				$this->l->t('Scope type'),
-				$this->l->t('none, source, provider'),
+				'Any of the following values: "none", "source", "provider".',  // not translated as these are fixed values
 				EShapeType::Text,
 			),
 			'scopeList' => new ShapeDescriptor(
