@@ -8,7 +8,6 @@ OC.L10N.register(
     "Search with Context Chat." : "コンテキスト チャットで検索します。",
     "Prompt" : "プロンプト",
     "Scope type" : "スコープタイプ",
-    "none, provider" : "なし、プロバイダー",
     "Scope list" : "スコープリスト",
     "list of providers" : "プロバイダーのリスト",
     "Scope list metadata" : "スコープリストのメタデータ",
