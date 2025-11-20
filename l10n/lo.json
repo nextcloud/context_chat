@@ -1,0 +1,8 @@
+{ "translations": {
+    "Prompt" : "Prompt",
+    "Sources" : "Sources",
+    "Context Chat" : "ສົນທະນາຕາມບໍລິບົດ",
+    "Generated response" : "Generated response",
+    "never" : "ບໍ່ເຄີຍ"
+},"pluralForm" :"nplurals=1; plural=0;"
+}
