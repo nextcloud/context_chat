@@ -61,10 +61,13 @@ class DiagnosticService {
 	public function sendIndexedFiles(int $count): void {
 		$this->logger->info('Indexed ' . $count . ' files');
 		// We use numericToNumber to fall back to float in case int is too small
+		// non-lazy since this needs to change often in one process
 		$this->appConfig->setAppValueString(
 			'indexed_files_count',
 			(string)Util::numericToNumber(
-				floatval($count) + floatval(Util::numericToNumber($this->appConfig->getAppValueString('indexed_files_count', '0', false)))
+				floatval($count) + floatval(Util::numericToNumber(intval(
+					$this->appConfig->getAppValueString('indexed_files_count', '0', false)
+				)))
 			),
 			false,
 		);
