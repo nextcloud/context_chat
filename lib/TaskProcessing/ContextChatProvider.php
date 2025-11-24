@@ -252,7 +252,7 @@ class ContextChatProvider implements ISynchronousProvider {
 		}
 
 		$indexedSources = [];
-		$maxSize = $this->appConfig->getAppValueInt('indexing_max_size', Application::CC_MAX_SIZE, true);
+		$maxSize = $this->appConfig->getAppValueInt('indexing_max_size', Application::CC_MAX_SIZE, lazy: true);
 		foreach ($filteredNodes as $node) {
 			try {
 				if ($node['node'] instanceof File) {

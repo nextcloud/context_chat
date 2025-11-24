@@ -34,9 +34,8 @@ class SchedulerJob extends QueuedJob {
 	 * @throws Exception
 	 */
 	protected function run($argument): void {
-		// todo: non-lazy since this needs to change often in one process, like in the diagnostics service
-		$this->appConfig->setAppValueString('indexed_files_count', (string)0, false);
-		$this->appConfig->setAppValueInt('last_indexed_time', 0, true);
+		$this->appConfig->setAppValueString('indexed_files_count', (string)0, lazy: true);
+		$this->appConfig->setAppValueInt('last_indexed_time', 0, lazy: true);
 		foreach ($this->storageService->getMounts() as $mount) {
 			$this->logger->debug('Scheduling StorageCrawlJob storage_id=' . $mount['storage_id'] . ' root_id=' . $mount['root_id' ] . 'override_root=' . $mount['overridden_root']);
 			$this->jobList->add(StorageCrawlJob::class, [

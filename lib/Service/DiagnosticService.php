@@ -66,10 +66,10 @@ class DiagnosticService {
 			'indexed_files_count',
 			(string)Util::numericToNumber(
 				floatval($count) + floatval(Util::numericToNumber(intval(
-					$this->appConfig->getAppValueString('indexed_files_count', '0', false)
+					$this->appConfig->getAppValueString('indexed_files_count', '0', lazy: true)
 				)))
 			),
-			false,
+			lazy: true,
 		);
 	}
 }

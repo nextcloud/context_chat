@@ -51,7 +51,7 @@ class ConfigController extends Controller {
 	 */
 	public function setAdminConfig(array $values): DataResponse {
 		foreach ($values as $key => $value) {
-			$this->appConfig->setAppValueString($key, $value, true);
+			$this->appConfig->setAppValueString($key, $value, lazy: true);
 		}
 		return new DataResponse(1);
 	}

@@ -78,14 +78,14 @@ class ProviderConfigService {
 	 */
 	public function getProviders(): array {
 		$providers = [];
-		$providersString = $this->appConfig->getAppValueString('providers', '', true);
+		$providersString = $this->appConfig->getAppValueString('providers', '', lazy: true);
 
 		if ($providersString !== '') {
 			$providers = json_decode($providersString, true);
 
 			if ($providers === null || !$this->validateProvidersArray($providers)) {
 				$providers = [];
-				$this->appConfig->setAppValueString('providers', '', true);
+				$this->appConfig->setAppValueString('providers', '', lazy: true);
 			}
 		}
 
@@ -109,7 +109,7 @@ class ProviderConfigService {
 			'isInitiated' => $isInitiated,
 			'classString' => $providerClass,
 		];
-		$this->appConfig->setAppValueString('providers', json_encode($providers), true);
+		$this->appConfig->setAppValueString('providers', json_encode($providers), lazy: true);
 	}
 
 	/**
@@ -129,7 +129,7 @@ class ProviderConfigService {
 			}
 		}
 
-		$this->appConfig->setAppValueString('providers', json_encode($providers), true);
+		$this->appConfig->setAppValueString('providers', json_encode($providers), lazy: true);
 	}
 
 	/**

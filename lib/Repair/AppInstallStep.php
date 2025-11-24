@@ -34,9 +34,9 @@ class AppInstallStep implements IRepairStep {
 	 * @param IOutput $output
 	 */
 	public function run(IOutput $output): void {
-		if ($this->appConfig->getAppValueInt('installed_time', 0, true) === 0) {
+		if ($this->appConfig->getAppValueInt('installed_time', 0, lazy: true) === 0) {
 			$this->logger->info('Setting up Context Chat for the first time');
-			$this->appConfig->setAppValueInt('installed_time', time(), true);
+			$this->appConfig->setAppValueInt('installed_time', time(), lazy: true);
 		}
 
 		$providerConfigService = new ProviderConfigService($this->appConfig);

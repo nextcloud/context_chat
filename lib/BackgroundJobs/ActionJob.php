@@ -38,7 +38,7 @@ class ActionJob extends TimedJob {
 	}
 
 	private function getJobInterval(): int {
-		return intval($this->appConfig->getAppValueString('action_job_interval', (string)(5 * 60), true)); // 5 minutes
+		return intval($this->appConfig->getAppValueString('action_job_interval', (string)(5 * 60), lazy: true)); // 5 minutes
 	}
 
 	protected function run($argument): void {

@@ -90,7 +90,7 @@ class StorageCrawlJob extends QueuedJob {
 
 				if ($lastSuccessfulFileId !== -1) {
 					// the last job to set this value will win
-					$this->appConfig->setAppValueInt('last_indexed_file_id', $lastSuccessfulFileId, true);
+					$this->appConfig->setAppValueInt('last_indexed_file_id', $lastSuccessfulFileId, lazy: true);
 				}
 			}
 		} finally {
@@ -99,6 +99,6 @@ class StorageCrawlJob extends QueuedJob {
 	}
 
 	protected function getJobInterval(): int {
-		return $this->appConfig->getAppValueInt('crawl_job_interval', self::DEFAULT_JOB_INTERVAL, true);
+		return $this->appConfig->getAppValueInt('crawl_job_interval', self::DEFAULT_JOB_INTERVAL, lazy: true);
 	}
 }

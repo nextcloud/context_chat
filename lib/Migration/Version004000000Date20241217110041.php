@@ -95,7 +95,7 @@ class Version004000000Date20241217110041 extends SimpleMigrationStep {
 		}
 		$output->advance(1);
 
-		$this->appConfig->setAppValueString('providers', '', true);
+		$this->appConfig->setAppValueString('providers', '', lazy: true);
 		$output->advance(1);
 
 		$this->jobList->add(SchedulerJob::class);

@@ -77,8 +77,7 @@ class Version4000Date20241108004215 extends SimpleMigrationStep {
 		}
 		$output->advance(1);
 
-		// todo: maybe migrations also need to use the newer app config service?
-		$this->appConfig->setAppValueString('providers', '', true);
+		$this->appConfig->setAppValueString('providers', '', lazy: true);
 		$output->advance(1);
 
 		$this->jobList->add(SchedulerJob::class);

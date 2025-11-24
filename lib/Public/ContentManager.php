@@ -46,7 +46,7 @@ class ContentManager implements IContentManager {
 	 * @since 4.6.0
 	 */
 	public function isContextChatAvailable(): bool {
-		return $this->appConfig->getAppValueString('backend_init', 'false', true) === 'true';
+		return $this->appConfig->getAppValueString('backend_init', 'false', lazy: true) === 'true';
 	}
 
 	/**

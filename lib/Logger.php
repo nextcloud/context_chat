@@ -34,7 +34,7 @@ class Logger {
 
 	public function getLogFilepath(): string {
 		$default = $this->config->getSystemValue('datadirectory', \OC::$SERVERROOT . '/data') . '/context_chat.log';
-		return $this->appConfig->getAppValueString('logfile', $default, true);
+		return $this->appConfig->getAppValueString('logfile', $default, lazy: true);
 	}
 
 	public function emergency(Stringable|string $message, array $context = []): void {

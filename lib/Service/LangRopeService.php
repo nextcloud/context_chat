@@ -66,7 +66,7 @@ class LangRopeService {
 		}
 
 		// backend init check
-		$backendInit = $this->appConfig->getAppValueString('backend_init', 'false', true);
+		$backendInit = $this->appConfig->getAppValueString('backend_init', 'false', lazy: true);
 		if ($backendInit !== 'true') {
 			$enabledResponse = $appApiFunctions->exAppRequest('context_chat_backend', '/enabled', $this->userId, 'GET');
 
@@ -88,9 +88,9 @@ class LangRopeService {
 			}
 
 			if (isset($enabledResponse['enabled']) && $enabledResponse['enabled'] === true) {
-				$this->appConfig->setAppValueString('backend_init', 'true', true);
+				$this->appConfig->setAppValueString('backend_init', 'true', lazy: true);
 			} else {
-				$this->appConfig->setAppValueString('backend_init', 'false', true);
+				$this->appConfig->setAppValueString('backend_init', 'false', lazy: true);
 				throw new RuntimeException('Context Chat backend is not ready yet. Please wait a while before trying again.');
 			}
 		}
@@ -98,7 +98,7 @@ class LangRopeService {
 		$timeout = $this->appConfig->getAppValueString(
 			'request_timeout',
 			strval(Application::CC_DEFAULT_REQUEST_TIMEOUT),
-			true,
+			lazy: true,
 		);
 		$options = [
 			'timeout' => $timeout,

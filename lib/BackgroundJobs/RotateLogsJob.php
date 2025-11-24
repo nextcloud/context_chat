@@ -28,7 +28,7 @@ class RotateLogsJob extends TimedJob {
 
 	protected function run($argument): void {
 		$default = $this->config->getSystemValue('datadirectory', \OC::$SERVERROOT . '/data') . '/context_chat.log';
-		$this->filePath = $this->appConfig->getAppValueString('logfile', $default, true);
+		$this->filePath = $this->appConfig->getAppValueString('logfile', $default, lazy: true);
 
 		$this->maxSize = $this->config->getSystemValue('log_rotate_size', 100 * 1024 * 1024);
 

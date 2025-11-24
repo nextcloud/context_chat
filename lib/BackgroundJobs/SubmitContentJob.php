@@ -63,7 +63,7 @@ class SubmitContentJob extends QueuedJob {
 				return;
 			}
 
-			$maxSize = $this->appConfig->getAppValueInt('indexing_max_size', Application::CC_MAX_SIZE, true);
+			$maxSize = $this->appConfig->getAppValueInt('indexing_max_size', Application::CC_MAX_SIZE, lazy: true);
 
 			if (empty($entities)) {
 				return;
