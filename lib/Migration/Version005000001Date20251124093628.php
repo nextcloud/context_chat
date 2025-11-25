@@ -10,35 +10,37 @@ declare(strict_types=1);
 namespace OCA\ContextChat\Migration;
 
 use Closure;
-use OCA\ContextChat\AppInfo\Application;
+use OCP\AppFramework\Services\IAppConfig;
 use OCP\DB\ISchemaWrapper;
-use OCP\DB\QueryBuilder\IQueryBuilder;
-use OCP\IDBConnection;
 use OCP\Migration\IOutput;
 use OCP\Migration\SimpleMigrationStep;
 use Override;
 
 class Version005000001Date20251124093628 extends SimpleMigrationStep {
 	private static array $configKeys = [
-		'action_job_interval',
-		'auto_indexing',
-		'backend_init',
-		'crawl_job_interval',
-		'fs_listener_job_interval',
-		'indexed_files_count',
-		'indexing_batch_size',
-		'indexing_job_interval',
-		'indexing_max_size',
-		'indexing_max_time',
-		'installed_time',
-		'last_indexed_file_id',
-		'last_indexed_time',
-		'logfile',
-		'providers',
+		'int' => [
+			'crawl_job_interval',
+			'indexing_batch_size',
+			'indexing_job_interval',
+			'indexing_max_size',
+			'indexing_max_time',
+			'installed_time',
+			'last_indexed_file_id',
+			'last_indexed_time'
+		],
+		'string' => [
+			'action_job_interval',
+			'auto_indexing',
+			'backend_init',
+			'fs_listener_job_interval',
+			'indexed_files_count',
+			'logfile',
+			'providers'
+		]
 	];
 
 	public function __construct(
-		private IDBConnection $connection,
+		private IAppConfig $appConfig,
 	) {
 	}
 
@@ -50,23 +52,26 @@ class Version005000001Date20251124093628 extends SimpleMigrationStep {
 	 */
 	#[Override]
 	public function postSchemaChange(IOutput $output, Closure $schemaClosure, array $options) {
-		$schema = $schemaClosure();
+		$allSetKeys = $this->appConfig->getAppKeys();
 
-		if (!$schema->hasTable('appconfig')) {
-			return null;
+		foreach (self::$configKeys['int'] as $key) {
+			// skip if not already set
+			if (!in_array($key, $allSetKeys)) {
+				continue;
+			}
+			$value = $this->appConfig->getAppValueInt($key);
+			$this->appConfig->setAppValueInt($key, $value, lazy: true);
 		}
 
-		$qb = $this->connection->getQueryBuilder();
-		$qb->update('appconfig')
-			->set('lazy', $qb->createNamedParameter(1, IQueryBuilder::PARAM_INT))
-			->where(
-				$qb->expr()->eq('appid', $qb->createNamedParameter(Application::APP_ID, IQueryBuilder::PARAM_STR))
-			)
-			->andWhere(
-				$qb->expr()->in('configkey', $qb->createNamedParameter(self::$configKeys, IQueryBuilder::PARAM_STR_ARRAY))
-			);
-		$qb->executeStatement();
+		foreach (self::$configKeys['string'] as $key) {
+			// skip if not already set
+			if (!in_array($key, $allSetKeys)) {
+				continue;
+			}
+			$value = $this->appConfig->getAppValueString($key);
+			$this->appConfig->setAppValueString($key, $value, lazy: true);
+		}
 
-		return $schema;
+		return null;
 	}
 }
