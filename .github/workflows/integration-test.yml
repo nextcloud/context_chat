@@ -97,6 +97,7 @@ jobs:
           repository: nextcloud/context_chat_backend
           path: context_chat_backend/
           persist-credentials: false
+          ref: stable31
 
       - name: Get backend app version
         id: appinfo
@@ -408,6 +409,7 @@ jobs:
           repository: nextcloud/context_chat_backend
           path: context_chat_backend/
           persist-credentials: false
+          ref: stable31
 
       - name: Get backend app version
         id: appinfo
@@ -723,6 +725,7 @@ jobs:
           repository: nextcloud/context_chat_backend
           path: context_chat_backend/
           persist-credentials: false
+          ref: stable31
 
       - name: Get backend app version
         id: appinfo
