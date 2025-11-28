@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   scan-test:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     strategy:
       # do not stop on another job's failure
@@ -330,7 +330,7 @@ jobs:
           tail -v -n +1 context_chat_backend/persistent_storage/logs/* || echo "No logs in logs directory"
 
   cron-test:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     strategy:
       # do not stop on another job's failure
@@ -627,7 +627,7 @@ jobs:
           tail -v -n +1 context_chat_backend/persistent_storage/logs/* || echo "No logs in logs directory"
 
   listener-test:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     strategy:
       # do not stop on another job's failure
