@@ -215,6 +215,9 @@ jobs:
         run: |
           cd context_chat_backend
           pip install --upgrade pip setuptools wheel
+          # use the cpu version of torch to not run out of space
+          pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          sed -i '/torch(vision)?/d' requirements.txt
           pip install -r requirements.txt
           cp example.env .env
           echo "NEXTCLOUD_URL=http://localhost:8080" >> .env
@@ -466,6 +469,9 @@ jobs:
         run: |
           cd context_chat_backend
           pip install --upgrade pip setuptools wheel
+          # use the cpu version of torch to not run out of space
+          pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          sed -i '/torch(vision)?/d' requirements.txt
           pip install -r requirements.txt
           cp example.env .env
           echo "NEXTCLOUD_URL=http://localhost:8080" >> .env
@@ -771,6 +777,9 @@ jobs:
         run: |
           cd context_chat_backend
           pip install --upgrade pip setuptools wheel
+          # use the cpu version of torch to not run out of space
+          pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          sed -i '/torch(vision)?/d' requirements.txt
           pip install -r requirements.txt
           cp example.env .env
           echo "NEXTCLOUD_URL=http://localhost:8080" >> .env
