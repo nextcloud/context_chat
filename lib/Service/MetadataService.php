@@ -7,6 +7,7 @@
 
 namespace OCA\ContextChat\Service;
 
+use OC\Files\SetupManager;
 use OCA\ContextChat\Logger;
 use OCA\ContextChat\Public\ContentManager;
 use OCA\ContextChat\Public\IContentProvider;
@@ -86,7 +87,7 @@ class MetadataService {
 
 	private function getIdFromSource(string $sourceId): string {
 		// note the ":" in the item id part
-		if (!preg_match('/^[a-zA-Z0-9_-]+__[a-zA-Z0-9_-]+: ([a-zA-Z0-9:-])+$/', $sourceId, $matches)) {
+		if (!preg_match('/^[a-zA-Z0-9_-]+__[a-zA-Z0-9_-]+: ([a-zA-Z0-9:-]+)$/', $sourceId, $matches)) {
 			throw new \InvalidArgumentException("Invalid source id $sourceId");
 		}
 		return $matches[1];
@@ -166,14 +167,34 @@ class MetadataService {
 			}
 		}
 
-		# for files
-		foreach ($sources as $source) {
-			if (!str_starts_with($source, ProviderConfigService::getDefaultProviderKey() . ': ')) {
-				continue;
-			}
-			$enrichedSources[] = $this->getMetadataObjectForId($userId, $source);
+		$setupManager = \OCP\Server::get(SetupManager::class);
+		$user = $this->userManager->get($userId);
+
+		if ($user === null) {
+			$this->logger->warning('User not found for enriching sources', ['userId' => $userId]);
+			return $enrichedSources;
 		}
 
-		return $enrichedSources;
+		try {
+			$setupManager->setupForUser($user);
+		} catch (\Throwable $e) {
+			$this->logger->error('Error setting up filesystem for user ' . $userId . ': ' . $e->getMessage(), ['exception' => $e]);
+			return $enrichedSources;
+		}
+
+		try {
+			# for files
+			foreach ($sources as $source) {
+				if (!str_starts_with($source, ProviderConfigService::getDefaultProviderKey() . ': ')) {
+					continue;
+				}
+				$enrichedSources[] = $this->getMetadataObjectForId($userId, $source);
+			}
+		} catch (\Throwable $e) {
+			$this->logger->error('Error enriching file sources: ' . $e->getMessage(), ['exception' => $e]);
+		} finally {
+			$setupManager->tearDown();
+			return $enrichedSources;
+		}
 	}
 }

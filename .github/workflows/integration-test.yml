@@ -23,21 +23,29 @@ concurrency:
 
 jobs:
   scan-test:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     strategy:
       # do not stop on another job's failure
       fail-fast: false
       matrix:
-        php-versions: [ '8.1' ]
+        php-versions: [ '8.1', '8.2' ]
         databases: [ 'pgsql' ]
         server-versions: [ 'stable32', 'master' ]
-        encryption: ['on', 'off']
+        encryption: ['off']
         exclude:
+          - server-versions: master
+            databases: pgsql
+            php-versions: 8.1
+        include:
+          - server-versions: master
+            databases: pgsql
+            php-versions: 8.2
+            encryption: 'on'
           - server-versions: stable32
             databases: pgsql
             php-versions: 8.1
-            encryption: on
+            encryption: 'on'
 
     name: Integration test ☁️${{ matrix.server-versions }} 🐘${{ matrix.php-versions }} 🔐:${{ matrix.encryption }}
 
@@ -215,13 +223,16 @@ jobs:
         run: |
           cd context_chat_backend
           pip install --upgrade pip setuptools wheel
+          # use the cpu version of torch to not run out of space
+          pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          sed -i '/torch(vision)?/d' requirements.txt
           pip install -r requirements.txt
           cp example.env .env
           echo "NEXTCLOUD_URL=http://localhost:8080" >> .env
           python3 -u ./main_em.py > em_backend_logs 2>&1 &
           python3 -u ./main.py > backend_logs 2>&1 &
           echo $! > ../pid.txt          # Save the process ID (PID)
-          sleep 60 # Wait for the backend to get ready
+          sleep 120 # Wait for the backend to get ready
 
       - name: Register backend
         run: |
@@ -330,21 +341,29 @@ jobs:
           tail -v -n +1 context_chat_backend/persistent_storage/logs/* || echo "No logs in logs directory"
 
   cron-test:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     strategy:
       # do not stop on another job's failure
       fail-fast: false
       matrix:
-        php-versions: [ '8.1' ]
+        php-versions: [ '8.1', '8.2' ]
         databases: [ 'pgsql' ]
         server-versions: [ 'stable32', 'master' ]
-        encryption: ['on', 'off']
+        encryption: ['off']
         exclude:
+          - server-versions: master
+            databases: pgsql
+            php-versions: 8.1
+        include:
+          - server-versions: master
+            databases: pgsql
+            php-versions: 8.2
+            encryption: 'on'
           - server-versions: stable32
             databases: pgsql
             php-versions: 8.1
-            encryption: on
+            encryption: 'on'
 
     name: Integration test with cron ☁️${{ matrix.server-versions }} 🐘${{ matrix.php-versions }} 🔐:${{ matrix.encryption }}
 
@@ -466,13 +485,16 @@ jobs:
         run: |
           cd context_chat_backend
           pip install --upgrade pip setuptools wheel
+          # use the cpu version of torch to not run out of space
+          pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          sed -i '/torch(vision)?/d' requirements.txt
           pip install -r requirements.txt
           cp example.env .env
           echo "NEXTCLOUD_URL=http://localhost:8080" >> .env
           python3 -u ./main_em.py > em_backend_logs 2>&1 &
           python3 -u ./main.py > backend_logs 2>&1 &
           echo $! > ../pid.txt          # Save the process ID (PID)
-          sleep 60 # Wait for the backend to get ready
+          sleep 120 # Wait for the backend to get ready
 
       - name: Register backend
         run: |
@@ -627,28 +649,32 @@ jobs:
           tail -v -n +1 context_chat_backend/persistent_storage/logs/* || echo "No logs in logs directory"
 
   listener-test:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     strategy:
       # do not stop on another job's failure
       fail-fast: false
       matrix:
-        php-versions: [ '8.1' ]
+        php-versions: [ '8.1', '8.2' ]
         databases: [ 'pgsql' ]
         server-versions: [ 'stable32', 'master' ]
-        encryption: ['on', 'off']
+        encryption: ['off']
         file-deletion-method: [ 'occ', 'os' ]
         exclude:
-          - server-versions: stable32
-            file-deletion-method: os
+          - server-versions: master
             databases: pgsql
             php-versions: 8.1
-            encryption: on
+        include:
+          - server-versions: master
+            databases: pgsql
+            php-versions: 8.2
+            encryption: 'on'
+            file-deletion-method: 'occ'
           - server-versions: stable32
-            file-deletion-method: os
             databases: pgsql
             php-versions: 8.1
-            encryption: off
+            encryption: 'on'
+            file-deletion-method: 'occ'
 
 
     name: Integration test with file listener ☁️${{ matrix.server-versions }} 🐘${{ matrix.php-versions }} 🗑️${{ matrix.file-deletion-method }} 🔐:${{ matrix.encryption }}
@@ -771,13 +797,16 @@ jobs:
         run: |
           cd context_chat_backend
           pip install --upgrade pip setuptools wheel
+          # use the cpu version of torch to not run out of space
+          pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          sed -i '/torch(vision)?/d' requirements.txt
           pip install -r requirements.txt
           cp example.env .env
           echo "NEXTCLOUD_URL=http://localhost:8080" >> .env
           python3 -u ./main_em.py > em_backend_logs 2>&1 &
           python3 -u ./main.py > backend_logs 2>&1 &
           echo $! > ../pid.txt          # Save the process ID (PID)
-          sleep 60 # Wait for the backend to get ready
+          sleep 120 # Wait for the backend to get ready
 
       - name: Register backend
         run: |
