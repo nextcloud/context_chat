@@ -12,7 +12,6 @@ use OCA\ContextChat\BackgroundJobs\InitialContentImportJob;
 use OCA\ContextChat\BackgroundJobs\SubmitContentJob;
 use OCA\ContextChat\Db\QueueContentItem;
 use OCA\ContextChat\Db\QueueContentItemMapper;
-use OCA\ContextChat\Event\ContentProviderRegisterEvent;
 use OCA\ContextChat\Logger;
 use OCA\ContextChat\Service\ActionScheduler;
 use OCA\ContextChat\Service\ProviderConfigService;
@@ -91,7 +90,9 @@ class ContentManager implements IContentManager {
 	 * @since 2.2.2
 	 */
 	public function collectAllContentProviders(): void {
-		$providerCollectionEvent = new ContentProviderRegisterEvent($this);
+		$providerCollectionEvent = new \OCA\ContextChat\Event\ContentProviderRegisterEvent($this);
+		$this->eventDispatcher->dispatchTyped($providerCollectionEvent);
+		$providerCollectionEvent = new \OCP\ContextChat\Events\ContentProviderRegisterEvent($this);
 		$this->eventDispatcher->dispatchTyped($providerCollectionEvent);
 	}
 
