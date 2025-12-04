@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   scan-test:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     strategy:
       # do not stop on another job's failure
@@ -223,6 +223,9 @@ jobs:
         run: |
           cd context_chat_backend
           pip install --upgrade pip setuptools wheel
+          # use the cpu version of torch to not run out of space
+          pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          sed -i '/torch(vision)?/d' requirements.txt
           pip install -r requirements.txt
           cp example.env .env
           echo "NEXTCLOUD_URL=http://localhost:8080" >> .env
@@ -338,7 +341,7 @@ jobs:
           tail -v -n +1 context_chat_backend/persistent_storage/logs/* || echo "No logs in logs directory"
 
   cron-test:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     strategy:
       # do not stop on another job's failure
@@ -482,6 +485,9 @@ jobs:
         run: |
           cd context_chat_backend
           pip install --upgrade pip setuptools wheel
+          # use the cpu version of torch to not run out of space
+          pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          sed -i '/torch(vision)?/d' requirements.txt
           pip install -r requirements.txt
           cp example.env .env
           echo "NEXTCLOUD_URL=http://localhost:8080" >> .env
@@ -643,7 +649,7 @@ jobs:
           tail -v -n +1 context_chat_backend/persistent_storage/logs/* || echo "No logs in logs directory"
 
   listener-test:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     strategy:
       # do not stop on another job's failure
@@ -791,6 +797,9 @@ jobs:
         run: |
           cd context_chat_backend
           pip install --upgrade pip setuptools wheel
+          # use the cpu version of torch to not run out of space
+          pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          sed -i '/torch(vision)?/d' requirements.txt
           pip install -r requirements.txt
           cp example.env .env
           echo "NEXTCLOUD_URL=http://localhost:8080" >> .env
