@@ -10,17 +10,16 @@ declare(strict_types=1);
 
 namespace OCA\ContextChat\BackgroundJobs;
 
-use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\Db\QueueFile;
 use OCA\ContextChat\Logger;
 use OCA\ContextChat\Service\DiagnosticService;
 use OCA\ContextChat\Service\QueueService;
 use OCA\ContextChat\Service\StorageService;
+use OCP\AppFramework\Services\IAppConfig;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\IJobList;
 use OCP\BackgroundJob\QueuedJob;
 use OCP\DB\Exception;
-use OCP\IAppConfig;
 
 class StorageCrawlJob extends QueuedJob {
 	public const BATCH_SIZE = 2000;
@@ -91,7 +90,7 @@ class StorageCrawlJob extends QueuedJob {
 
 				if ($lastSuccessfulFileId !== -1) {
 					// the last job to set this value will win
-					$this->appConfig->setValueInt(Application::APP_ID, 'last_indexed_file_id', $lastSuccessfulFileId);
+					$this->appConfig->setAppValueInt('last_indexed_file_id', $lastSuccessfulFileId, lazy: true);
 				}
 			}
 		} finally {
@@ -100,6 +99,6 @@ class StorageCrawlJob extends QueuedJob {
 	}
 
 	protected function getJobInterval(): int {
-		return $this->appConfig->getValueInt(Application::APP_ID, 'crawl_job_interval', self::DEFAULT_JOB_INTERVAL);
+		return $this->appConfig->getAppValueInt('crawl_job_interval', self::DEFAULT_JOB_INTERVAL, lazy: true);
 	}
 }

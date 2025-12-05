@@ -7,15 +7,15 @@
 
 namespace OCA\ContextChat\Service;
 
-use OCA\ContextChat\AppInfo\Application;
-use OCA\ContextChat\Public\IContentProvider;
-use OCP\IConfig;
+use OCA\ContextChat\Public\IContentProvider as OCAIContentProvider;
+use OCP\AppFramework\Services\IAppConfig;
+use OCP\ContextChat\IContentProvider as OCPIContentProvider;
 
 /* array<[$appId__$providerId], array{ isInitiated: bool, classString: string }> */
 
 class ProviderConfigService {
 	public function __construct(
-		private IConfig $config,
+		private IAppConfig $appConfig,
 	) {
 	}
 
@@ -78,14 +78,14 @@ class ProviderConfigService {
 	 */
 	public function getProviders(): array {
 		$providers = [];
-		$providersString = $this->config->getAppValue(Application::APP_ID, 'providers', '');
+		$providersString = $this->appConfig->getAppValueString('providers', '', lazy: true);
 
 		if ($providersString !== '') {
 			$providers = json_decode($providersString, true);
 
 			if ($providers === null || !$this->validateProvidersArray($providers)) {
 				$providers = [];
-				$this->config->setAppValue(Application::APP_ID, 'providers', '');
+				$this->appConfig->setAppValueString('providers', '', lazy: true);
 			}
 		}
 
@@ -95,7 +95,7 @@ class ProviderConfigService {
 	/**
 	 * @param string $appId
 	 * @param string $providerId
-	 * @param class-string<IContentProvider> $providerClass
+	 * @param class-string<OCAIContentProvider|OCPIContentProvider> $providerClass
 	 * @param bool $isInitiated
 	 */
 	public function updateProvider(
@@ -109,7 +109,7 @@ class ProviderConfigService {
 			'isInitiated' => $isInitiated,
 			'classString' => $providerClass,
 		];
-		$this->config->setAppValue(Application::APP_ID, 'providers', json_encode($providers));
+		$this->appConfig->setAppValueString('providers', json_encode($providers), lazy: true);
 	}
 
 	/**
@@ -129,7 +129,7 @@ class ProviderConfigService {
 			}
 		}
 
-		$this->config->setAppValue(Application::APP_ID, 'providers', json_encode($providers));
+		$this->appConfig->setAppValueString('providers', json_encode($providers), lazy: true);
 	}
 
 	/**

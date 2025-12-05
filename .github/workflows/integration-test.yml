@@ -573,8 +573,8 @@ jobs:
           # Run cron in speed mode: Set interval to 0 minutes
           ./occ config:app:set --value 30 --type integer context_chat indexing_job_interval # 30 seconds
           ./occ config:app:set --value 10 --type integer context_chat crawl_job_interval # 10 seconds
-          ./occ config:app:set --value 10 --type integer context_chat action_job_interval # 10 seconds
-          ./occ config:app:set --value 10 --type integer context_chat fs_listener_job_interval # 10 seconds
+          ./occ config:app:set --value '10' --type string context_chat action_job_interval # 10 seconds
+          ./occ config:app:set --value '10' --type string context_chat fs_listener_job_interval # 10 seconds
           for i in {1..100}; do
             php cron.php & # Starting with stable31 we can use -v here for better visibility
             wait
@@ -822,8 +822,8 @@ jobs:
           # Run cron in speed mode
           ./occ config:app:set --value 30 --type integer context_chat indexing_job_interval # 30 seconds
           ./occ config:app:set --value 10 --type integer context_chat crawl_job_interval # 10 seconds
-          ./occ config:app:set --value 10 --type integer context_chat action_job_interval # 10 seconds
-          ./occ config:app:set --value 10 --type integer context_chat fs_listener_job_interval # 10 seconds
+          ./occ config:app:set --value '10' --type string context_chat action_job_interval # 10 seconds
+          ./occ config:app:set --value '10' --type string context_chat fs_listener_job_interval # 10 seconds
           # Run normal indexing jobs which will only pick up welcome.txt etc
           for i in {1..10}; do
           php cron.php & # Starting with stable31 we can use -v here for better visibility

@@ -16,11 +16,11 @@ use OCA\ContextChat\Service\DiagnosticService;
 use OCA\ContextChat\Service\FsEventService;
 use OCA\ContextChat\Type\FsEventType;
 use OCP\App\IAppManager;
+use OCP\AppFramework\Services\IAppConfig;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
 use OCP\DB\Exception;
 use OCP\Files\IRootFolder;
-use OCP\IConfig;
 
 class FileSystemListenerJob extends TimedJob {
 	private const BATCH_SIZE = 500;
@@ -40,7 +40,7 @@ class FileSystemListenerJob extends TimedJob {
 		private IAppManager $appManager,
 		private FsEventService $fsEventService,
 		private IRootFolder $rootFolder,
-		private IConfig $config,
+		private IAppConfig $appConfig,
 	) {
 		parent::__construct($timeFactory);
 		$this->allowParallelRuns = false;
@@ -48,11 +48,11 @@ class FileSystemListenerJob extends TimedJob {
 	}
 
 	private function getJobInterval(): int {
-		return intval($this->config->getAppValue('context_chat', 'fs_listener_job_interval', (string)(5 * 60))); // 5 minutes
+		return intval($this->appConfig->getAppValueString('fs_listener_job_interval', (string)(5 * 60), lazy: true)); // 5 minutes
 	}
 
 	protected function run($argument): void {
-		if (!$this->appManager->isInstalled('app_api')) {
+		if (!$this->appManager->isEnabledForAnyone('app_api')) {
 			$this->logger->warning('FileSystemListenerJob is skipped as app_api is disabled');
 			return;
 		}
