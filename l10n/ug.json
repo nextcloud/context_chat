@@ -27,12 +27,13 @@
     "Chat with your documents" : "ھۆججەتلىرىڭىز بىلەن پاراڭلىشىڭ",
     "Ask questions to Nextcloud Assistant about the content of your documents.\n\nInstall the given apps for Context Chat to work as desired **in the given order**:\n- [AppAPI from the Apps page](https://apps.nextcloud.com/apps/app_api)\n- [Context Chat Backend (same major and minor version as Context Chat app below) from the External Apps page](https://apps.nextcloud.com/apps/context_chat_backend)\n- [Context Chat (same major and minor version as the backend) from the Apps page](https://apps.nextcloud.com/apps/context_chat)\n- [Assistant from the Apps page](https://apps.nextcloud.com/apps/assistant). The OCS API or the `occ` commands can also be used to interact with this app but it recommended to do that through a Task Processing OCP API consumer like the Assistant app, which is also the officially supported universal UI for all the AI providers.\n- Text2Text Task Processing Provider like [llm2 from the External Apps page](https://apps.nextcloud.com/apps/llm2) or [integration_openai from the Apps page](https://apps.nextcloud.com/apps/integration_openai)\n\nSetup background job workers as described here: https://docs.nextcloud.com/server/latest/admin_manual/ai/overview.html#improve-ai-task-pickup-speed\n\nNote:\nRefer to the [Context Chat Backend's readme](https://github.com/nextcloud/context_chat_backend/?tab=readme-ov-file) and the [AppAPI's documentation](https://cloud-py-api.github.io/app_api/) for help with setup of AppAPI's deploy daemon." : "Nextcloud ياردەمچىسىگە ھۆججەتلىرىڭىزنىڭ مەزمۇنى ھەققىدە سوئال سوراڭ.\n\nContext Chat ئۈچۈن بېرىلگەن ئەپلەرنى لازىملىق ** بويىچە ئىشلەڭ.\n- [ئەپ بېتىدىن AppAPI] (https://apps.nextcloud.com/apps/app_api)\n- [سىرتقى قوللىنىشچان بەت بېتىدىن مەزمۇن پاراڭلىشىش ئارقا كۆرۈنۈشى (تۆۋەندىكى مەزمۇن پاراڭ دېتالىغا ئوخشاش چوڭ ۋە كىچىك نەشرى)] (https://apps.nextcloud.com/apps/context_chat_backend)\n- [مەزمۇن بېتى (ئارقا بەت بىلەن ئوخشاش چوڭ ۋە كىچىك نەشرى)] (https://apps.nextcloud.com/apps/context_chat)\n- [ئەپلەر بېتىدىكى ياردەمچى] (https://apps.nextcloud.com/apps/assistant). OCS API ياكى `occ` بۇيرۇقلىرىنىمۇ بۇ ئەپ بىلەن ئۆز-ئارا تەسىر كۆرسىتىشكە ئىشلىتىشكە بولىدۇ ، ئەمما ياردەمچى ئەپكە ئوخشاش ۋەزىپە بىر تەرەپ قىلىش OCP API ئىستىمالچىسى ئارقىلىق قىلىشنى تەۋسىيە قىلدى ، بۇ بارلىق سۈنئىي ئەقىل بىلەن تەمىنلىگۈچىلەر ئۈچۈن رەسمىي قوللايدىغان ئۇنىۋېرسال UI.\n- Text2Text ۋەزىپە بىر تەرەپ قىلىش تەمىنلىگۈچى [سىرتقى ئەپلەر بېتىدىن llm2] (https://apps.nextcloud.com/apps/llm2) ياكى [ئەپلەر بېتىدىن integration_openai] (https://apps.nextcloud.com/apps/integration_openai)\n\nبۇ يەردە چۈشەندۈرۈلگەن ئارقا كۆرۈنۈش خىزمەت خىزمەتچىلىرىنى تەڭشەش: https://docs.nextcloud.com/server/latest/admin_manual/ai/overview.html#improve-ai-task-pickup-speed\n\nئەسكەرتىش:\n[Context Chat Backend's readme] (https://github.com/nextcloud/context_chat_backend/?tab=readme-ov-file) ۋە [AppAPI نىڭ ھۆججەتلىرى] (https://cloud-py-api.github.io/app_api/) دىن پايدىلىنىڭ.",
     "never" : "ھەرگىز",
-    "{time} ago" : "{time} ago",
+    "{time} ago" : "{time} ئىلگىرى",
     "Indexing Status" : "كۆرسەتكۈچ ھالىتى",
     "The initial indexing run finished {date}." : "دەسلەپكى كۆرسەتكۈچ ئىجرا قىلىش ۋاقتى {date}.",
     "The initial indexing is still running." : "دەسلەپكى كۆرسەتكۈچ يەنىلا ئىجرا بولۇۋاتىدۇ.",
     "The Context Chat Backend app is installed and responsive." : "Context Chat Backend دېتالى قاچىلانغان ۋە ئىنكاسچان.",
     "The Context Chat Backend app is not installed or not responsing." : "Context Chat Backend دېتالى قاچىلانمىغان ياكى ئىنكاس قايتۇرمىغان.",
+    "Less files were indexed than expected. Only {percent}% files out of {eligibleCount} are in the VectorDB." : "مۆلچەردىكىدىن ئاز ھۆججەتلەر مۇندەرىجە قىلىندى. VectorDB دا پەقەت {eligibleCount} ھۆججەتتىن %{percent} سى بار.",
     "Content provider" : "مەزمۇن تەمىنلىگۈچى",
     "Queued documents including updates" : "يېڭىلاشنى ئۆز ئىچىگە ئالغان ئۆچرەت ھۆججەتلەر",
     "Documents in vector database" : "ۋېكتور ساندانىدىكى ھۆججەتلەر",
@@ -44,6 +45,7 @@
     "Download Logs" : "خاتىرە چۈشۈرۈش",
     "Download the PHP App logs" : "PHP ئەپ خاتىرىسىنى چۈشۈرۈڭ",
     "Download the Ex-App Backend logs" : "Ex-App ئارقا ئارقا خاتىرىسىنى چۈشۈرۈڭ",
-    "Official documentation" : "رەسمىي ھۆججەتلەر"
+    "Official documentation" : "رەسمىي ھۆججەتلەر",
+    "_({count} new file)_::_({count} new files)_" : ["({count} يېڭى ھۆججەت)","({count} يېڭى ھۆججەت)"]
 },"pluralForm" :"nplurals=2; plural=(n != 1);"
 }
