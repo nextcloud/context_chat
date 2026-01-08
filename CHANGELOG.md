@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [5.2.0] - 2025-01-08
+
+* bump to keep in sync with context_chat_backend minor version
+
+
 ## [5.1.0] - 2025-12-05
 
 ### Changed
