@@ -21,37 +21,37 @@ class DiagnosticService {
 
 	/**
 	 * @param string $class
-	 * @param int $id
+	 * @param int|string $id
 	 * @return void
 	 */
-	public function sendJobTrigger(string $class, int $id): void {
+	public function sendJobTrigger(string $class, int|string $id): void {
 		$this->logger->info('Background jobs: ' . $class . ' ' . $id . ' triggered');
 	}
 
 	/**
 	 * @param string $class
-	 * @param int $id
+	 * @param int|string $id
 	 * @return void
 	 */
-	public function sendJobStart(string $class, int $id): void {
+	public function sendJobStart(string $class, int|string $id): void {
 		$this->logger->info('Background jobs: ' . $class . ' ' . $id . ' started');
 	}
 
 	/**
 	 * @param string $class
-	 * @param int $id
+	 * @param int|string $id
 	 * @return void
 	 */
-	public function sendJobEnd(string $class, int $id): void {
+	public function sendJobEnd(string $class, int|string $id): void {
 		$this->logger->info('Background jobs: ' . $class . ' ' . $id . ' ended');
 	}
 
 	/**
 	 * @param string $class
-	 * @param int $id
+	 * @param int|string $id
 	 * @return void
 	 */
-	public function sendHeartbeat(string $class, int $id): void {
+	public function sendHeartbeat(string $class, int|string $id): void {
 	}
 
 	/**
