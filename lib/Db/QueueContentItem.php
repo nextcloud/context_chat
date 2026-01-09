@@ -34,7 +34,6 @@ use OCP\DB\Types;
  * @method string getUsers()
  */
 class QueueContentItem extends Entity {
-	public $id;
 	protected $itemId;
 	protected $appId;
 	protected $providerId;
@@ -69,7 +68,6 @@ class QueueContentItem extends Entity {
 
 	public function __construct() {
 		// add types in constructor
-		$this->addType('id', Types::INTEGER);
 		$this->addType('itemId', Types::STRING);
 		$this->addType('appId', Types::STRING);
 		$this->addType('providerId', Types::STRING);

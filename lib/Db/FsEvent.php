@@ -23,7 +23,6 @@ use OCP\DB\Types;
  * @method setNodeId(int $nodeId)
  */
 class FsEvent extends Entity {
-	public $id;
 	protected $type;
 	protected $userId;
 	protected $nodeId;
