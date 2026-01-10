@@ -2,6 +2,7 @@
     "Sources referenced to generate the above response:" : "上記の応答を生成するために参照した情報源：",
     "Deleted file" : "ファイルを削除",
     "Nextcloud Assistant Context Chat Provider" : "Nextcloud Assistant コンテキストチャットプロバイダー",
+    "Nextcloud Assistant Context Chat Search Provider" : "Nextcloud Assistant コンテキストチャット検索プロバイダー",
     "Context Chat search" : "コンテキストチャット検索",
     "Search with Context Chat." : "コンテキスト チャットで検索します。",
     "Prompt" : "プロンプト",
@@ -28,7 +29,7 @@
     "({count} sent)" : "（ {count}送信済み）",
     "Eligible files for indexing: {count}" : "インデックス作成対象ファイル: {count}",
     "Download Logs" : "ログのダウンロード",
-    "Download the PHP App logs" : " PHP Appログをダウンロード",
+    "Download the PHP App logs" : "PHPのアプリログをダウンロード",
     "Download the Ex-App Backend logs" : "ExAppバックエンドログをダウンロード",
     "Official documentation" : "公式ドキュメント"
 },"pluralForm" :"nplurals=1; plural=0;"
