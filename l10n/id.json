@@ -1,0 +1,7 @@
+{ "translations": {
+    "Prompt" : "Prompt",
+    "Generated response" : "Respons yang dihasilkan",
+    "never" : "tidak pernah.",
+    "{time} ago" : "{time} yang lalu"
+},"pluralForm" :"nplurals=1; plural=0;"
+}
