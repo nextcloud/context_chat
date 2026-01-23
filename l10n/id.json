@@ -1,5 +1,6 @@
 { "translations": {
     "Prompt" : "Prompt",
+    "Context Chat" : "Chat Konteks",
     "Generated response" : "Respons yang dihasilkan",
     "never" : "tidak pernah.",
     "{time} ago" : "{time} yang lalu"
