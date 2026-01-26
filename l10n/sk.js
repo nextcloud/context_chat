@@ -6,6 +6,7 @@ OC.L10N.register(
     "Prompt" : "Zadanie",
     "Sources" : "Zdroje",
     "Context Chat" : "Kontextový čet",
+    "Ask a question about your data." : "Opýtať sa otázku o vašich dátach.",
     "Generated response" : "Vygenerovaná odpoveď",
     "never" : "nikdy",
     "{time} ago" : "Pred {time} "
