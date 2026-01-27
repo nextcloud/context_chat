@@ -63,7 +63,7 @@ class FsEventScheduler {
 	 * @throws NotFoundException
 	 * @throws Exception
 	 */
-	public function onAccessUpdateDecl(int $nodeId, $ownerId = null): void {
+	public function onAccessUpdateDecl(int $nodeId, ?string $ownerId = null): void {
 		if ($ownerId === null) {
 			$ownerId = $this->storageService->getOwnerForFileId($nodeId);
 			if ($ownerId === false) {
