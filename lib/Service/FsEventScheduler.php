@@ -63,10 +63,12 @@ class FsEventScheduler {
 	 * @throws NotFoundException
 	 * @throws Exception
 	 */
-	public function onAccessUpdateDecl(int $nodeId): void {
-		$ownerId = $this->storageService->getOwnerForFileId($nodeId);
-		if ($ownerId === false) {
-			throw new NotFoundException('Cannot get owner for file ID ' . $nodeId);
+	public function onAccessUpdateDecl(int $nodeId, $ownerId = null): void {
+		if ($ownerId === null) {
+			$ownerId = $this->storageService->getOwnerForFileId($nodeId);
+			if ($ownerId === false) {
+				throw new NotFoundException('Cannot get owner for file ID ' . $nodeId);
+			}
 		}
 		$this->scheduleEvent(FsEventType::ACCESS_UPDATE_DECL, $ownerId, $nodeId);
 	}

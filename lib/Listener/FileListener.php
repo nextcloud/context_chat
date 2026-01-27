@@ -116,7 +116,7 @@ class FileListener implements IEventListener {
 			if ($event instanceof \OCP\Files\Config\Event\UserMountAddedEvent) {
 				$rootId = $event->mountPoint->getRootId();
 				// Asynchronous, because we potentially recurse and this event needs to be handled fast
-				$this->fsEventScheduler->onAccessUpdateDecl($rootId);
+				$this->fsEventScheduler->onAccessUpdateDecl($rootId, $event->mountPoint->getUser()->getUID());
 				// Remember that this mount was added in the current process (see UserMountRemovedEvent below)
 				$this->addedMounts[$event->mountPoint->getUser()->getUID() . '-' . $rootId] = true;
 			}
@@ -130,7 +130,7 @@ class FileListener implements IEventListener {
 					return;
 				}
 				// Asynchronous, because we potentially recurse and this event needs to be handled fast
-				$this->fsEventScheduler->onAccessUpdateDecl($rootId);
+				$this->fsEventScheduler->onAccessUpdateDecl($rootId, $event->mountPoint->getUser()->getUID());
 			}
 		} catch (InvalidPathException|Exception|NotFoundException $e) {
 			$this->logger->warning('Error in fs event listener: ' . $e->getMessage(), ['exception' => $e]);
