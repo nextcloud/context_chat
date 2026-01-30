@@ -97,9 +97,11 @@ class FsEventService {
 	}
 
 	public function onInsert(Node $node, bool $recurse = true, bool $update = false): void {
-		if (!$this->allowedPath($node)) {
+		$user = $node->getOwner();
+		if (!$this->allowedPath($node) || $user === null) {
 			return;
 		}
+		$userFolder = $this->rootFolder->getUserFolder($user);
 		if ($node instanceof Folder) {
 			if (!$recurse) {
 				return;
@@ -117,7 +119,7 @@ class FsEventService {
 		}
 
 		foreach ($fileIds as $fileId) {
-			$file = current($this->rootFolder->getById($fileId));
+			$file = current($userFolder->getById($fileId));
 			if (!$file instanceof File) {
 				continue;
 			}
