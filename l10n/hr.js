@@ -1,7 +1,9 @@
 OC.L10N.register(
     "context_chat",
     {
+    "Prompt" : "Upit",
     "Sources" : "Izvori",
+    "Generated response" : "Generirani odgovor",
     "never" : "nikad",
     "{time} ago" : "Prije {time}"
 },
