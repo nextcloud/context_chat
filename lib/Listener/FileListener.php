@@ -78,8 +78,8 @@ class FileListener implements IEventListener {
 			}
 
 			if ($event instanceof CacheEntryInsertedEvent) {
-				$node = current($this->rootFolder->getById($event->getFileId()));
-				if ($node === false) {
+				$node = $this->rootFolder->getFirstNodeById($event->getFileId());
+				if ($node === null) {
 					return;
 				}
 				if ($node instanceof Folder) {
@@ -105,8 +105,8 @@ class FileListener implements IEventListener {
 				if ($cacheEntry === false) {
 					return;
 				}
-				$node = current($this->rootFolder->getById($cacheEntry->getId()));
-				if ($node === false) {
+				$node = $this->rootFolder->getFirstNodeById($cacheEntry->getId());
+				if ($node === null) {
 					return;
 				}
 				// Synchronous, because we wouldn't have the recursive list of file ids after deletion

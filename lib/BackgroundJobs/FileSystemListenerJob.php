@@ -84,7 +84,7 @@ class FileSystemListenerJob extends TimedJob {
 				}
 
 				try {
-					$node = current($this->rootFolder->getUserFolder($fsEvent->getUserId())->getById($fsEvent->getNodeId()));
+					$node = $this->rootFolder->getUserFolder($fsEvent->getUserId())->getFirstNodeById($fsEvent->getNodeId());
 				} catch (\Exception $e) {
 					$this->logger->warning('Error retrieving node for fs event' . $e->getMessage(), [
 						'exception' => $e,

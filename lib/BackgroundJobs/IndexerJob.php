@@ -191,7 +191,7 @@ class IndexerJob extends TimedJob {
 			// this includes files that are too large, locked, or not readable
 			$visitedQFiles[] = $queueFile;
 
-			$file = current($this->rootFolder->getById($queueFile->getFileId()));
+			$file = $this->rootFolder->getFirstNodeById($queueFile->getFileId());
 			if (!$file instanceof File) {
 				continue;
 			}

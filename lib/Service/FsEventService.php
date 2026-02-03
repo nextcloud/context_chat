@@ -117,7 +117,7 @@ class FsEventService {
 		}
 
 		foreach ($fileIds as $fileId) {
-			$file = current($this->rootFolder->getById($fileId));
+			$file = $this->rootFolder->getFirstNodeById($fileId);
 			if (!$file instanceof File) {
 				continue;
 			}
