@@ -13,7 +13,7 @@ use OCA\ContextChat\Logger;
 use OCA\ContextChat\Public\IContentProvider;
 use OCA\ContextChat\Type\Source;
 use OCP\App\IAppManager;
-use OCP\IConfig;
+use OCP\AppFramework\Services\IAppConfig;
 use OCP\IL10N;
 use OCP\IURLGenerator;
 use OCP\IUserManager;
@@ -26,7 +26,7 @@ class LangRopeService {
 	public function __construct(
 		private Logger $logger,
 		private IL10N $l10n,
-		private IConfig $config,
+		private IAppConfig $appConfig,
 		private IAppManager $appManager,
 		private IURLGenerator $urlGenerator,
 		private IUserManager $userMan,
@@ -66,7 +66,7 @@ class LangRopeService {
 		}
 
 		// backend init check
-		$backendInit = $this->config->getAppValue(Application::APP_ID, 'backend_init', 'false');
+		$backendInit = $this->appConfig->getAppValueString('backend_init', 'false', lazy: true);
 		if ($backendInit !== 'true') {
 			$enabledResponse = $appApiFunctions->exAppRequest('context_chat_backend', '/enabled', $this->userId, 'GET');
 
@@ -88,17 +88,17 @@ class LangRopeService {
 			}
 
 			if (isset($enabledResponse['enabled']) && $enabledResponse['enabled'] === true) {
-				$this->config->setAppValue(Application::APP_ID, 'backend_init', 'true');
+				$this->appConfig->setAppValueString('backend_init', 'true', lazy: true);
 			} else {
-				$this->config->setAppValue(Application::APP_ID, 'backend_init', 'false');
+				$this->appConfig->setAppValueString('backend_init', 'false', lazy: true);
 				throw new RuntimeException('Context Chat backend is not ready yet. Please wait a while before trying again.');
 			}
 		}
 
-		$timeout = $this->config->getAppValue(
-			Application::APP_ID,
+		$timeout = $this->appConfig->getAppValueString(
 			'request_timeout',
 			strval(Application::CC_DEFAULT_REQUEST_TIMEOUT),
+			lazy: true,
 		);
 		$options = [
 			'timeout' => $timeout,

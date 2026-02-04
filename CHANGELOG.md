@@ -10,6 +10,25 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [5.2.0] - 2025-01-08
+
+* bump to keep in sync with context_chat_backend minor version
+
+
+## [5.1.0] - 2025-12-05
+
+### Changed
+* do not translation enum values description (#193) @kyteinsky
+* use lazy app config values and small fixes (#191) @kyteinsky
+
+### Fixed
+* add missing entity id in FsEventMapper::getFromQueue() (#196) @rotdrop
+* expand the source id regex item part (#190) @kyteinsky
+* Trigger both OCA and OCP ContentProviderRegisterEvent (#187) @marcelklehr
+* CI fixes (#183) @kyteinsky
+* setup FS before trying to get metadata for files (#197) @kyteinsky
+
+
 ## [5.0.0] - 2025-10-15
 
 The public Content Manager API has been replaced and extended with the OCP API.

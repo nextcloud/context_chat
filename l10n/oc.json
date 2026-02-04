@@ -1,0 +1,6 @@
+{ "translations": {
+    "Sources" : "Fonts",
+    "never" : "pas jamai",
+    "{time} ago" : "fa {time}"
+},"pluralForm" :"nplurals=2; plural=(n > 1);"
+}

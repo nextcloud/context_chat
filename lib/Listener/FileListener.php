@@ -78,8 +78,8 @@ class FileListener implements IEventListener {
 			}
 
 			if ($event instanceof CacheEntryInsertedEvent) {
-				$node = current($this->rootFolder->getById($event->getFileId()));
-				if ($node === false) {
+				$node = $this->rootFolder->getFirstNodeById($event->getFileId());
+				if ($node === null) {
 					return;
 				}
 				if ($node instanceof Folder) {
@@ -105,8 +105,8 @@ class FileListener implements IEventListener {
 				if ($cacheEntry === false) {
 					return;
 				}
-				$node = current($this->rootFolder->getById($cacheEntry->getId()));
-				if ($node === false) {
+				$node = $this->rootFolder->getFirstNodeById($cacheEntry->getId());
+				if ($node === null) {
 					return;
 				}
 				// Synchronous, because we wouldn't have the recursive list of file ids after deletion
@@ -116,7 +116,7 @@ class FileListener implements IEventListener {
 			if ($event instanceof \OCP\Files\Config\Event\UserMountAddedEvent) {
 				$rootId = $event->mountPoint->getRootId();
 				// Asynchronous, because we potentially recurse and this event needs to be handled fast
-				$this->fsEventScheduler->onAccessUpdateDecl($rootId);
+				$this->fsEventScheduler->onAccessUpdateDecl($rootId, $event->mountPoint->getUser()->getUID());
 				// Remember that this mount was added in the current process (see UserMountRemovedEvent below)
 				$this->addedMounts[$event->mountPoint->getUser()->getUID() . '-' . $rootId] = true;
 			}
@@ -130,7 +130,7 @@ class FileListener implements IEventListener {
 					return;
 				}
 				// Asynchronous, because we potentially recurse and this event needs to be handled fast
-				$this->fsEventScheduler->onAccessUpdateDecl($rootId);
+				$this->fsEventScheduler->onAccessUpdateDecl($rootId, $event->mountPoint->getUser()->getUID());
 			}
 		} catch (InvalidPathException|Exception|NotFoundException $e) {
 			$this->logger->warning('Error in fs event listener: ' . $e->getMessage(), ['exception' => $e]);

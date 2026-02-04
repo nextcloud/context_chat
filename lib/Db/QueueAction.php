@@ -21,7 +21,6 @@ use OCP\AppFramework\Db\Entity;
  * @method setPayload(string $payload)
  */
 class QueueAction extends Entity {
-	public $id;
 	protected $type;
 	protected $payload;
 
@@ -32,7 +31,6 @@ class QueueAction extends Entity {
 
 	public function __construct() {
 		// add types in constructor
-		$this->addType('id', 'integer');
 		$this->addType('type', 'string');
 		$this->addType('payload', 'string');
 	}

@@ -7,6 +7,7 @@ declare(strict_types=1);
  */
 namespace OCA\ContextChat\BackgroundJobs;
 
+use OCP\AppFramework\Services\IAppConfig;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
 use OCP\IConfig;
@@ -18,15 +19,16 @@ class RotateLogsJob extends TimedJob {
 	public function __construct(
 		ITimeFactory $time,
 		private IConfig $config,
+		private IAppConfig $appConfig,
 	) {
 		parent::__construct($time);
 
-		$this->setInterval(60 * 60 * 3);
+		$this->setInterval(60 * 60 * 3); // every 3 hours
 	}
 
 	protected function run($argument): void {
 		$default = $this->config->getSystemValue('datadirectory', \OC::$SERVERROOT . '/data') . '/context_chat.log';
-		$this->filePath = $this->config->getAppValue('context_chat', 'logfile', $default);
+		$this->filePath = $this->appConfig->getAppValueString('logfile', $default, lazy: true);
 
 		$this->maxSize = $this->config->getSystemValue('log_rotate_size', 100 * 1024 * 1024);
 

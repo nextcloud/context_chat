@@ -21,37 +21,37 @@ class DiagnosticService {
 
 	/**
 	 * @param string $class
-	 * @param int $id
+	 * @param int|string $id
 	 * @return void
 	 */
-	public function sendJobTrigger(string $class, int $id): void {
+	public function sendJobTrigger(string $class, int|string $id): void {
 		$this->logger->info('Background jobs: ' . $class . ' ' . $id . ' triggered');
 	}
 
 	/**
 	 * @param string $class
-	 * @param int $id
+	 * @param int|string $id
 	 * @return void
 	 */
-	public function sendJobStart(string $class, int $id): void {
+	public function sendJobStart(string $class, int|string $id): void {
 		$this->logger->info('Background jobs: ' . $class . ' ' . $id . ' started');
 	}
 
 	/**
 	 * @param string $class
-	 * @param int $id
+	 * @param int|string $id
 	 * @return void
 	 */
-	public function sendJobEnd(string $class, int $id): void {
+	public function sendJobEnd(string $class, int|string $id): void {
 		$this->logger->info('Background jobs: ' . $class . ' ' . $id . ' ended');
 	}
 
 	/**
 	 * @param string $class
-	 * @param int $id
+	 * @param int|string $id
 	 * @return void
 	 */
-	public function sendHeartbeat(string $class, int $id): void {
+	public function sendHeartbeat(string $class, int|string $id): void {
 	}
 
 	/**
@@ -61,12 +61,15 @@ class DiagnosticService {
 	public function sendIndexedFiles(int $count): void {
 		$this->logger->info('Indexed ' . $count . ' files');
 		// We use numericToNumber to fall back to float in case int is too small
+		// non-lazy since this needs to change often in one process
 		$this->appConfig->setAppValueString(
 			'indexed_files_count',
 			(string)Util::numericToNumber(
-				floatval($count) + floatval(Util::numericToNumber($this->appConfig->getAppValueString('indexed_files_count', '0', false)))
+				floatval($count) + floatval(Util::numericToNumber(intval(
+					$this->appConfig->getAppValueString('indexed_files_count', '0', lazy: true)
+				)))
 			),
-			false,
+			lazy: true,
 		);
 	}
 }

@@ -72,7 +72,7 @@ class FsEventMapper extends QBMapper {
 	 */
 	public function getFromQueue(int $limit): array {
 		$qb = $this->db->getQueryBuilder();
-		$qb->selectDistinct(['user_id', 'type', 'node_id'])
+		$qb->selectDistinct(['id', 'user_id', 'type', 'node_id'])
 			->from($this->getTableName())
 			->setMaxResults($limit);
 

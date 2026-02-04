@@ -1,0 +1,14 @@
+OC.L10N.register(
+    "context_chat",
+    {
+    "Sources referenced to generate the above response:" : "Zdroje použité na vytvorenie vyššie uvedenej odpovede:",
+    "Deleted file" : "Vymazaný súbor",
+    "Prompt" : "Zadanie",
+    "Sources" : "Zdroje",
+    "Context Chat" : "Kontextový čet",
+    "Ask a question about your data." : "Opýtať sa otázku o vašich dátach.",
+    "Generated response" : "Vygenerovaná odpoveď",
+    "never" : "nikdy",
+    "{time} ago" : "Pred {time} "
+},
+"nplurals=4; plural=(n % 1 == 0 && n == 1 ? 0 : n % 1 == 0 && n >= 2 && n <= 4 ? 1 : n % 1 != 0 ? 2: 3);");

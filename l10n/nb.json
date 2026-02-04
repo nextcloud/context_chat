@@ -1,0 +1,7 @@
+{ "translations": {
+    "Prompt" : "Spør",
+    "Sources" : "Kilder",
+    "never" : "aldri",
+    "{time} ago" : "{time} siden"
+},"pluralForm" :"nplurals=2; plural=(n != 1);"
+}

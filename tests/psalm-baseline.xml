@@ -34,4 +34,11 @@
       <code><![CDATA[getDistinctMounts]]></code>
     </UndefinedInterfaceMethod>
   </file>
+  <file src="lib/Service/MetadataService.php">
+    <UndefinedClass>
+      <code><![CDATA[$setupManager]]></code>
+      <code><![CDATA[\OCP\Server::get(SetupManager::class)]]></code>
+      <code><![CDATA[SetupManager]]></code>
+    </UndefinedClass>
+  </file>
 </files>

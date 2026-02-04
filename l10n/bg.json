@@ -1,0 +1,7 @@
+{ "translations": {
+    "Prompt" : "Подкана",
+    "Sources" : "Източници",
+    "never" : "никога",
+    "{time} ago" : "преди {time}"
+},"pluralForm" :"nplurals=2; plural=(n != 1);"
+}

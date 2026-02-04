@@ -84,14 +84,14 @@ class IndexerJob extends TimedJob {
 	 * @throws \Throwable
 	 */
 	public function run($argument): void {
-		if (!$this->appManager->isInstalled('app_api')) {
+		if (!$this->appManager->isEnabledForAnyone('app_api')) {
 			$this->logger->warning('IndexerJob is skipped as app_api is disabled');
 			return;
 		}
 
 		$this->storageId = $argument['storageId'];
 		$this->rootId = $argument['rootId'];
-		if ($this->appConfig->getAppValue('auto_indexing', 'true') === 'false') {
+		if ($this->appConfig->getAppValueString('auto_indexing', 'true', lazy: true) === 'false') {
 			return;
 		}
 		$this->diagnosticService->sendJobTrigger(static::class, $this->getId());
@@ -149,19 +149,19 @@ class IndexerJob extends TimedJob {
 	}
 
 	protected function getBatchSize(): int {
-		return $this->appConfig->getAppValueInt('indexing_batch_size', self::DEFAULT_BATCH_SIZE);
+		return $this->appConfig->getAppValueInt('indexing_batch_size', self::DEFAULT_BATCH_SIZE, lazy: true);
 	}
 
 	protected function getMaxIndexingTime(): int {
-		return $this->appConfig->getAppValueInt('indexing_max_time', self::DEFAULT_MAX_INDEXING_TIME);
+		return $this->appConfig->getAppValueInt('indexing_max_time', self::DEFAULT_MAX_INDEXING_TIME, lazy: true);
 	}
 
 	protected function getJobInterval(): int {
-		return $this->appConfig->getAppValueInt('indexing_job_interval', self::DEFAULT_JOB_INTERVAL);
+		return $this->appConfig->getAppValueInt('indexing_job_interval', self::DEFAULT_JOB_INTERVAL, lazy: true);
 	}
 
 	protected function getMaxSize(): float {
-		return (float)$this->appConfig->getAppValueInt('indexing_max_size', Application::CC_MAX_SIZE);
+		return (float)$this->appConfig->getAppValueInt('indexing_max_size', Application::CC_MAX_SIZE, lazy: true);
 	}
 
 	/**
@@ -191,7 +191,7 @@ class IndexerJob extends TimedJob {
 			// this includes files that are too large, locked, or not readable
 			$visitedQFiles[] = $queueFile;
 
-			$file = current($this->rootFolder->getById($queueFile->getFileId()));
+			$file = $this->rootFolder->getFirstNodeById($queueFile->getFileId());
 			if (!$file instanceof File) {
 				continue;
 			}
@@ -321,7 +321,7 @@ class IndexerJob extends TimedJob {
 	}
 
 	private function setInitialIndexCompletion(): void {
-		if ($this->appConfig->getAppValueInt('last_indexed_time', 0) !== 0) {
+		if ($this->appConfig->getAppValueInt('last_indexed_time', 0, lazy: true) !== 0) {
 			return;
 		}
 		try {
@@ -345,7 +345,7 @@ class IndexerJob extends TimedJob {
 		}
 
 		$this->logger->info('Initial index completion detected, setting last indexed time');
-		$this->appConfig->setAppValueInt('last_indexed_time', $this->timeFactory->getTime(), false);
+		$this->appConfig->setAppValueInt('last_indexed_time', $this->timeFactory->getTime(), lazy: true);
 	}
 
 	/**
