@@ -11,7 +11,6 @@ use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\Db\QueueFile;
 use OCA\ContextChat\Logger;
 use OCP\DB\Exception;
-use OCP\Files\File;
 use OCP\Files\Folder;
 use OCP\Files\InvalidPathException;
 use OCP\Files\IRootFolder;
@@ -117,27 +116,13 @@ class FsEventService {
 		}
 
 		foreach ($fileIds as $fileId) {
-			$file = current($this->rootFolder->getById($fileId));
-			if (!$file instanceof File) {
-				continue;
-			}
-			if (!$this->allowedPath($file)) {
-				continue;
-			}
 			$queueFile = new QueueFile();
-			if ($file->getMountPoint()->getNumericStorageId() === null) {
+			if ($node->getMountPoint()->getNumericStorageId() === null) {
 				return;
 			}
-			$queueFile->setStorageId($file->getMountPoint()->getNumericStorageId());
-			$queueFile->setRootId($file->getMountPoint()->getStorageRootId());
-
-			try {
-				$queueFile->setFileId($file->getId());
-			} catch (InvalidPathException|NotFoundException $e) {
-				$this->logger->warning($e->getMessage(), ['exception' => $e]);
-				return;
-			}
-
+			$queueFile->setStorageId($node->getMountPoint()->getNumericStorageId());
+			$queueFile->setRootId($node->getMountPoint()->getStorageRootId());
+			$queueFile->setFileId($fileId);
 			$queueFile->setUpdate($update);
 			try {
 				$this->queue->insertIntoQueue($queueFile);
