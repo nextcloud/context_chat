@@ -10,6 +10,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [5.2.1] - 2025-02-05
+
+### Changed
+* perf(FsEventScheduler): Make sure to get node owner from caller, if possible (#206) @marcelklehr
+* Migrate `getById` to `getFirstNodeById` (#211) @artonge
+* perf(FsEventService): Avoid fetching nodes (#213) @marcelklehr
+
+### Fixed
+* do not re-declare the id column in db models (#204) @kyteinsky
+* allow string IDs of oc_jobs from the snowflake change (#204) @kyteinsky
+
+
 ## [5.2.0] - 2025-01-08
 
 * bump to keep in sync with context_chat_backend minor version
