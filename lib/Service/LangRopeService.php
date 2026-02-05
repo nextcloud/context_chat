@@ -60,7 +60,7 @@ class LangRopeService {
 
 		// todo: app_api is always available now (composer update)
 		try {
-			$appApiFunctions = \OCP\Server::get(\OCA\AppAPI\PublicFunctions::class);
+			$appApiFunctions = $this->getAppApiFunctions();
 		} catch (ContainerExceptionInterface|NotFoundExceptionInterface $e) {
 			throw new RuntimeException('Could not get AppAPI public functions');
 		}
@@ -287,7 +287,7 @@ class LangRopeService {
 		}
 
 		$params = array_map(function (Source $source) {
-			return [
+			$part = [
 				'name' => 'sources',
 				'filename' => $source->reference, // eg. 'files__default: 555'
 				'contents' => $source->content,
@@ -299,6 +299,10 @@ class LangRopeService {
 					'provider' => $source->provider, // eg. 'files__default'
 				],
 			];
+			if ($source->size !== null) {
+				$part['headers']['Content-Length'] = $source->size;
+			}
+			return $part;
 		}, $sources);
 
 		$response = $this->requestToExApp('/loadSources', 'PUT', $params, 'multipart/form-data');
@@ -423,5 +427,9 @@ class LangRopeService {
 		}
 
 		return $llmResponse . $output;
+	}
+
+	protected function getAppApiFunctions() {
+		return \OCP\Server::get(\OCA\AppAPI\PublicFunctions::class);
 	}
 }
