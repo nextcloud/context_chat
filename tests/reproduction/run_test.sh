@@ -49,15 +49,25 @@ docker-compose exec -u 33 nextcloud php occ app:enable context_chat
 docker-compose exec -u 33 nextcloud php occ app:enable app_api
 
 # Register Mock Backend via OCC
+echo "Cleaning up previous registrations..."
+docker-compose exec -u 33 nextcloud php occ app_api:app:unregister context_chat_backend --force --no-interaction || true
+docker-compose exec -u 33 nextcloud php occ app_api:daemon:unregister manual_install --force --no-interaction || true
+
 echo "Registering Mock Backend..."
 
 # Register daemon config
-# Added --no-interaction just in case
-docker-compose exec -u 33 nextcloud php occ app_api:daemon:register manual_install "Manual Install" manual-install http context_chat_backend:23000 http://localhost --no-interaction || true
+# Using just hostname for daemon, assuming AppAPI constructs URL correctly with app port
+# Or specifically for manual_install, it might not use the daemon host for the app URL if app provides it?
+# Let's try without port in daemon host
+docker-compose exec -u 33 nextcloud php occ app_api:daemon:register manual_install "Manual Install" manual-install http context_chat_backend http://localhost --no-interaction || true
 
 # Register the app
-# Added --no-interaction and --wait-finish (if supported)
+# We use --force-scopes to avoid interactive prompts
 docker-compose exec -u 33 nextcloud php occ app_api:app:register context_chat_backend manual_install --json-info '{"id":"context_chat_backend","name":"Context Chat Backend","deploy_method":"manual_install","version":"1.0.0","secret":"secret","host":"context_chat_backend","port":23000,"scopes":[],"protocol":"http","system_app":0}' --force-scopes --no-interaction || true
+
+# Enable the app (it was listed as disabled)
+echo "Enabling Context Chat Backend..."
+docker-compose exec -u 33 nextcloud php occ app_api:app:enable context_chat_backend --no-interaction || true
 
 # Debug: List registered apps
 echo "Listing AppAPI apps..."
