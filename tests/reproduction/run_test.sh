@@ -93,9 +93,9 @@ echo "DEBUG: Checking file sizes..."
 docker-compose cp debug_sizes.php nextcloud:/var/www/html/debug_sizes.php
 docker-compose exec -u 33 nextcloud php /var/www/html/debug_sizes.php
 
-# Run Indexer
-echo "Running Scan (Direct Indexing)..."
-docker-compose exec -u 33 nextcloud php occ context_chat:scan admin
+# Run Indexer on the specific file
+echo "Running Scan (Direct Indexing) on test.txt..."
+docker-compose exec -u 33 nextcloud php occ context_chat:scan admin --directory test.txt
 
 # Check logs
 echo "Checking backend logs..."
