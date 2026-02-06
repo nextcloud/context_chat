@@ -48,14 +48,14 @@ docker-compose exec -u 33 nextcloud php occ encryption:enable-master-key
 docker-compose exec -u 33 nextcloud php occ app:enable context_chat
 docker-compose exec -u 33 nextcloud php occ app:enable app_api
 
-# Register Mock Backend
+# Register Mock Backend via OCC
 echo "Registering Mock Backend..."
-docker-compose cp register_mock.php nextcloud:/var/www/html/register_mock.php
-docker-compose exec -u 33 nextcloud php /var/www/html/register_mock.php
+# We use --force-scopes to avoid interactive prompts
+docker-compose exec -u 33 nextcloud php occ app_api:app:register context_chat_backend manual_install --json-info '{"id":"context_chat_backend","name":"Context Chat Backend","daemon_config_name":"manual_install","version":"1.0.0","secret":"secret","host":"context_chat_backend","port":23000,"scopes":[],"protocol":"http","system_app":0}' --force-scopes || true
 
 # Debug: List registered apps
 echo "Listing AppAPI apps..."
-docker-compose exec -u 33 nextcloud php occ app_api:app:list || true
+docker-compose exec -u 33 nextcloud php occ app_api:app:list
 
 # Configure context_chat
 docker-compose exec -u 33 nextcloud php occ config:app:set context_chat backend_init --value true
