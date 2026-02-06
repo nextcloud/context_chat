@@ -50,8 +50,12 @@ docker-compose exec -u 33 nextcloud php occ app:enable app_api
 
 # Register Mock Backend via OCC
 echo "Registering Mock Backend..."
+# Debug help
+docker-compose exec -u 33 nextcloud php occ app_api:app:register --help || true
+
 # We use --force-scopes to avoid interactive prompts
-docker-compose exec -u 33 nextcloud php occ app_api:app:register context_chat_backend manual_install --json-info '{"id":"context_chat_backend","name":"Context Chat Backend","daemon_config_name":"manual_install","version":"1.0.0","secret":"secret","host":"context_chat_backend","port":23000,"scopes":[],"protocol":"http","system_app":0}' --force-scopes || true
+# Removed daemon_config_name, added deploy_method
+docker-compose exec -u 33 nextcloud php occ app_api:app:register context_chat_backend manual_install --json-info '{"id":"context_chat_backend","name":"Context Chat Backend","deploy_method":"manual_install","version":"1.0.0","secret":"secret","host":"context_chat_backend","port":23000,"scopes":[],"protocol":"http","system_app":0}' --force-scopes || true
 
 # Debug: List registered apps
 echo "Listing AppAPI apps..."
