@@ -51,7 +51,6 @@ docker-compose exec -u 33 nextcloud php occ app:enable app_api
 # Register Mock Backend via OCC
 echo "Cleaning up previous registrations..."
 docker-compose exec -u 33 nextcloud php occ app_api:app:unregister context_chat_backend --force --no-interaction || true
-# Removed --force as it doesn't exist for daemon:unregister
 docker-compose exec -u 33 nextcloud php occ app_api:daemon:unregister manual_install --no-interaction || true
 
 echo "Registering Mock Backend..."
@@ -86,4 +85,6 @@ docker-compose exec -u 33 nextcloud php occ context_chat:scan admin
 
 # Check logs
 echo "Checking backend logs..."
-docker-compose logs context_chat_backend
+docker-compose logs --no-log-prefix context_chat_backend
+
+echo "Test completed successfully."
