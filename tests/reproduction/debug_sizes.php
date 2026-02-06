@@ -5,25 +5,32 @@ require_once '/var/www/html/lib/base.php';
 use OCP\Server;
 use OCP\Files\IRootFolder;
 
-try {
-    $rootFolder = Server::get(IRootFolder::class);
-    $userFolder = $rootFolder->getUserFolder('admin');
-    $file = $userFolder->get('test.txt');
+function checkFile($path) {
+    try {
+        $rootFolder = Server::get(IRootFolder::class);
+        $userFolder = $rootFolder->getUserFolder('admin');
+        if (!$userFolder->nodeExists($path)) {
+            echo "File $path not found.\n";
+            return;
+        }
+        $file = $userFolder->get($path);
 
-    $reportedSize = $file->getSize();
-    echo "File::getSize(): " . $reportedSize . "\n";
+        $reportedSize = $file->getSize();
+        echo "File::getSize() for $path: " . $reportedSize . "\n";
 
-    $handle = $file->fopen('rb');
-    $stat = fstat($handle);
-    echo "fstat()['size']: " . $stat['size'] . "\n";
+        $handle = $file->fopen('rb');
+        $stat = fstat($handle);
+        echo "fstat()['size'] for $path: " . $stat['size'] . "\n";
 
-    $contents = stream_get_contents($handle);
-    $actualReadSize = strlen($contents);
-    echo "Actual Read Size: " . $actualReadSize . "\n";
+        $contents = stream_get_contents($handle);
+        $actualReadSize = strlen($contents);
+        echo "Actual Read Size for $path: " . $actualReadSize . "\n";
 
-    echo "Mismatch: " . ($reportedSize - $actualReadSize) . "\n";
-
-} catch (\Exception $e) {
-    echo "Error: " . $e->getMessage() . "\n";
-    exit(1);
+        echo "Mismatch for $path: " . ($reportedSize - $actualReadSize) . "\n";
+    } catch (\Exception $e) {
+        echo "Error checking $path: " . $e->getMessage() . "\n";
+    }
 }
+
+checkFile('test.txt');
+checkFile('Nextcloud Manual.pdf'); // Check the default file too
