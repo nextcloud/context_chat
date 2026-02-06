@@ -1,6 +1,6 @@
 <?php
 define('NC_CLI_MODE', true);
-require_once '/var/www/html/console.php';
+require_once '/var/www/html/lib/base.php';
 
 use OCP\Server;
 use OCP\Files\IRootFolder;
