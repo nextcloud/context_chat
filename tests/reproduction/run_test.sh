@@ -79,6 +79,17 @@ echo "Creating test file via VFS (Encrypted)..."
 docker-compose cp create_test_file.php nextcloud:/var/www/html/create_test_file.php
 docker-compose exec -u 33 nextcloud php /var/www/html/create_test_file.php
 
+# Verify file existence via OCC
+echo "Verifying file existence in Nextcloud VFS..."
+# We use grep to check output. If grep fails, set -e will cause script to fail (after we ensure grep success)
+# But grep returns 1 if not found, so we handle it explicitly.
+if docker-compose exec -u 33 nextcloud php occ files:list admin | grep -q "test.txt"; then
+    echo "SUCCESS: test.txt found in Nextcloud VFS."
+else
+    echo "FAILURE: test.txt NOT found in Nextcloud VFS."
+    exit 1
+fi
+
 # Run Indexer
 echo "Running Scan (Direct Indexing)..."
 docker-compose exec -u 33 nextcloud php occ context_chat:scan admin
