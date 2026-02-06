@@ -3,39 +3,48 @@ define('NC_CLI_MODE', true);
 require_once '/var/www/html/console.php';
 
 use OCP\Server;
+use OCA\AppAPI\Db\ExApp;
+use OCA\AppAPI\Db\ExAppMapper;
 
 try {
-    $db = Server::get(\OCP\IDBConnection::class);
-
-    // Check if table exists
-    if (!$db->tableExists('app_api_apps')) {
-        echo "Table app_api_apps does not exist.\n";
+    if (!class_exists(ExAppMapper::class)) {
+        echo "AppAPI classes not found.\n";
         exit(1);
     }
 
-    // Delete existing if any
-    $qb = $db->getQueryBuilder();
-    $qb->delete('app_api_apps')
-       ->where($qb->expr()->eq('app_id', $qb->createNamedParameter('context_chat_backend')))
-       ->execute();
+    $mapper = Server::get(ExAppMapper::class);
 
-    // Insert
-    $qb = $db->getQueryBuilder();
-    $qb->insert('app_api_apps')
-       ->setValue('app_id', $qb->createNamedParameter('context_chat_backend'))
-       ->setValue('name', $qb->createNamedParameter('Context Chat Backend'))
-       ->setValue('deploy_method', $qb->createNamedParameter('manual_install'))
-       ->setValue('version', $qb->createNamedParameter('1.0.0'))
-       ->setValue('enabled', $qb->createNamedParameter(1))
-       ->setValue('host', $qb->createNamedParameter('context_chat_backend'))
-       ->setValue('port', $qb->createNamedParameter(23000))
-       ->setValue('protocol', $qb->createNamedParameter('http'))
-       ->setValue('secret', $qb->createNamedParameter('secret'))
-       ->setValue('hash', $qb->createNamedParameter('hash'))
-       ->setValue('last_updated', $qb->createNamedParameter(time()))
-       ->execute();
+    // Try to find existing
+    try {
+        $existing = $mapper->find('context_chat_backend');
+        $mapper->delete($existing);
+        echo "Deleted existing registration.\n";
+    } catch (\Exception $e) {
+        // Not found, ignore
+    }
 
-    echo "Registered context_chat_backend successfully.\n";
+    $exApp = new ExApp();
+    $exApp->setAppId('context_chat_backend');
+    $exApp->setName('Context Chat Backend');
+    $exApp->setDeployMethod('manual_install');
+    $exApp->setVersion('1.0.0');
+    $exApp->setEnabled(1);
+    $exApp->setHost('context_chat_backend');
+    $exApp->setPort(23000);
+    $exApp->setProtocol('http');
+    $exApp->setSecret('secret');
+    $exApp->setHash('hash');
+    $exApp->setLastUpdated(time());
+
+    // Set other required fields if any (based on standard ExApp entity)
+    // Some versions require 'scopes' or 'daemon_config_name'
+    if (method_exists($exApp, 'setDaemonConfigName')) {
+        $exApp->setDaemonConfigName('manual_install');
+    }
+
+    $mapper->insert($exApp);
+
+    echo "Registered context_chat_backend successfully via Mapper.\n";
 
 } catch (\Exception $e) {
     echo "Error registering app: " . $e->getMessage() . "\n";
