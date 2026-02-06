@@ -123,6 +123,7 @@ class ScanService {
 			$node->getMTime(),
 			$node->getMimeType(),
 			$providerKey,
+			(int)$node->getSize(),
 		);
 	}
 }

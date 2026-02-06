@@ -57,8 +57,8 @@ docker-compose exec -u 33 nextcloud php -r "if (!is_dir('data/admin/files')) { m
 docker-compose exec -u 33 nextcloud php occ files:scan --all
 
 # Run Indexer
-echo "Running IndexerJob..."
-docker-compose exec -u 33 nextcloud php occ context_chat:index
+echo "Running Scan (Direct Indexing)..."
+docker-compose exec -u 33 nextcloud php occ context_chat:scan admin
 
 # Check logs
 echo "Checking backend logs..."
