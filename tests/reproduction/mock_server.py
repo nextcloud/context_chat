@@ -3,6 +3,10 @@ import sys
 
 app = Flask(__name__)
 
+@app.route('/heartbeat', methods=['GET'])
+def heartbeat():
+    return jsonify({"status": "ok"}), 200
+
 @app.route('/loadSources', methods=['PUT'])
 def load_sources():
     content_length = request.headers.get('Content-Length')
