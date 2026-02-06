@@ -75,9 +75,9 @@ docker-compose exec -u 33 nextcloud php occ app_api:app:list
 docker-compose exec -u 33 nextcloud php occ config:app:set context_chat backend_init --value true
 
 # Create test file
-echo "Creating test file..."
-docker-compose exec -u 33 nextcloud php -r "if (!is_dir('data/admin/files')) { mkdir('data/admin/files', 0770, true); } file_put_contents('data/admin/files/test.txt', str_repeat('A', 1024*1024));"
-docker-compose exec -u 33 nextcloud php occ files:scan --all
+echo "Creating test file via VFS (Encrypted)..."
+docker-compose cp create_test_file.php nextcloud:/var/www/html/create_test_file.php
+docker-compose exec -u 33 nextcloud php /var/www/html/create_test_file.php
 
 # Run Indexer
 echo "Running Scan (Direct Indexing)..."
