@@ -300,7 +300,7 @@ class LangRopeService {
 				],
 			];
 			if ($source->size !== null) {
-				$part['headers']['Content-Length'] = $source->size;
+				$part['headers']['Content-Length'] = (string)$source->size;
 			}
 			return $part;
 		}, $sources);

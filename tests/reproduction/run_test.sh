@@ -52,12 +52,12 @@ docker-compose exec -u 33 nextcloud php occ app:enable app_api
 echo "Registering Mock Backend..."
 
 # Register daemon config
-# Syntax: <name> <display-name> <accepts-deploy-id> <protocol> <host> <nextcloud_url>
-docker-compose exec -u 33 nextcloud php occ app_api:daemon:register manual_install "Manual Install" manual-install http context_chat_backend:23000 http://localhost || true
+# Added --no-interaction just in case
+docker-compose exec -u 33 nextcloud php occ app_api:daemon:register manual_install "Manual Install" manual-install http context_chat_backend:23000 http://localhost --no-interaction || true
 
 # Register the app
-# We use --force-scopes to avoid interactive prompts
-docker-compose exec -u 33 nextcloud php occ app_api:app:register context_chat_backend manual_install --json-info '{"id":"context_chat_backend","name":"Context Chat Backend","deploy_method":"manual_install","version":"1.0.0","secret":"secret","host":"context_chat_backend","port":23000,"scopes":[],"protocol":"http","system_app":0}' --force-scopes || true
+# Added --no-interaction and --wait-finish (if supported)
+docker-compose exec -u 33 nextcloud php occ app_api:app:register context_chat_backend manual_install --json-info '{"id":"context_chat_backend","name":"Context Chat Backend","deploy_method":"manual_install","version":"1.0.0","secret":"secret","host":"context_chat_backend","port":23000,"scopes":[],"protocol":"http","system_app":0}' --force-scopes --no-interaction || true
 
 # Debug: List registered apps
 echo "Listing AppAPI apps..."
