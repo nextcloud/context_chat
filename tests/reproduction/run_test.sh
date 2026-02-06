@@ -88,6 +88,11 @@ else
     exit 1
 fi
 
+# DEBUG: Check Sizes
+echo "DEBUG: Checking file sizes..."
+docker-compose cp debug_sizes.php nextcloud:/var/www/html/debug_sizes.php
+docker-compose exec -u 33 nextcloud php /var/www/html/debug_sizes.php
+
 # Run Indexer
 echo "Running Scan (Direct Indexing)..."
 docker-compose exec -u 33 nextcloud php occ context_chat:scan admin
