@@ -4,21 +4,36 @@ set -e
 # Start containers
 docker-compose up -d
 
-echo "Waiting for Nextcloud to be ready..."
-max_retries=30
+echo "Waiting for container to accept commands..."
+sleep 10
+
+# Check if Nextcloud is installed
+echo "Checking Nextcloud status..."
+if docker-compose exec -u 33 nextcloud php occ status | grep -q "installed: true"; then
+    echo "Nextcloud is already installed."
+else
+    echo "Nextcloud is not installed. Installing..."
+    docker-compose exec -u 33 nextcloud php occ maintenance:install \
+        --database "sqlite" \
+        --admin-user "admin" \
+        --admin-pass "password"
+fi
+
+echo "Waiting for Nextcloud to be fully ready..."
+max_retries=10
 count=0
 while [ $count -lt $max_retries ]; do
     if docker-compose exec -u 33 nextcloud php occ status | grep -q "installed: true"; then
-        echo "Nextcloud is installed and ready."
+        echo "Nextcloud is ready."
         break
     fi
-    echo "Nextcloud not ready yet... waiting (Attempt $((count+1))/$max_retries)"
-    sleep 10
+    echo "Waiting for status update... (Attempt $((count+1))/$max_retries)"
+    sleep 5
     count=$((count+1))
 done
 
 if [ $count -eq $max_retries ]; then
-    echo "Timeout waiting for Nextcloud to install."
+    echo "Timeout waiting for Nextcloud to be ready."
     exit 1
 fi
 
