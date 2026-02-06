@@ -51,16 +51,11 @@ docker-compose exec -u 33 nextcloud php occ app:enable app_api
 # Register Mock Backend via OCC
 echo "Registering Mock Backend..."
 
-# First, register the daemon config for manual install
-# Arguments guess: name "Display Name" host port? No, manual_install usually takes just a name and type.
-# Trying to find help
-docker-compose exec -u 33 nextcloud php occ app_api:daemon:register --help || true
+# Register daemon config
+# Syntax: <name> <display-name> <accepts-deploy-id> <protocol> <host> <nextcloud_url>
+docker-compose exec -u 33 nextcloud php occ app_api:daemon:register manual_install "Manual Install" manual-install http context_chat_backend:23000 http://localhost || true
 
-# Trying to register manual_install daemon
-# Syntax often: name display-name
-docker-compose exec -u 33 nextcloud php occ app_api:daemon:register manual_install "Manual Install" --force-scopes || true
-
-# Then register the app
+# Register the app
 # We use --force-scopes to avoid interactive prompts
 docker-compose exec -u 33 nextcloud php occ app_api:app:register context_chat_backend manual_install --json-info '{"id":"context_chat_backend","name":"Context Chat Backend","deploy_method":"manual_install","version":"1.0.0","secret":"secret","host":"context_chat_backend","port":23000,"scopes":[],"protocol":"http","system_app":0}' --force-scopes || true
 
