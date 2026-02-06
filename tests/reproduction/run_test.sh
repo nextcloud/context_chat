@@ -51,14 +51,13 @@ docker-compose exec -u 33 nextcloud php occ app:enable app_api
 # Register Mock Backend via OCC
 echo "Cleaning up previous registrations..."
 docker-compose exec -u 33 nextcloud php occ app_api:app:unregister context_chat_backend --force --no-interaction || true
-docker-compose exec -u 33 nextcloud php occ app_api:daemon:unregister manual_install --force --no-interaction || true
+# Removed --force as it doesn't exist for daemon:unregister
+docker-compose exec -u 33 nextcloud php occ app_api:daemon:unregister manual_install --no-interaction || true
 
 echo "Registering Mock Backend..."
 
 # Register daemon config
-# Using just hostname for daemon, assuming AppAPI constructs URL correctly with app port
-# Or specifically for manual_install, it might not use the daemon host for the app URL if app provides it?
-# Let's try without port in daemon host
+# Using just hostname for daemon, allowing app port to be appended correctly
 docker-compose exec -u 33 nextcloud php occ app_api:daemon:register manual_install "Manual Install" manual-install http context_chat_backend http://localhost --no-interaction || true
 
 # Register the app
