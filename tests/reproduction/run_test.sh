@@ -50,7 +50,7 @@ docker-compose exec -u 33 nextcloud php occ app:enable app_api
 
 # Register Mock Backend
 echo "Registering Mock Backend..."
-docker-compose cp tests/reproduction/register_mock.php nextcloud:/var/www/html/register_mock.php
+docker-compose cp register_mock.php nextcloud:/var/www/html/register_mock.php
 docker-compose exec -u 33 nextcloud php /var/www/html/register_mock.php
 
 # Configure context_chat
