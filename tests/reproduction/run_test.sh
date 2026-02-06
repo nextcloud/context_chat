@@ -81,7 +81,7 @@ docker-compose exec -u 33 nextcloud php /var/www/html/create_test_file.php
 
 # Verify file existence via PHP
 echo "Verifying file existence in Nextcloud VFS..."
-if docker-compose exec -u 33 nextcloud php -r 'define("NC_CLI_MODE", true); require_once "/var/www/html/console.php"; echo \OCP\Server::get(\OCP\Files\IRootFolder::class)->getUserFolder("admin")->nodeExists("test.txt") ? "YES" : "NO";' | grep -q "YES"; then
+if docker-compose exec -u 33 nextcloud php -r 'define("NC_CLI_MODE", true); require_once "/var/www/html/lib/base.php"; echo \OCP\Server::get(\OCP\Files\IRootFolder::class)->getUserFolder("admin")->nodeExists("test.txt") ? "YES" : "NO";' | grep -q "YES"; then
     echo "SUCCESS: test.txt found in Nextcloud VFS."
 else
     echo "FAILURE: test.txt NOT found in Nextcloud VFS."
