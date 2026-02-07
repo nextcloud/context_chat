@@ -16,6 +16,7 @@ class Source {
 		public int|string $modified,
 		public string $type,
 		public string $provider,
+		public ?int $size = null,
 	) {
 	}
 }
