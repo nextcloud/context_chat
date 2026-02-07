@@ -287,10 +287,24 @@ class LangRopeService {
 		}
 
 		$params = array_map(function (Source $source) {
-			$part = [
+			$contents = $source->content;
+			if ($source->size !== null) {
+				if (class_exists('\GuzzleHttp\Psr7\Utils')) {
+					$stream = \GuzzleHttp\Psr7\Utils::streamFor($source->content);
+				} else {
+					$stream = \GuzzleHttp\Psr7\stream_for($source->content);
+				}
+				$contents = \GuzzleHttp\Psr7\FnStream::decorate($stream, [
+					'getSize' => function () use ($source) {
+						return $source->size;
+					},
+				]);
+			}
+
+			return [
 				'name' => 'sources',
 				'filename' => $source->reference, // eg. 'files__default: 555'
-				'contents' => $source->content,
+				'contents' => $contents,
 				'headers' => [
 					'userIds' => implode(',', $source->userIds),
 					'title' => $source->title,
@@ -299,10 +313,6 @@ class LangRopeService {
 					'provider' => $source->provider, // eg. 'files__default'
 				],
 			];
-			if ($source->size !== null) {
-				$part['headers']['Content-Length'] = (string)$source->size;
-			}
-			return $part;
 		}, $sources);
 
 		$response = $this->requestToExApp('/loadSources', 'PUT', $params, 'multipart/form-data');
