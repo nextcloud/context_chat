@@ -40,7 +40,7 @@ Refer to the [Context Chat Backend's readme](https://github.com/nextcloud/contex
     <screenshot>https://raw.githubusercontent.com/nextcloud/context_chat/main/screenshots/context_chat_4.png</screenshot>
     <screenshot>https://raw.githubusercontent.com/nextcloud/context_chat/main/screenshots/context_chat_5.png</screenshot>
     <dependencies>
-        <nextcloud min-version="32" max-version="33"/>
+        <nextcloud min-version="32" max-version="34"/>
     </dependencies>
     <background-jobs>
 		<job>OCA\ContextChat\BackgroundJobs\FileSystemListenerJob</job>

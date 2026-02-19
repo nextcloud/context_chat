@@ -10,7 +10,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
-## [5.2.1] - 2025-02-05
+## [5.3.0] - 2026-02-19
+
+### Added
+* improve metadata provider (#218) @kyteinsky
+* add support for NC 34
+
+
+## [5.2.1] - 2026-02-05
 
 ### Changed
 * perf(FsEventScheduler): Make sure to get node owner from caller, if possible (#206) @marcelklehr
@@ -22,7 +29,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 * allow string IDs of oc_jobs from the snowflake change (#204) @kyteinsky
 
 
-## [5.2.0] - 2025-01-08
+## [5.2.0] - 2026-01-08
 
 * bump to keep in sync with context_chat_backend minor version
 
