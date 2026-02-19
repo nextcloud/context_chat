@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [5.3.1] - 2026-02-19
+
+### Fixed
+* fix info.xml version
+
+
 ## [5.3.0] - 2026-02-19
 
 ### Added
