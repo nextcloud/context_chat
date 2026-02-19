@@ -39,6 +39,15 @@ class ScanService {
 			$userFolder = $this->root->getUserFolder($userId)->get($directory);
 		}
 
+		if ($userFolder instanceof File) {
+			$source = $this->getSourceFromFile($mimeTypeFilter, $userFolder);
+			if ($source !== null) {
+				$this->langRopeService->indexSources([$source]);
+				yield $source;
+			}
+			return [];
+		}
+
 		yield from ($this->scanDirectory($mimeTypeFilter, $userFolder));
 		return [];
 	}
@@ -123,6 +132,7 @@ class ScanService {
 			$node->getMTime(),
 			$node->getMimeType(),
 			$providerKey,
+			(int)$node->getSize(),
 		);
 	}
 }
