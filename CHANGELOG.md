@@ -11,6 +11,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 
+## [4.6.0] - 2026-02-19
+
+### Changed
+* pin max NC version to 31
+* do not translation enum values description (#194) @kyteinsky
+
+### Added
+* improve metadata provider (#219) @kyteinsky
+
+
 ## [4.5.0] - 2025-09-23
 
 ### Changed
