@@ -10,6 +10,7 @@ namespace OCA\ContextChat\Controller;
 use OCA\ContextChat\Service\MetadataService;
 use OCA\ContextChat\Service\ProviderConfigService;
 use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\DataResponse;
 use OCP\IRequest;
@@ -20,6 +21,7 @@ class ProviderController extends Controller {
 		string $appName,
 		IRequest $request,
 		private MetadataService $metadataService,
+		private ?string $userId,
 	) {
 		parent::__construct($appName, $request);
 	}
@@ -48,7 +50,13 @@ class ProviderController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function getMetadataFor(array $sources): DataResponse {
-		$enrichedSources = $this->metadataService->getEnrichedSources(...$sources);
+		if (empty($sources)) {
+			return new DataResponse([]);
+		}
+		if ($this->userId === null) {
+			return new DataResponse(['error' => 'User must be logged in to get metadata for sources'], Http::STATUS_UNAUTHORIZED);
+		}
+		$enrichedSources = $this->metadataService->getEnrichedSources($this->userId, ...$sources);
 		return new DataResponse($enrichedSources);
 	}
 }
