@@ -1,0 +1,20 @@
+services:
+  nextcloud:
+    image: nextcloud:latest
+    environment:
+      - NEXTCLOUD_ADMIN_USER=admin
+      - NEXTCLOUD_ADMIN_PASSWORD=password
+    volumes:
+      - ../../:/var/www/html/custom_apps/context_chat
+    ports:
+      - "8080:80"
+
+  context_chat_backend:
+    image: python:3.9-slim
+    command: sh -c "pip install flask && python /mock_server.py"
+    volumes:
+      - ./mock_server.py:/mock_server.py
+    networks:
+      default:
+        aliases:
+          - context_chat_backend
