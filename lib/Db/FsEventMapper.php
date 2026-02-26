@@ -48,6 +48,7 @@ class FsEventMapper extends QBMapper {
 			$entities = $this->findEntities($qb);
 
 			if (!empty($entities)) {
+				$this->db->commit();
 				return $entities[0];
 			}
 
