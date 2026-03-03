@@ -10,11 +10,7 @@ declare(strict_types=1);
 namespace OCA\ContextChat\Migration;
 
 use Closure;
-use OCA\ContextChat\BackgroundJobs\IndexerJob;
-use OCA\ContextChat\BackgroundJobs\InitialContentImportJob;
 use OCA\ContextChat\BackgroundJobs\SchedulerJob;
-use OCA\ContextChat\BackgroundJobs\StorageCrawlJob;
-use OCA\ContextChat\BackgroundJobs\SubmitContentJob;
 use OCP\AppFramework\Services\IAppConfig;
 use OCP\BackgroundJob\IJobList;
 use OCP\DB\Exception;
