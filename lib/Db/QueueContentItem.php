@@ -32,8 +32,8 @@ use OCP\DB\Types;
  * @method \DateTime getLastModified()
  * @method setUsers(string $users)
  * @method string getUsers()
- * @method \DateTime getLockedAt()
- * @method setLockedAt(\DateTime $dateTime)
+ * @method ?\DateTime getLockedAt()
+ * @method setLockedAt(?\DateTime $dateTime)
  */
 class QueueContentItem extends Entity implements \JsonSerializable {
 	protected $itemId;

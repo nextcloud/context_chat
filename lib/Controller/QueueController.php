@@ -45,15 +45,22 @@ class QueueController extends OCSController {
 	#[ExAppRequired]
 	#[ApiRoute(verb: 'GET', url: '/files/{fileId}')]
 	public function getFileContents(IRootFolder $rootFolder, int $fileId) : DataResponse|Http\StreamResponse {
-		$file = $rootFolder->getFirstNodeById($fileId);
-		if (!$file) {
+		try {
+			$file = $rootFolder->getFirstNodeById($fileId);
+			if (!$file || !$file instanceof \OCP\Files\File) {
+				return new DataResponse([], Http::STATUS_NOT_FOUND);
+			}
+
+			$stream = $file->fopen('r');
+			if (!$stream) {
+				return new DataResponse([], Http::STATUS_NOT_FOUND);
+			}
+
+			return new Http\StreamResponse($stream);
+		} catch (\Throwable $e) {
+			// Avoid leaking filesystem details; keep behavior consistent with other failure paths.
 			return new DataResponse([], Http::STATUS_NOT_FOUND);
 		}
-		$stream = $file->fopen('r');
-		if (!$stream) {
-			return new DataResponse([], Http::STATUS_NOT_FOUND);
-		}
-		return new Http\StreamResponse($stream);
 	}
 
 	/**
@@ -66,6 +73,14 @@ class QueueController extends OCSController {
 	#[ExAppRequired]
 	#[ApiRoute(verb: 'GET', url: '/queues/documents/')]
 	public function getDocumentsQueueItems(QueueMapper $queueMapper, QueueContentItemMapper $queueContentItemMapper, int $n = 64) : DataResponse {
+		if ($n <= 0) {
+			return new DataResponse(['message' => 'Parameter n must be a positive integer'], Http::STATUS_BAD_REQUEST);
+		}
+
+		$maxN = 1024;
+		if ($n > $maxN) {
+			$n = $maxN;
+		}
 		try {
 			$files = [];
 			while (count($files) < $n) {

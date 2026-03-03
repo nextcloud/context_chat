@@ -43,7 +43,7 @@ class QueueActionMapper extends QBMapper {
 				$qb->expr()->lte(
 					'locked_at',
 					$qb->createPositionalParameter(
-						(new \DateTime())->sub(new \DateInterval('P' . self::LOCK_TIMEOUT . 'S')),
+						(new \DateTime())->sub(new \DateInterval('PT' . self::LOCK_TIMEOUT . 'S')),
 						IQueryBuilder::PARAM_DATETIME_MUTABLE
 					)
 				)

@@ -19,8 +19,8 @@ use OCP\AppFramework\Db\Entity;
  * @method setType(string $type)
  * @method string getPayload()
  * @method setPayload(string $payload)
- * @method \DateTime getLockedAt()
- * @method setLockedAt(\DateTime $dateTime)
+ * @method ?\DateTime getLockedAt()
+ * @method setLockedAt(?\DateTime $dateTime)
  */
 class QueueAction extends Entity implements \JsonSerializable {
 	protected $type;

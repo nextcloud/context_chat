@@ -24,8 +24,8 @@ use OCP\AppFramework\Db\Entity;
  * @method setRootId(int $rootId)
  * @method setUpdate(boolean $update)
  * @method bool getUpdate()
- * @method \DateTime getLockedAt()
- * @method setLockedAt(\DateTime $dateTime)
+ * @method ?\DateTime getLockedAt()
+ * @method setLockedAt(?\DateTime $dateTime)
  */
 class QueueFile extends Entity implements \JsonSerializable {
 	protected $fileId;
