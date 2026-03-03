@@ -11,14 +11,21 @@ declare(strict_types=1);
 namespace OCA\ContextChat\Controller;
 
 use OCA\ContextChat\Db\QueueActionMapper;
+use OCA\ContextChat\Db\QueueContentItem;
 use OCA\ContextChat\Db\QueueContentItemMapper;
+use OCA\ContextChat\Db\QueueFile;
 use OCA\ContextChat\Db\QueueMapper;
+use OCA\ContextChat\Service\ProviderConfigService;
+use OCA\ContextChat\Service\StorageService;
+use OCA\ContextChat\Type\Source;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\ApiRoute;
 use OCP\AppFramework\Http\Attribute\ExAppRequired;
 use OCP\AppFramework\Http\DataResponse;
+use OCP\AppFramework\Http\StreamResponse;
 use OCP\AppFramework\OCSController;
 use OCP\DB\Exception;
+use OCP\Files\File;
 use OCP\Files\IRootFolder;
 use OCP\IDBConnection;
 use OCP\IRequest;
@@ -40,13 +47,18 @@ class QueueController extends OCSController {
 	 * ExApp-only endpoint to retrieve file contents by fileId
 	 * @param IRootFolder $rootFolder
 	 * @param int $fileId
-	 * @return DataResponse|Http\StreamResponse
+	 * @param string|null $userId
+	 * @return DataResponse|StreamResponse
 	 */
 	#[ExAppRequired]
 	#[ApiRoute(verb: 'GET', url: '/files/{fileId}')]
-	public function getFileContents(IRootFolder $rootFolder, int $fileId) : DataResponse|Http\StreamResponse {
+	public function getFileContents(IRootFolder $rootFolder, int $fileId, ?string $userId = null) : DataResponse|Http\StreamResponse {
 		try {
-			$file = $rootFolder->getFirstNodeById($fileId);
+			if ($userId === null) {
+				$file = $rootFolder->getFirstNodeById($fileId);
+			} else {
+				$file = $rootFolder->getUserFolder($userId)->getById($fileId);
+			}
 			if (!$file || !$file instanceof \OCP\Files\File) {
 				return new DataResponse([], Http::STATUS_NOT_FOUND);
 			}
@@ -72,7 +84,13 @@ class QueueController extends OCSController {
 	 */
 	#[ExAppRequired]
 	#[ApiRoute(verb: 'GET', url: '/queues/documents/')]
-	public function getDocumentsQueueItems(QueueMapper $queueMapper, QueueContentItemMapper $queueContentItemMapper, int $n = 64) : DataResponse {
+	public function getDocumentsQueueItems(
+		StorageService $storageService,
+		IRootFolder $rootFolder,
+		QueueMapper $queueMapper,
+		QueueContentItemMapper $queueContentItemMapper,
+		int $n = 64,
+	) : DataResponse {
 		if ($n <= 0) {
 			return new DataResponse(['message' => 'Parameter n must be a positive integer'], Http::STATUS_BAD_REQUEST);
 		}
@@ -91,7 +109,7 @@ class QueueController extends OCSController {
 				}
 				foreach ($documents as $document) {
 					if ($queueMapper->lock($document->getId())) {
-						$files[] = $document;
+						$files[] = $this->getFileSource($document, $rootFolder, $storageService);
 					}
 				}
 			}
@@ -104,7 +122,7 @@ class QueueController extends OCSController {
 				}
 				foreach ($documents as $document) {
 					if ($queueContentItemMapper->lock($document->getId())) {
-						$contentItems[] = $document;
+						$contentItems[] = $this->getContentItemSource($document);
 					}
 				}
 			}
@@ -171,7 +189,7 @@ class QueueController extends OCSController {
 	}
 
 	/**
-	 * ExApp-only endpoint for backend to get actions from queue
+	 * ExApp-only endpoint for backend to get actions from the queue
 	 * @param QueueActionMapper $queueActionMapper
 	 * @param int $n
 	 * @return DataResponse
@@ -241,5 +259,36 @@ class QueueController extends OCSController {
 			$this->logger->error($e->getMessage(), ['exception' => $e]);
 			return new DataResponse([], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
+	}
+
+	private function getFileSource(QueueFile $document, IRootFolder $rootFolder, StorageService $storageService) : Source {
+		$file = $rootFolder->getFirstNodeById($document->getFileId());
+		if ($file === null || !($file instanceof File)) {
+			throw new \Exception('File not found or not a file');
+		}
+		$userIds = $storageService->getUsersForFileId($document->getFileId());
+
+		return new Source(
+			$userIds,
+			ProviderConfigService::getSourceId($file->getId()),
+			$file->getInternalPath() ?: $file->getPath() ?: $file->getName(),
+			null,
+			$file->getMTime(),
+			$file->getMimeType(),
+			ProviderConfigService::getDefaultProviderKey(),
+		);
+	}
+
+	private function getContentItemSource(QueueContentItem $document) : Source {
+		$providerKey = ProviderConfigService::getConfigKey($document->getAppId(), $document->getProviderId());
+		return new Source(
+			explode(',', $document->getUsers()),
+			ProviderConfigService::getSourceId($document->getItemId(), $providerKey),
+			$document->getTitle(),
+			$document->getContent(),
+			$document->getLastModified()->getTimestamp(),
+			$document->getDocumentType(),
+			$providerKey,
+		);
 	}
 }

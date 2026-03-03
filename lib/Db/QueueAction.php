@@ -39,11 +39,14 @@ class QueueAction extends Entity implements \JsonSerializable {
 		$this->addType('lockedAt', 'datetime');
 	}
 
+	/**
+	 * @throws \JsonException
+	 */
 	public function jsonSerialize() : array {
 		return [
 			'id' => $this->id,
 			'type' => $this->type,
-			'payload' => $this->payload,
+			'payload' => json_decode($this->payload, true, flags: JSON_THROW_ON_ERROR),
 		];
 	}
 }

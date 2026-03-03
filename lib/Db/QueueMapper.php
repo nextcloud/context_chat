@@ -131,7 +131,7 @@ class QueueMapper extends QBMapper {
 		$qb->select($qb->func()->count('id'))
 			->from($this->getTableName())
 			->andWhere($qb->expr()->orX(
-			// Get queue items if they are not locked, or the lock is older than one day
+				// Get queue items if they are not locked, or the lock is older than one day
 				$qb->expr()->isNull('locked_at'),
 				$qb->expr()->lte(
 					'locked_at',
@@ -180,6 +180,7 @@ class QueueMapper extends QBMapper {
 	 * @throws Exception
 	 */
 	public function lock(int $id) : bool {
+		// TODO: Add a retry column to count how many times an item has been locked again without being processed
 		$qb = $this->db->getQueryBuilder();
 		$qb->update($this->getTableName())
 			->where($qb->expr()->eq('id', $qb->createNamedParameter($id, IQueryBuilder::PARAM_INT)))
