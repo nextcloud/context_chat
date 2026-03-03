@@ -97,7 +97,7 @@ class QueueActionMapper extends QBMapper {
 				$qb->expr()->lte(
 					'locked_at',
 					$qb->createPositionalParameter(
-						(new \DateTime())->sub(new \DateInterval('P' . self::LOCK_TIMEOUT . 'S')),
+						(new \DateTime())->sub(new \DateInterval('PT' . self::LOCK_TIMEOUT . 'S')),
 						IQueryBuilder::PARAM_DATETIME_MUTABLE
 					)
 				)
@@ -119,7 +119,7 @@ class QueueActionMapper extends QBMapper {
 			->where($qb->expr()->gt(
 				'locked_at',
 				$qb->createPositionalParameter(
-					(new \DateTime())->sub(new \DateInterval('P' . self::LOCK_TIMEOUT . 'S')),
+					(new \DateTime())->sub(new \DateInterval('PT' . self::LOCK_TIMEOUT . 'S')),
 					IQueryBuilder::PARAM_DATETIME_MUTABLE
 				)
 			))
@@ -141,7 +141,7 @@ class QueueActionMapper extends QBMapper {
 				$qb->expr()->orX(
 					$qb->expr()->isNull('locked_at'),
 					$qb->expr()->lte('locked_at', $qb->createNamedParameter(
-						(new \DateTime('now'))->sub(new \DateInterval('P' . self::LOCK_TIMEOUT . 'S')),
+						(new \DateTime('now'))->sub(new \DateInterval('PT' . self::LOCK_TIMEOUT . 'S')),
 						IQueryBuilder::PARAM_DATETIME_MUTABLE
 					))
 				)
