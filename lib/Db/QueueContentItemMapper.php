@@ -39,6 +39,17 @@ class QueueContentItemMapper extends QBMapper {
 		$qb = $this->db->getQueryBuilder();
 		$qb->select(QueueContentItem::$columns)
 			->from($this->getTableName())
+			->andWhere($qb->expr()->orX(
+			// Get queue items if they are not locked, or the lock is older than one day
+				$qb->expr()->isNull('locked_at'),
+				$qb->expr()->lte(
+					'locked_at',
+					$qb->createPositionalParameter(
+						(new \DateTime())->sub(new \DateInterval('P' . self::LOCK_TIMEOUT . 'S')),
+						IQueryBuilder::PARAM_DATETIME_MUTABLE
+					)
+				)
+			))
 			->orderBy('id', 'ASC')
 			->setMaxResults($limit);
 
