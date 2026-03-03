@@ -11,6 +11,7 @@ use OCP\AppFramework\Http\Attribute\ExAppRequired;
 use OCP\AppFramework\Http\DataResponse;
 use OCP\AppFramework\OCSController;
 use OCP\DB\Exception;
+use OCP\Files\IRootFolder;
 use OCP\IDBConnection;
 use OCP\IRequest;
 use Psr\Log\LoggerInterface;
@@ -25,6 +26,26 @@ class QueueController extends OCSController {
 		private LoggerInterface $logger,
 	) {
 		parent::__construct($appName, $request, $corsMethods, $corsAllowedHeaders, $corsMaxAge);
+	}
+
+	/**
+	 * ExApp-only endpoint to retrieve file contents by fileId
+	 * @param IRootFolder $rootFolder
+	 * @param int $fileId
+	 * @return DataResponse|Http
+	 */
+	#[ExAppRequired]
+	#[ApiRoute(verb: 'GET', url: '/files/{fileId}')]
+	public function getFileContents(IRootFolder $rootFolder, int $fileId) : DataResponse|Http\StreamResponse {
+		$file = $rootFolder->getFirstNodeById($fileId);
+		if (!$file) {
+			return new DataResponse([], Http::STATUS_NOT_FOUND);
+		}
+		$stream = $file->fopen('r');
+		if (!$stream) {
+			return new DataResponse([], Http::STATUS_NOT_FOUND);
+		}
+		return new Http\StreamResponse($stream);
 	}
 
 	/**
