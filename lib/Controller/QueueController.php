@@ -109,7 +109,7 @@ class QueueController extends OCSController {
 				}
 				foreach ($documents as $document) {
 					if ($queueMapper->lock($document->getId())) {
-						$files[] = $this->getFileSource($document, $rootFolder, $storageService);
+						$files[$document->getId()] = $this->getFileSource($document, $rootFolder, $storageService);
 					}
 				}
 			}
@@ -122,7 +122,7 @@ class QueueController extends OCSController {
 				}
 				foreach ($documents as $document) {
 					if ($queueContentItemMapper->lock($document->getId())) {
-						$contentItems[] = $this->getContentItemSource($document);
+						$contentItems[$document->getId()] = $this->getContentItemSource($document);
 					}
 				}
 			}
@@ -189,7 +189,7 @@ class QueueController extends OCSController {
 	}
 
 	/**
-	 * ExApp-only endpoint for backend to get actions from the queue
+	 * ExApp-only endpoint for backend to get actions from queue
 	 * @param QueueActionMapper $queueActionMapper
 	 * @param int $n
 	 * @return DataResponse
@@ -207,7 +207,7 @@ class QueueController extends OCSController {
 				}
 				foreach ($documents as $document) {
 					if ($queueActionMapper->lock($document->getId())) {
-						$actions[] = $document;
+						$actions[$document->getId()] = $document;
 					}
 				}
 			}
