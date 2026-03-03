@@ -88,9 +88,7 @@ class Application extends App implements IBootstrap {
 			$context->registerEventListener(ShareDeletedEvent::class, ShareListener::class);
 		}
 		$context->registerTaskProcessingTaskType(ContextChatTaskType::class);
-		$context->registerTaskProcessingProvider(ContextChatProvider::class);
 		$context->registerTaskProcessingTaskType(ContextChatSearchTaskType::class);
-		$context->registerTaskProcessingProvider(ContextChatSearchProvider::class);
 	}
 
 	public function boot(IBootContext $context): void {

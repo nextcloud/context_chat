@@ -40,7 +40,7 @@ class QueueController extends OCSController {
 	 * ExApp-only endpoint to retrieve file contents by fileId
 	 * @param IRootFolder $rootFolder
 	 * @param int $fileId
-	 * @return DataResponse|Http
+	 * @return DataResponse|Http\StreamResponse
 	 */
 	#[ExAppRequired]
 	#[ApiRoute(verb: 'GET', url: '/files/{fileId}')]
