@@ -9,11 +9,9 @@ declare(strict_types=1);
 
 namespace OCA\ContextChat\Service;
 
-use OCA\ContextChat\BackgroundJobs\IndexerJob;
 use OCA\ContextChat\Db\QueueFile;
 use OCA\ContextChat\Db\QueueMapper;
 use OCP\BackgroundJob\IJobList;
-use OCP\DB\Exception;
 
 class QueueService {
 

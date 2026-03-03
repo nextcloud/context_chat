@@ -19,7 +19,7 @@ use OCP\IDBConnection;
  * @template-extends QBMapper<QueueContentItem>
  */
 class QueueContentItemMapper extends QBMapper {
-	const LOCK_TIMEOUT = 60 * 60 * 24;
+	public const LOCK_TIMEOUT = 60 * 60 * 24;
 
 	/**
 	 * @var IDBConnection $db
@@ -70,7 +70,7 @@ class QueueContentItemMapper extends QBMapper {
 			->from($this->getTableName())
 			->groupBy('app_id', 'provider_id')
 			->andWhere($qb->expr()->orX(
-			// Get queue items if they are not locked, or the lock is older than one day
+				// Get queue items if they are not locked, or the lock is older than one day
 				$qb->expr()->isNull('locked_at'),
 				$qb->expr()->lte(
 					'locked_at',
