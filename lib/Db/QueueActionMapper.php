@@ -112,7 +112,7 @@ class QueueActionMapper extends QBMapper {
 	/**
 	 * @throws \OCP\DB\Exception
 	 */
-	public function countLocked() {
+	public function countLocked() : int {
 		$qb = $this->db->getQueryBuilder();
 		$result = $qb->select($qb->func()->count('id'))
 			->from($this->getTableName())
