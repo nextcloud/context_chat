@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * SPDX-FileCopyrightText: 2024 Nextcloud GmbH and Nextcloud contributors
+ * SPDX-FileCopyrightText: 2024-2026 Nextcloud GmbH and Nextcloud contributors
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
@@ -32,8 +32,10 @@ use OCP\DB\Types;
  * @method \DateTime getLastModified()
  * @method setUsers(string $users)
  * @method string getUsers()
+ * @method ?\DateTime getLockedAt()
+ * @method setLockedAt(?\DateTime $dateTime)
  */
-class QueueContentItem extends Entity {
+class QueueContentItem extends Entity implements \JsonSerializable {
 	protected $itemId;
 	protected $appId;
 	protected $providerId;
@@ -42,6 +44,7 @@ class QueueContentItem extends Entity {
 	protected $documentType;
 	protected $lastModified;
 	protected $users;
+	protected $lockedAt;
 
 	public static $columns = [
 		'id',
@@ -52,7 +55,8 @@ class QueueContentItem extends Entity {
 		'content',
 		'document_type',
 		'last_modified',
-		'users'
+		'users',
+		'locked_at'
 	];
 	public static $fields = [
 		'id',
@@ -63,7 +67,8 @@ class QueueContentItem extends Entity {
 		'content',
 		'documentType',
 		'lastModified',
-		'users'
+		'users',
+		'lockedAt'
 	];
 
 	public function __construct() {
@@ -76,5 +81,20 @@ class QueueContentItem extends Entity {
 		$this->addType('documentType', Types::STRING);
 		$this->addType('lastModified', Types::DATETIME);
 		$this->addType('users', Types::STRING);
+		$this->addType('lockedAt', Types::DATETIME);
+	}
+
+	public function jsonSerialize() : array {
+		return [
+			'id' => $this->id,
+			'itemId' => $this->itemId,
+			'appId' => $this->appId,
+			'providerId' => $this->providerId,
+			'title' => $this->title,
+			'content' => $this->content,
+			'documentType' => $this->documentType,
+			'lastModified' => $this->lastModified,
+			'users' => $this->users,
+		];
 	}
 }

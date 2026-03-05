@@ -8,7 +8,6 @@
 namespace OCA\ContextChat\Public;
 
 use OCA\ContextChat\BackgroundJobs\InitialContentImportJob;
-use OCA\ContextChat\BackgroundJobs\SubmitContentJob;
 use OCA\ContextChat\Db\QueueContentItem;
 use OCA\ContextChat\Db\QueueContentItemMapper;
 use OCA\ContextChat\Logger;
@@ -123,10 +122,6 @@ class ContentManager implements IContentManager {
 			} catch (Exception $e) {
 				$this->logger->error($e->getMessage(), ['exception' => $e]);
 			}
-		}
-
-		if (!$this->jobList->has(SubmitContentJob::class, null)) {
-			$this->jobList->add(SubmitContentJob::class, null);
 		}
 	}
 
