@@ -34,23 +34,23 @@ class FsEventMapper extends QBMapper {
 	}
 
 	public function insertRow(string $type, string $userId, int $nodeId): Entity {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('*')
+			->from($this->getTableName())
+			->setMaxResults(1)
+			->where(
+				$qb->expr()->eq('user_id', $qb->createNamedParameter($userId)),
+				$qb->expr()->eq('type', $qb->createNamedParameter($type)),
+				$qb->expr()->eq('node_id', $qb->createNamedParameter($nodeId, IQueryBuilder::PARAM_INT)),
+			);
+		$entities = $this->findEntities($qb);
+
+		if (!empty($entities)) {
+			return $entities[0];
+		}
+
+		$this->db->beginTransaction();
 		try {
-			$this->db->beginTransaction();
-			$qb = $this->db->getQueryBuilder();
-			$qb->select('*')
-				->from($this->getTableName())
-				->setMaxResults(1)
-				->where(
-					$qb->expr()->eq('user_id', $qb->createNamedParameter($userId)),
-					$qb->expr()->eq('type', $qb->createNamedParameter($type)),
-					$qb->expr()->eq('node_id', $qb->createNamedParameter($nodeId, IQueryBuilder::PARAM_INT)),
-				);
-			$entities = $this->findEntities($qb);
-
-			if (!empty($entities)) {
-				return $entities[0];
-			}
-
 			$entity = new FsEvent();
 			$entity->setUserId($userId);
 			$entity->setType($type);
