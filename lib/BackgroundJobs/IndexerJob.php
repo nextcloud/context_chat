@@ -239,6 +239,7 @@ class IndexerJob extends TimedJob {
 				$file->getMtime(),
 				$file->getMimeType(),
 				ProviderConfigService::getDefaultProviderKey(),
+				(int)$fileSize,
 			);
 			$allSourceIds[] = ProviderConfigService::getSourceId($file->getId());
 

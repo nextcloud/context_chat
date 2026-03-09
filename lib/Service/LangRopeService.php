@@ -60,7 +60,7 @@ class LangRopeService {
 
 		// todo: app_api is always available now (composer update)
 		try {
-			$appApiFunctions = \OCP\Server::get(\OCA\AppAPI\PublicFunctions::class);
+			$appApiFunctions = $this->getAppApiFunctions();
 		} catch (ContainerExceptionInterface|NotFoundExceptionInterface $e) {
 			throw new RuntimeException('Could not get AppAPI public functions');
 		}
@@ -287,10 +287,24 @@ class LangRopeService {
 		}
 
 		$params = array_map(function (Source $source) {
+			$contents = $source->content;
+			if ($source->size !== null) {
+				if (class_exists('\GuzzleHttp\Psr7\Utils')) {
+					$stream = \GuzzleHttp\Psr7\Utils::streamFor($source->content);
+				} else {
+					$stream = \GuzzleHttp\Psr7\stream_for($source->content);
+				}
+				$contents = \GuzzleHttp\Psr7\FnStream::decorate($stream, [
+					'getSize' => function () use ($source) {
+						return $source->size;
+					},
+				]);
+			}
+
 			return [
 				'name' => 'sources',
 				'filename' => $source->reference, // eg. 'files__default: 555'
-				'contents' => $source->content,
+				'contents' => $contents,
 				'headers' => [
 					'userIds' => implode(',', $source->userIds),
 					'title' => $source->title,
@@ -423,5 +437,9 @@ class LangRopeService {
 		}
 
 		return $llmResponse . $output;
+	}
+
+	protected function getAppApiFunctions() {
+		return \OCP\Server::get(\OCA\AppAPI\PublicFunctions::class);
 	}
 }
