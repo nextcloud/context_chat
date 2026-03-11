@@ -276,6 +276,7 @@ class QueueController extends OCSController {
 			$file->getMTime(),
 			$file->getMimeType(),
 			ProviderConfigService::getDefaultProviderKey(),
+			$file->getSize()
 		);
 	}
 
@@ -289,6 +290,7 @@ class QueueController extends OCSController {
 			$document->getLastModified()->getTimestamp(),
 			$document->getDocumentType(),
 			$providerKey,
+			strlen($document->getContent()),
 		);
 	}
 }

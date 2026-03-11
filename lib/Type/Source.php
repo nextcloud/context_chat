@@ -16,6 +16,7 @@ class Source implements \JsonSerializable {
 		public int|string $modified,
 		public string $type,
 		public string $provider,
+		public int|float $size,
 	) {
 	}
 
@@ -28,6 +29,7 @@ class Source implements \JsonSerializable {
 			'modified' => $this->modified,
 			'type' => $this->type,
 			'provider' => $this->provider,
+			'size' => $this->size,
 		];
 	}
 }
