@@ -127,8 +127,8 @@ class QueueController extends OCSController {
 				}
 			}
 			return new DataResponse([
-				'files' => $files,
-				'content_providers' => $contentItems,
+				'files' => (object)$files,
+				'content_providers' => (object)$contentItems,
 			]);
 		} catch (Exception $e) {
 			$this->logger->error($e->getMessage(), ['exception' => $e]);
@@ -211,7 +211,7 @@ class QueueController extends OCSController {
 					}
 				}
 			}
-			return new DataResponse(['actions' => $actions]);
+			return new DataResponse(['actions' => (object)$actions]);
 		} catch (Exception $e) {
 			$this->logger->error($e->getMessage(), ['exception' => $e]);
 			return new DataResponse([], Http::STATUS_INTERNAL_SERVER_ERROR);
