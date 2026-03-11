@@ -47,18 +47,14 @@ class QueueController extends OCSController {
 	 * ExApp-only endpoint to retrieve file contents by fileId
 	 * @param IRootFolder $rootFolder
 	 * @param int $fileId
-	 * @param string|null $userId
+	 * @param string $userId
 	 * @return DataResponse|StreamResponse
 	 */
 	#[ExAppRequired]
 	#[ApiRoute(verb: 'GET', url: '/files/{fileId}')]
-	public function getFileContents(IRootFolder $rootFolder, int $fileId, ?string $userId = null) : DataResponse|Http\StreamResponse {
+	public function getFileContents(IRootFolder $rootFolder, int $fileId, string $userId) : DataResponse|Http\StreamResponse {
 		try {
-			if ($userId === null) {
-				$file = $rootFolder->getFirstNodeById($fileId);
-			} else {
-				$file = $rootFolder->getUserFolder($userId)->getById($fileId);
-			}
+			$file = $rootFolder->getUserFolder($userId)->getById($fileId);
 			if (!$file || !$file instanceof \OCP\Files\File) {
 				return new DataResponse([], Http::STATUS_NOT_FOUND);
 			}
