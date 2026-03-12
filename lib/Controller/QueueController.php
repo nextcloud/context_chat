@@ -54,7 +54,7 @@ class QueueController extends OCSController {
 	#[ApiRoute(verb: 'GET', url: '/files/{fileId}')]
 	public function getFileContents(IRootFolder $rootFolder, int $fileId, string $userId) : DataResponse|Http\StreamResponse {
 		try {
-			$file = $rootFolder->getUserFolder($userId)->getById($fileId);
+			$file = $rootFolder->getUserFolder($userId)->getFirstNodeById($fileId);
 			if (!$file || !$file instanceof \OCP\Files\File) {
 				return new DataResponse([], Http::STATUS_NOT_FOUND);
 			}
