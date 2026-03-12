@@ -7,7 +7,7 @@
 
 namespace OCA\ContextChat\Type;
 
-class Source {
+class Source implements \JsonSerializable {
 	public function __construct(
 		public array $userIds,
 		public string $reference,
@@ -16,6 +16,20 @@ class Source {
 		public int|string $modified,
 		public string $type,
 		public string $provider,
+		public int|float $size,
 	) {
+	}
+
+	public function jsonSerialize(): array {
+		return [
+			'userIds' => $this->userIds,
+			'reference' => $this->reference,
+			'title' => $this->title,
+			'content' => $this->content,
+			'modified' => $this->modified,
+			'type' => $this->type,
+			'provider' => $this->provider,
+			'size' => $this->size,
+		];
 	}
 }
