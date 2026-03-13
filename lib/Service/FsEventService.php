@@ -7,13 +7,11 @@
 
 namespace OCA\ContextChat\Service;
 
-use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\Db\QueueFile;
 use OCA\ContextChat\Logger;
 use OCP\DB\Exception;
 use OCP\Files\Folder;
 use OCP\Files\InvalidPathException;
-use OCP\Files\IRootFolder;
 use OCP\Files\Node;
 use OCP\Files\NotFoundException;
 
@@ -24,7 +22,7 @@ class FsEventService {
 		private QueueService $queue,
 		private ActionScheduler $actionService,
 		private StorageService $storageService,
-		private IRootFolder $rootFolder,
+		private TaskTypeService $taskTypeService,
 	) {
 
 	}
@@ -134,7 +132,8 @@ class FsEventService {
 
 	private function allowedMimeType(Node $file): bool {
 		$mimeType = $file->getMimeType();
-		return in_array($mimeType, Application::MIMETYPES, true);
+		$mimeTypes = $this->taskTypeService->getMultimodalMimetypes();
+		return in_array($mimeType, $mimeTypes, true);
 	}
 
 	private function allowedPath(Node $file): bool {
