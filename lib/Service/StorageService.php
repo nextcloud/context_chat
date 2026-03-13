@@ -20,7 +20,6 @@ use OCP\Files\Config\ICachedMountInfo;
 use OCP\Files\Config\IUserMountCache;
 use OCP\Files\Folder;
 use OCP\Files\IMimeTypeLoader;
-use OCP\Files\IRootFolder;
 use OCP\Files\Node;
 use OCP\FilesMetadata\IFilesMetadataManager;
 use OCP\IDBConnection;
@@ -44,8 +43,8 @@ class StorageService {
 		private IMimeTypeLoader $mimeTypes,
 		private IUserMountCache $userMountCache,
 		private IFilesMetadataManager $metadataManager,
-		private IRootFolder $rootFolder,
 		private IFileAccess $fileAccess,
+		private TaskTypeService $taskTypeService,
 	) {
 	}
 
@@ -84,7 +83,8 @@ class StorageService {
 			return 0;
 		}
 
-		$mimeTypes = array_map(fn ($mimeType) => $this->mimeTypes->getId($mimeType), Application::MIMETYPES);
+		$mimeTypes = $this->taskTypeService->getMultimodalMimetypes();
+		$mimeTypesIds = array_map(fn ($mimeType) => $this->mimeTypes->getId($mimeType), $mimeTypes);
 
 		$qb = $this->getCacheQueryBuilder();
 
@@ -110,7 +110,7 @@ class StorageService {
 				->andWhere($qb->expr()->notLike('filecache.path', $qb->createNamedParameter('files_versions/%')))
 				->andWhere($qb->expr()->notLike('filecache.path', $qb->createNamedParameter('files_trashbin/%')))
 				->andWhere($qb->expr()->eq('filecache.storage', $qb->createNamedParameter($storageId)))
-				->andWhere($qb->expr()->in('filecache.mimetype', $qb->createNamedParameter($mimeTypes, IQueryBuilder::PARAM_INT_ARRAY)))
+				->andWhere($qb->expr()->in('filecache.mimetype', $qb->createNamedParameter($mimeTypesIds, IQueryBuilder::PARAM_INT_ARRAY)))
 				->andWhere($qb->expr()->lte('filecache.size', $qb->createNamedParameter(Application::CC_MAX_SIZE, IQueryBuilder::PARAM_INT)))
 				->andWhere($qb->expr()->gt('filecache.size', $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT)));
 			$result = $qb->executeQuery();
@@ -199,14 +199,24 @@ class StorageService {
 	 * @param int $rootId
 	 * @param int $lastFileId
 	 * @param int $maxResults
+	 * @param list<string> $mimeTypes
 	 * @return \Generator<int,int,mixed,void>
 	 */
-	public function getFilesInMount(int $storageId, int $rootId, int $lastFileId = 0, int $maxResults = 100): \Generator {
+	public function getFilesInMount(
+		int $storageId,
+		int $rootId,
+		int $lastFileId = 0,
+		int $maxResults = 100,
+		array $mimeTypes = [],
+	): \Generator {
+		if ($mimeTypes === []) {
+			$mimeTypes = $this->taskTypeService->getMultimodalMimetypes();
+		}
 		if (!$this->isFileAccessAvailable()) {
-			return $this->getFilesInMountOld($storageId, $rootId, $lastFileId, $maxResults);
+			return $this->getFilesInMountOld($storageId, $rootId, $lastFileId, $maxResults, $mimeTypes);
 		}
 
-		return $this->getFilesInMountUsingFileAccess($storageId, $rootId, $lastFileId, $maxResults);
+		return $this->getFilesInMountUsingFileAccess($storageId, $rootId, $lastFileId, $maxResults, $mimeTypes);
 	}
 
 	/**
@@ -214,10 +224,17 @@ class StorageService {
 	 * @param int $rootId
 	 * @param int $lastFileId
 	 * @param int $maxResults
+	 * @param list<string> $mimeTypes
 	 * @return \Generator<int,int,mixed,void>
 	 */
-	private function getFilesInMountUsingFileAccess(int $storageId, int $rootId, int $lastFileId = 0, int $maxResults = 100): \Generator {
-		$mimeTypeIds = array_map(fn ($mimeType) => $this->mimeTypes->getId($mimeType), Application::MIMETYPES);
+	private function getFilesInMountUsingFileAccess(
+		int $storageId,
+		int $rootId,
+		int $lastFileId = 0,
+		int $maxResults = 100,
+		array $mimeTypes = Application::MIMETYPES,
+	): \Generator {
+		$mimeTypeIds = array_map(fn ($mimeType) => $this->mimeTypes->getId($mimeType), $mimeTypes);
 		foreach ($this->fileAccess->getByAncestorInStorage($storageId, $rootId, $lastFileId, $maxResults, $mimeTypeIds, false, true) as $cacheEntry) {
 			yield $cacheEntry['fileid'];
 		}
@@ -228,9 +245,16 @@ class StorageService {
 	 * @param int $rootId
 	 * @param int $lastFileId
 	 * @param int $maxResults
+	 * @param list<string> $mimeTypes
 	 * @return \Generator<int,int,mixed,void>
 	 */
-	private function getFilesInMountOld(int $storageId, int $rootId, int $lastFileId = 0, int $maxResults = 100): \Generator {
+	private function getFilesInMountOld(
+		int $storageId,
+		int $rootId,
+		int $lastFileId = 0,
+		int $maxResults = 100,
+		array $mimeTypes = Application::MIMETYPES,
+	): \Generator {
 		$qb = $this->getCacheQueryBuilder();
 		try {
 			$qb->selectFileCache();
@@ -249,7 +273,7 @@ class StorageService {
 			return;
 		}
 
-		$mimeTypes = array_map(fn ($mimeType) => $this->mimeTypes->getId($mimeType), Application::MIMETYPES);
+		$mimeTypesIds = array_map(fn ($mimeType) => $this->mimeTypes->getId($mimeType), $mimeTypes);
 
 		$qb = $this->getCacheQueryBuilder();
 
@@ -272,7 +296,7 @@ class StorageService {
 				->andWhere($qb->expr()->like('filecache.path', $qb->createNamedParameter($path . '%')))
 				->andWhere($qb->expr()->eq('filecache.storage', $qb->createNamedParameter($storageId)))
 				->andWhere($qb->expr()->gt('filecache.fileid', $qb->createNamedParameter($lastFileId)))
-				->andWhere($qb->expr()->in('filecache.mimetype', $qb->createNamedParameter($mimeTypes, IQueryBuilder::PARAM_INT_ARRAY)));
+				->andWhere($qb->expr()->in('filecache.mimetype', $qb->createNamedParameter($mimeTypesIds, IQueryBuilder::PARAM_INT_ARRAY)));
 
 			if ($maxResults !== 0) {
 				$qb->setMaxResults($maxResults);
