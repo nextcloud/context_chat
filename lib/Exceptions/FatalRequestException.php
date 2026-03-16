@@ -12,5 +12,5 @@ namespace OCA\ContextChat\Exceptions;
 /**
  * For 4xx responses from the context_chat_backend
  */
-class FatalRequestException extends \Exception {
+class FatalRequestException extends \RuntimeException {
 }
