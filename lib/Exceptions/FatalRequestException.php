@@ -9,5 +9,8 @@ declare(strict_types=1);
 
 namespace OCA\ContextChat\Exceptions;
 
-class RequestException4xx extends \Exception {
+/**
+ * For 4xx responses from the context_chat_backend
+ */
+class FatalRequestException extends \Exception {
 }

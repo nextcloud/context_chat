@@ -8,7 +8,7 @@
 namespace OCA\ContextChat\Service;
 
 use OCA\ContextChat\AppInfo\Application;
-use OCA\ContextChat\Exceptions\RequestException4xx;
+use OCA\ContextChat\Exceptions\FatalRequestException;
 use OCA\ContextChat\Exceptions\RetryIndexException;
 use OCA\ContextChat\Logger;
 use OCA\ContextChat\Public\IContentProvider;
@@ -43,7 +43,7 @@ class LangRopeService {
 	 * @param string|null $contentType
 	 * @return array
 	 * @throws RuntimeException
-	 * @throws RequestException4xx
+	 * @throws FatalRequestException
 	 */
 	private function requestToExApp(
 		string $route,
@@ -168,7 +168,7 @@ class LangRopeService {
 			}
 
 			if ($response->getStatusCode() >= 400) {
-				throw new RequestException4xx(
+				throw new FatalRequestException(
 					'Error received from Context Chat Backend (ExApp) with status code '
 					. $response->getStatusCode()
 					. ': '
@@ -306,7 +306,7 @@ class LangRopeService {
 
 		try {
 			$response = $this->requestToExApp('/loadSources', 'PUT', $params, 'multipart/form-data');
-		} catch (RequestException4xx $e) {
+		} catch (FatalRequestException $e) {
 			// do not retry on 4xx errors
 			$this->logger->warning('Error while indexing sources: ' . $e->getMessage(), [
 				'exception' => $e,
