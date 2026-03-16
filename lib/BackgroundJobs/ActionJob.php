@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace OCA\ContextChat\BackgroundJobs;
 
 use OCA\ContextChat\Db\QueueActionMapper;
+use OCA\ContextChat\Exceptions\FatalRequestException;
 use OCA\ContextChat\Logger;
 use OCA\ContextChat\Service\DiagnosticService;
 use OCA\ContextChat\Service\LangRopeService;
@@ -124,6 +125,9 @@ class ActionJob extends TimedJob {
 							$this->logger->warning('Unknown action type', ['type' => $entity->getType()]);
 					}
 					$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
+					$this->actionMapper->removeFromQueue($entity);
+				} catch (FatalRequestException $e) {
+					$this->logger->warning('Error performing action "' . $entity->getType() . '" and removing it from queue: ' . $e->getMessage(), ['exception' => $e]);
 					$this->actionMapper->removeFromQueue($entity);
 				} catch (\RuntimeException $e) {
 					$this->logger->warning('Error performing action "' . $entity->getType() . '": ' . $e->getMessage(), ['exception' => $e]);

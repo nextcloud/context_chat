@@ -8,6 +8,7 @@
 namespace OCA\ContextChat\Service;
 
 use OCA\ContextChat\AppInfo\Application;
+use OCA\ContextChat\Exceptions\FatalRequestException;
 use OCA\ContextChat\Exceptions\RetryIndexException;
 use OCA\ContextChat\Logger;
 use OCA\ContextChat\Public\IContentProvider;
@@ -42,6 +43,7 @@ class LangRopeService {
 	 * @param string|null $contentType
 	 * @return array
 	 * @throws RuntimeException
+	 * @throws FatalRequestException
 	 */
 	private function requestToExApp(
 		string $route,
@@ -128,13 +130,6 @@ class LangRopeService {
 			$params,
 			$options,
 		);
-		if (is_array($response) && isset($response['error'])) {
-			throw new RuntimeException('Error during request to Context Chat Backend (ExApp): ' . $response['error']);
-		}
-		if (is_array($response)) {
-			// this should never happen since app_api only returns errors in an array
-			throw new RuntimeException('Error during request to Context Chat Backend (ExApp): response is not a valid response object');
-		}
 
 		$resContentType = $response->getHeader('Content-Type');
 		if (strpos($resContentType, 'application/json') !== false) {
@@ -164,12 +159,20 @@ class LangRopeService {
 			}
 
 			if ($response->getStatusCode() >= 500) {
-				// only throw for 5xx errors
 				throw new RuntimeException(
 					'Error received from Context Chat Backend (ExApp) with status code '
 					. $response->getStatusCode()
 					. ': '
 					. (isset($finalBody['error']) ? $finalBody['error'] : 'unknown error')
+				);
+			}
+
+			if ($response->getStatusCode() >= 400) {
+				throw new FatalRequestException(
+					'Error received from Context Chat Backend (ExApp) with status code '
+					. $response->getStatusCode()
+					. ': '
+					. (isset($finalBody['error']) ? $finalBody['error'] : json_encode($finalBody))
 				);
 			}
 		}
@@ -301,7 +304,17 @@ class LangRopeService {
 			];
 		}, $sources);
 
-		$response = $this->requestToExApp('/loadSources', 'PUT', $params, 'multipart/form-data');
+		try {
+			$response = $this->requestToExApp('/loadSources', 'PUT', $params, 'multipart/form-data');
+		} catch (FatalRequestException $e) {
+			// do not retry on 4xx errors
+			$this->logger->warning('Error while indexing sources: ' . $e->getMessage(), [
+				'exception' => $e,
+				'sourceIds' => array_map(fn (Source $source) => $source->reference, $sources),
+			]);
+			return ['loaded_sources' => [], 'sources_to_retry' => []];
+		}
+
 		if (
 			!isset($response['loaded_sources']) || !is_array($response['loaded_sources'])
 			|| !isset($response['sources_to_retry']) || !is_array($response['sources_to_retry'])
