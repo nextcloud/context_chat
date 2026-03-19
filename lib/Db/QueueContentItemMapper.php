@@ -42,6 +42,8 @@ class QueueContentItemMapper extends QBMapper {
 	}
 
 	/**
+	 * Removes all the duplicate entries for a given content item based on app_id, provider_id, and item_id
+	 *
 	 * @param QueueContentItem $item
 	 * @return void
 	 * @throws \OCP\DB\Exception
@@ -49,7 +51,9 @@ class QueueContentItemMapper extends QBMapper {
 	public function removeFromQueue(QueueContentItem $item): void {
 		$qb = $this->db->getQueryBuilder();
 		$qb->delete($this->getTableName())
-			->where($qb->expr()->eq('id', $qb->createPositionalParameter($item->getId())))
+			->where($qb->expr()->eq('app_id', $qb->createPositionalParameter($item->getAppId())))
+			->andWhere($qb->expr()->eq('provider_id', $qb->createPositionalParameter($item->getProviderId())))
+			->andWhere($qb->expr()->eq('item_id', $qb->createPositionalParameter($item->getItemId())))
 			->executeStatement();
 	}
 
