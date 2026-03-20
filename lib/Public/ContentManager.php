@@ -138,7 +138,7 @@ class ContentManager implements IContentManager {
 			$dbItem->setUsers(implode(',', $item->users));
 
 			try {
-				$this->mapper->insert($dbItem);
+				$this->mapper->insertOrUpdate($dbItem);
 			} catch (Exception $e) {
 				$this->logger->error($e->getMessage(), ['exception' => $e]);
 			}
