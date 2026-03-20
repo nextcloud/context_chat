@@ -58,7 +58,7 @@ class Version005003002Date20260320093628 extends SimpleMigrationStep {
 			);
 
 		try {
-			while ($row = $selectQuery->fetchAssociative()) {
+			while ($row = $selectQuery->fetch()) {
 				$qb2->setParameter('appId', $row['app_id'])
 					->setParameter('providerId', $row['provider_id'])
 					->setParameter('itemId', $row['item_id'])
