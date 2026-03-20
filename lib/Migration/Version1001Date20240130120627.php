@@ -65,8 +65,6 @@ class Version1001Date20240130120627 extends SimpleMigrationStep {
 			]);
 
 			$table->setPrimaryKey(['id'], 'ccc_queue_id');
-			// ccc_q_provider_idx was added later and might be missing in older deployments
-			$table->addIndex(['app_id', 'provider_id', 'item_id'], 'ccc_q_provider_idx');
 		}
 
 		return $schema;

@@ -51,9 +51,7 @@ class QueueContentItemMapper extends QBMapper {
 	public function removeFromQueue(QueueContentItem $item): void {
 		$qb = $this->db->getQueryBuilder();
 		$qb->delete($this->getTableName())
-			->where($qb->expr()->eq('app_id', $qb->createPositionalParameter($item->getAppId())))
-			->andWhere($qb->expr()->eq('provider_id', $qb->createPositionalParameter($item->getProviderId())))
-			->andWhere($qb->expr()->eq('item_id', $qb->createPositionalParameter($item->getItemId())))
+			->where($qb->expr()->eq('id', $qb->createPositionalParameter($item->getId())))
 			->executeStatement();
 	}
 
