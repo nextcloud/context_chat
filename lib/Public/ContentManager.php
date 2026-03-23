@@ -77,6 +77,16 @@ class ContentManager implements IContentManager {
 			return;
 		}
 
+		if (mb_strlen($appId) > 32) {
+			$this->logger->warning('App ID is too long, maximum length is 32 characters.', ['appId' => $appId]);
+			return;
+		}
+
+		if (mb_strlen($providerId) > 63) {
+			$this->logger->warning('Provider ID is too long, maximum length is 63 characters.', ['providerId' => $providerId]);
+			return;
+		}
+
 		$this->providerConfig->updateProvider($appId, $providerId, $providerClass);
 
 		if (!$this->jobList->has(InitialContentImportJob::class, $providerClass)) {
@@ -108,6 +118,15 @@ class ContentManager implements IContentManager {
 		$this->collectAllContentProviders();
 
 		foreach ($items as $item) {
+			if (mb_strlen($item->itemId) > 63) {
+				$this->logger->warning('Item ID is too long, maximum length is 63 characters.', [
+					'appId' => $appId,
+					'providerId' => $item->providerId,
+					'itemId' => $item->itemId,
+				]);
+				continue;
+			}
+
 			$dbItem = new QueueContentItem();
 			$dbItem->setItemId($item->itemId);
 			$dbItem->setAppId($appId);
@@ -119,7 +138,7 @@ class ContentManager implements IContentManager {
 			$dbItem->setUsers(implode(',', $item->users));
 
 			try {
-				$this->mapper->insert($dbItem);
+				$this->mapper->insertOrUpdate($dbItem);
 			} catch (Exception $e) {
 				$this->logger->error($e->getMessage(), ['exception' => $e]);
 			}
