@@ -42,8 +42,6 @@ class QueueContentItemMapper extends QBMapper {
 	}
 
 	/**
-	 * Removes all the duplicate entries for a given content item based on app_id, provider_id, and item_id
-	 *
 	 * @param QueueContentItem $item
 	 * @return void
 	 * @throws \OCP\DB\Exception
