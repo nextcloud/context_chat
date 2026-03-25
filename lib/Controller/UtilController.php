@@ -43,11 +43,11 @@ class UtilController extends OCSController {
 	 * @param ProviderConfigService $providerConfigService
 	 * @param list<string> $source_ids
 	 * @param string $userId
-	 * @return DataResponse|StreamResponse
+	 * @return DataResponse
 	 */
 	#[ExAppRequired]
 	#[ApiRoute(verb: 'POST', url: '/resolve_scope_list')]
-	public function resolveScopeList(IRootFolder $rootFolder, StorageService $storageService, ProviderConfigService $providerConfigService, array $source_ids, string $userId) : DataResponse|Http\StreamResponse {
+	public function resolveScopeList(IRootFolder $rootFolder, StorageService $storageService, ProviderConfigService $providerConfigService, array $source_ids, string $userId) : DataResponse {
 		try {
 			$userFolder = $rootFolder->getUserFolder($userId);
 			$newScopeList = [];
@@ -70,10 +70,11 @@ class UtilController extends OCSController {
 				} else {
 					$newScopeList[] = $source_id;
 				}
-				return new DataResponse(['source_ids' => $newScopeList]);
 			}
+			return new DataResponse(['source_ids' => $newScopeList]);
 		} catch (\Throwable $e) {
 			// Avoid leaking filesystem details; keep behavior consistent with other failure paths.
+			$this->logger->warning($e);
 			return new DataResponse([], Http::STATUS_NOT_FOUND);
 		}
 	}
@@ -81,7 +82,7 @@ class UtilController extends OCSController {
 	/**
 	 * ExApp-only endpoint to enrich sources with icon, label and url
 	 * @param MetadataService $metadataService
-	 * @param list<string> $sources
+	 * @param list<array{ source_id: string, title?: string }> $sources
 	 * @param string $userId
 	 * @return DataResponse
 	 */
@@ -89,10 +90,11 @@ class UtilController extends OCSController {
 	#[ApiRoute(verb: 'POST', url: '/enrich_sources')]
 	public function enrichSources(MetadataService $metadataService, array $sources, string $userId) : DataResponse {
 		try {
-			$sources = $metadataService->getEnrichedSources($userId, ...$sources);
+			$sources = $metadataService->getEnrichedSources($userId, $sources);
 			return new DataResponse(['sources' => $sources]);
 		} catch (\Throwable $e) {
 			// Avoid leaking filesystem details; keep behavior consistent with other failure paths.
+			$this->logger->warning($e);
 			return new DataResponse([], Http::STATUS_NOT_FOUND);
 		}
 	}
