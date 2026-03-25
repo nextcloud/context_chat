@@ -46,7 +46,7 @@ class UtilController extends OCSController {
 	 * @return DataResponse|StreamResponse
 	 */
 	#[ExAppRequired]
-	#[ApiRoute(verb: 'GET', url: '/resolve_scope_list')]
+	#[ApiRoute(verb: 'POST', url: '/resolve_scope_list')]
 	public function resolveScopeList(IRootFolder $rootFolder, StorageService $storageService, ProviderConfigService $providerConfigService, array $source_ids, string $userId) : DataResponse|Http\StreamResponse {
 		try {
 			$userFolder = $rootFolder->getUserFolder($userId);
@@ -86,7 +86,7 @@ class UtilController extends OCSController {
 	 * @return DataResponse
 	 */
 	#[ExAppRequired]
-	#[ApiRoute(verb: 'GET', url: '/enrich_sources')]
+	#[ApiRoute(verb: 'POST', url: '/enrich_sources')]
 	public function enrichSources(MetadataService $metadataService, array $sources, string $userId) : DataResponse {
 		try {
 			$sources = $metadataService->getEnrichedSources($userId, ...$sources);
