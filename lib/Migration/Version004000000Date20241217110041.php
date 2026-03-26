@@ -10,11 +10,9 @@ declare(strict_types=1);
 namespace OCA\ContextChat\Migration;
 
 use Closure;
-use OCA\ContextChat\BackgroundJobs\IndexerJob;
 use OCA\ContextChat\BackgroundJobs\InitialContentImportJob;
 use OCA\ContextChat\BackgroundJobs\SchedulerJob;
 use OCA\ContextChat\BackgroundJobs\StorageCrawlJob;
-use OCA\ContextChat\BackgroundJobs\SubmitContentJob;
 use OCP\AppFramework\Services\IAppConfig;
 use OCP\BackgroundJob\IJobList;
 use OCP\DB\Exception;
@@ -40,13 +38,11 @@ class Version004000000Date20241217110041 extends SimpleMigrationStep {
 	 * @return void
 	 */
 	public function postSchemaChange(IOutput $output, Closure $schemaClosure, array $options) {
-		$output->startProgress(10);
+		$output->startProgress(8);
 		foreach ([
 			SchedulerJob::class,
 			StorageCrawlJob::class,
-			IndexerJob::class,
 			InitialContentImportJob::class,
-			SubmitContentJob::class,
 		] as $className) {
 			$this->jobList->remove($className);
 			$output->advance(1);
