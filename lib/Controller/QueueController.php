@@ -33,12 +33,12 @@ use Psr\Log\LoggerInterface;
 
 class QueueController extends OCSController {
 	public function __construct(
-		$appName,
+		string $appName,
 		IRequest $request,
-		$corsMethods = 'PUT, POST, GET, DELETE, PATCH',
-		$corsAllowedHeaders = 'Authorization, Content-Type, Accept, OCS-APIRequest',
-		$corsMaxAge = 1728000,
 		private LoggerInterface $logger,
+		string $corsMethods = 'PUT, POST, GET, DELETE, PATCH',
+		string $corsAllowedHeaders = 'Authorization, Content-Type, Accept, OCS-APIRequest',
+		int $corsMaxAge = 1728000,
 	) {
 		parent::__construct($appName, $request, $corsMethods, $corsAllowedHeaders, $corsMaxAge);
 	}

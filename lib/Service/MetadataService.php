@@ -161,7 +161,7 @@ class MetadataService {
 				$itemId = $this->getIdFromSource($source['source_id']);
 				$url = $klass->getItemUrl($itemId);
 				$provider['url'] = $url;
-				$provider['label'] .= $source['title'] ?? ' #' . $itemId;
+				$provider['label'] .= ($source['title'] ?? '') ?: ' #' . $itemId;
 				$enrichedSources[] = $provider;
 			} catch (ContainerExceptionInterface|NotFoundExceptionInterface $e) {
 				$this->logger->warning('Could not find content provider by class name', ['classString' => $providerConfig['classString'], 'exception' => $e]);

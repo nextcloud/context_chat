@@ -17,7 +17,6 @@ use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\ApiRoute;
 use OCP\AppFramework\Http\Attribute\ExAppRequired;
 use OCP\AppFramework\Http\DataResponse;
-use OCP\AppFramework\Http\StreamResponse;
 use OCP\AppFramework\OCSController;
 use OCP\Files\Folder;
 use OCP\Files\IRootFolder;
@@ -26,12 +25,12 @@ use Psr\Log\LoggerInterface;
 
 class UtilController extends OCSController {
 	public function __construct(
-		$appName,
+		string $appName,
 		IRequest $request,
-		$corsMethods = 'PUT, POST, GET, DELETE, PATCH',
-		$corsAllowedHeaders = 'Authorization, Content-Type, Accept, OCS-APIRequest',
-		$corsMaxAge = 1728000,
 		private LoggerInterface $logger,
+		string $corsMethods = 'POST',
+		string $corsAllowedHeaders = 'Authorization, Content-Type, Accept, OCS-APIRequest',
+		int $corsMaxAge = 1728000,
 	) {
 		parent::__construct($appName, $request, $corsMethods, $corsAllowedHeaders, $corsMaxAge);
 	}
