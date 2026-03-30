@@ -38,14 +38,14 @@ class StorageCrawlJob extends QueuedJob {
 	}
 
 	/**
-	 * @param array{storage_id:int, root_id:int, overridden_root:int|null, override_root:int|null, last_file_id:int} $argument
+	 * @param array{storage_id:int, root_id:int, overridden_root:int|null, override_root:int|null, last_file_id:int|null} $argument
 	 * @return void
 	 */
 	protected function run($argument): void {
 		$storageId = $argument['storage_id'];
 		$rootId = $argument['root_id'];
 		$overrideRoot = $argument['overridden_root'] ?? $argument['override_root'] ?? $rootId;
-		$lastFileId = $argument['last_file_id'];
+		$lastFileId = ($argument['last_file_id'] ?? null) === null ? 0 : $argument['last_file_id'];
 
 		// Remove current iteration
 		$this->jobList->remove(self::class, $argument);
@@ -55,7 +55,8 @@ class StorageCrawlJob extends QueuedJob {
 			$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
 
 			$mountFilesCount = 0;
-			$lastSuccessfulFileId = -1;
+			$lastSuccessfulDbId = -1;
+			$queueFile = null;
 			foreach ($this->storageService->getFilesInMount($storageId, $overrideRoot ?? $rootId, $lastFileId, self::BATCH_SIZE) as $fileId) {
 				$queueFile = new QueueFile();
 				$queueFile->setStorageId($storageId);
@@ -64,8 +65,8 @@ class StorageCrawlJob extends QueuedJob {
 				$queueFile->setUpdate(false);
 				$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
 				try {
-					$this->queue->insertIntoQueue($queueFile);
-					$lastSuccessfulFileId = $fileId;
+					$dbFile = $this->queue->insertIntoQueue($queueFile);
+					$lastSuccessfulDbId = $dbFile->getId();
 				} catch (Exception $e) {
 					$this->logger->error('[StorageCrawlJob] Failed to add file to queue', [
 						'fileId' => $fileId,
@@ -85,12 +86,12 @@ class StorageCrawlJob extends QueuedJob {
 					'storage_id' => $storageId,
 					'root_id' => $rootId,
 					'override_root' => $overrideRoot,
-					'last_file_id' => $queueFile->getFileId(),
+					'last_file_id' => $queueFile?->getFileId(),
 				]);
 
-				if ($lastSuccessfulFileId !== -1) {
+				if ($lastSuccessfulDbId !== -1) {
 					// the last job to set this value will win
-					$this->appConfig->setAppValueInt('last_indexed_file_id', $lastSuccessfulFileId, lazy: true);
+					$this->appConfig->setAppValueInt('last_enqueued_db_id', $lastSuccessfulDbId, lazy: true);
 				}
 			}
 		} finally {

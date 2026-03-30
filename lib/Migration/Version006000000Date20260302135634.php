@@ -10,12 +10,20 @@ declare(strict_types=1);
 namespace OCA\ContextChat\Migration;
 
 use Closure;
+use OCA\ContextChat\Db\QueueMapper;
+use OCP\AppFramework\Services\IAppConfig;
 use OCP\DB\ISchemaWrapper;
 use OCP\DB\Types;
 use OCP\Migration\IOutput;
 use OCP\Migration\SimpleMigrationStep;
 
 class Version006000000Date20260302135634 extends SimpleMigrationStep {
+	public function __construct(
+		private IAppConfig $appConfig,
+		private QueueMapper $queueMapper,
+	) {
+	}
+
 	/**
 	 * @param IOutput $output
 	 * @param Closure(): ISchemaWrapper $schemaClosure
@@ -54,5 +62,21 @@ class Version006000000Date20260302135634 extends SimpleMigrationStep {
 		}
 
 		return $schema;
+	}
+
+	/**
+	 * @param IOutput $output
+	 * @param Closure(): ISchemaWrapper $schemaClosure
+	 * @param array $options
+	 */
+	public function postSchemaChange(IOutput $output, Closure $schemaClosure, array $options): void {
+		if (($configVal = $this->appConfig->getAppValueInt('last_indexed_file_id', -1, lazy: true)) === -1) {
+			return;
+		}
+
+		if (($queueFile = $this->queueMapper->findQueueItemByFileId($configVal)) === null) {
+			return;
+		}
+		$this->appConfig->setAppValueInt('last_enqueued_db_id', $queueFile->getId(), lazy: true);
 	}
 }
