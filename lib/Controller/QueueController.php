@@ -30,8 +30,10 @@ use OCP\AppFramework\Services\IAppConfig;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\IJobList;
 use OCP\DB\Exception;
+use OCP\Files\Config\IUserMountCache;
 use OCP\Files\File;
 use OCP\Files\IRootFolder;
+use OCP\Files\NotPermittedException;
 use OCP\IDBConnection;
 use OCP\IRequest;
 use OCP\Util;
@@ -99,6 +101,7 @@ class QueueController extends OCSController {
 		IRootFolder $rootFolder,
 		QueueMapper $queueMapper,
 		QueueContentItemMapper $queueContentItemMapper,
+		IUserMountCache $userMountCache,
 		int $n = 64,
 	) : DataResponse {
 		if ($n <= 0) {
@@ -120,7 +123,7 @@ class QueueController extends OCSController {
 				foreach ($documents as $document) {
 					if ($queueMapper->lock($document->getId())) {
 						try {
-							$files[$document->getId()] = $this->getFileSource($document, $rootFolder, $storageService);
+							$files[$document->getId()] = $this->getFileSource($document, $rootFolder, $storageService, $userMountCache);
 						} catch (\Exception $e) {
 							$this->logger->warning($e->getMessage(), ['exception' => $e]);
 							$queueMapper->delete($document);
@@ -284,9 +287,19 @@ class QueueController extends OCSController {
 		}
 	}
 
-	private function getFileSource(QueueFile $document, IRootFolder $rootFolder, StorageService $storageService) : Source {
-		$file = $rootFolder->getFirstNodeById($document->getFileId());
-		if ($file === null || !($file instanceof File)) {
+	private function getFileSource(QueueFile $document, IRootFolder $rootFolder, StorageService $storageService, IUserMountCache $userMountCache) : Source {
+		$mounts = $userMountCache->getMountsForStorageId($document->getStorageId());
+		if (empty($mounts)) {
+			throw new \Exception('Couldn\'t find any mounts for this storage');
+		}
+		$userId = $mounts[0]->getUser()->getUID();
+
+		try {
+			$file = $rootFolder->getUserFolder($userId)->getFirstNodeById($document->getFileId());
+		} catch (NotPermittedException $e) {
+			throw new \Exception('Not allowed to get user folder');
+		}
+		if (!($file instanceof File)) {
 			throw new \Exception('File not found or not a file');
 		}
 		$userIds = $storageService->getUsersForFileId($document->getFileId());
