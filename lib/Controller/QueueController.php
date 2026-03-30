@@ -34,6 +34,7 @@ use OCP\Files\File;
 use OCP\Files\IRootFolder;
 use OCP\IDBConnection;
 use OCP\IRequest;
+use OCP\Util;
 use Psr\Log\LoggerInterface;
 
 class QueueController extends OCSController {
@@ -174,6 +175,7 @@ class QueueController extends OCSController {
 
 		try {
 			$this->setInitialIndexCompletion();
+			$this->countIndexedFiles(count($files));
 		} catch (\Exception $e) {
 			$this->logger->warning('Could not check for initial index completion', ['exception' => $e]);
 		}
@@ -370,5 +372,20 @@ class QueueController extends OCSController {
 
 		$this->logger->info('Initial index completion detected, setting last indexed time');
 		$this->appConfig->setAppValueInt('last_indexed_time', $this->timeFactory->getTime(), lazy: true);
+	}
+
+	private function countIndexedFiles(int $count): void {
+		$this->logger->info('Indexed ' . $count . ' files');
+		// We use numericToNumber to fall back to float in case int is too small
+		// non-lazy since this needs to change often in one process
+		$this->appConfig->setAppValueString(
+			'indexed_files_count',
+			(string)Util::numericToNumber(
+				floatval($count) + floatval(Util::numericToNumber(intval(
+					$this->appConfig->getAppValueString('indexed_files_count', '0', lazy: true)
+				)))
+			),
+			lazy: true,
+		);
 	}
 }
