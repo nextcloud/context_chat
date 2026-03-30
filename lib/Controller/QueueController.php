@@ -119,7 +119,12 @@ class QueueController extends OCSController {
 				}
 				foreach ($documents as $document) {
 					if ($queueMapper->lock($document->getId())) {
-						$files[$document->getId()] = $this->getFileSource($document, $rootFolder, $storageService);
+						try {
+							$files[$document->getId()] = $this->getFileSource($document, $rootFolder, $storageService);
+						} catch (\Exception $e) {
+							$this->logger->warning($e->getMessage(), ['exception' => $e]);
+							$queueMapper->delete($document);
+						}
 					}
 				}
 			}
