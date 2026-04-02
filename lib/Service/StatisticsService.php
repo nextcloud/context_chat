@@ -56,6 +56,12 @@ class StatisticsService {
 			$stats['queued_actions_count'] = 0;
 		}
 		try {
+			$stats['queued_actions_locked_count'] = $this->actionService->countLocked();
+		} catch (Exception $e) {
+			$this->logger->error($e->getMessage(), ['exception' => $e]);
+			$stats['queued_actions_locked_count'] = 0;
+		}
+		try {
 			$stats['queued_fs_events_count'] = $this->fsEventMapper->count();
 		} catch (Exception $e) {
 			$this->logger->error($e->getMessage(), ['exception' => $e]);
@@ -76,6 +82,12 @@ class StatisticsService {
 			$queued_files_count = 0;
 		}
 		try {
+			$queued_files_locked_count = $this->queueService->countLocked();
+		} catch (Exception $e) {
+			$this->logger->error($e->getMessage(), ['exception' => $e]);
+			$queued_files_locked_count = 0;
+		}
+		try {
 			$stats['queued_new_files_count'] = $this->queueService->countNewFiles();
 		} catch (Exception $e) {
 			$this->logger->error($e->getMessage(), ['exception' => $e]);
@@ -87,6 +99,13 @@ class StatisticsService {
 		} catch (Exception $e) {
 			$this->logger->error($e->getMessage(), ['exception' => $e]);
 			$stats['queued_documents_counts'] = [];
+		}
+		try {
+			$stats['queued_documents_locked_counts'] = $this->contentQueue->countLocked();
+			$stats['queued_documents_locked_counts'][ProviderConfigService::getDefaultProviderKey()] = $queued_files_locked_count;
+		} catch (Exception $e) {
+			$this->logger->error($e->getMessage(), ['exception' => $e]);
+			$stats['queued_documents_locked_counts'] = [];
 		}
 
 		return $stats;

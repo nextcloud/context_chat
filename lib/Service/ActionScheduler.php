@@ -156,4 +156,11 @@ class ActionScheduler {
 	public function count(): int {
 		return $this->actionMapper->count();
 	}
+
+	/**
+	 * @throws Exception
+	 */
+	public function countLocked(): int {
+		return $this->actionMapper->countLocked();
+	}
 }

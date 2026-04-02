@@ -11,6 +11,7 @@ namespace OCA\ContextChat\Service;
 
 use OCA\ContextChat\Db\QueueFile;
 use OCA\ContextChat\Db\QueueMapper;
+use OCP\DB\Exception;
 
 class QueueService {
 
@@ -44,5 +45,12 @@ class QueueService {
 	 */
 	public function countNewFiles(): int {
 		return $this->queueMapper->count(true);
+	}
+
+	/**
+	 * @throws Exception
+	 */
+	public function countLocked(): int {
+		return $this->queueMapper->countLocked();
 	}
 }
