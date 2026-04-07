@@ -46,9 +46,6 @@ class StatisticsService {
 			$this->logger->error($e->getMessage(), ['exception' => $e]);
 			$stats['eligible_files_count'] = 0;
 		}
-		$stats['recorded_indexed_files_count'] = Util::numericToNumber(intval(
-			$this->appConfig->getAppValueString('indexed_files_count', '0', lazy: true)
-		));
 		try {
 			$stats['queued_actions_count'] = $this->actionService->count();
 		} catch (Exception $e) {

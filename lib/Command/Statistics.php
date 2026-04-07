@@ -64,7 +64,6 @@ class Statistics extends Command {
 		$output->writeln('New files in indexing queue (without updates): ' . $stats['queued_new_files_count']);
 		$output->writeln('Queued documents:' . var_export($stats['queued_documents_counts'] ?? [], true));
 		$output->writeln('Locked queue documents:' . var_export($stats['queued_documents_locked_counts'] ?? [], true));
-		$output->writeln('Files successfully sent to backend: ' . strval($stats['recorded_indexed_files_count']));
 		$output->writeln('Indexed documents: ' . var_export($stats['vectordb_document_counts'], true));
 		$output->writeln('Actions in queue: ' . $stats['queued_actions_count']);
 		$output->writeln('Locked actions in queue: ' . $stats['queued_actions_locked_count']);

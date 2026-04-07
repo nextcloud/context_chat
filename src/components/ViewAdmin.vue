@@ -58,9 +58,6 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 							? stats.vectordb_document_counts[providerId]
 							: t('context_chat', 'CC Backend unavailable')
 					}}
-					<template v-if="providerId === 'files__default'">
-						{{ t('context_chat', '({count} sent)', {count: stats.recorded_indexed_files_count}) }}
-					</template>
 				</td>
 			</tr>
 		</table>
