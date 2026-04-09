@@ -36,7 +36,6 @@ use OCP\Files\IRootFolder;
 use OCP\Files\NotPermittedException;
 use OCP\IDBConnection;
 use OCP\IRequest;
-use OCP\Util;
 use Psr\Log\LoggerInterface;
 
 class QueueController extends OCSController {
@@ -347,6 +346,7 @@ class QueueController extends OCSController {
 		try {
 			$crawlJobCount = $this->getJobCount(StorageCrawlJob::class);
 			if ($crawlJobCount > 0) {
+				$this->logger->debug('StorageCrawlJob\'s still scheduled for execution, intial indexing has not completed.');
 				return;
 			}
 		} catch (\Exception $e) {
@@ -357,18 +357,20 @@ class QueueController extends OCSController {
 		try {
 			$lastEnqueuedDbId = $this->appConfig->getAppValueInt('last_enqueued_db_id', -1, lazy: true);
 			if ($lastEnqueuedDbId !== -1) {
-				$fileStillThere = $this->queueMapper->existsQueueItemByDbId($lastEnqueuedDbId);
-				if ($fileStillThere) {
+				$initiallyQueuedFilesExist = $this->queueMapper->existsQueueItemsUpToDbId($lastEnqueuedDbId);
+				if ($initiallyQueuedFilesExist) {
+					$this->logger->debug('Initially queued files still in the queue, intial indexing has not completed.');
 					return;
 				}
 				$this->logger->info('Initial index completion detected, setting last indexed time');
 				$this->appConfig->setAppValueInt('last_indexed_time', $this->timeFactory->getTime(), lazy: true);
+				return;
 			}
 		} catch (\Exception $e) {
 			$this->logger->warning('Could not get last enqueued file\'s DB id', ['exception' => $e]);
 		}
 
-		// last enqueued file's ID could not retrieved, falling back to file counting method
+		// last enqueued file's ID could not be retrieved, falling back to file counting method
 		try {
 			$queuedNewFilesCount = $this->queueService->countNewFiles();
 			$eligibleFilesCount = $this->storageService->countFiles();
@@ -376,18 +378,24 @@ class QueueController extends OCSController {
 			// initial indexing complete this allows for some margin of error in case some files were
 			// added while we were indexing but still ensures that we have indexed the vast majority of
 			// files at least once
-			$thresholdCount = (float)$eligibleFilesCount * self::INDEX_COMPLETION_THRESHOLD;
+			if (self::withinThreshold($queuedNewFilesCount, $eligibleFilesCount)) {
+				$this->logger->info('Initial index completion detected, setting last indexed time');
+				$this->appConfig->setAppValueInt('last_indexed_time', $this->timeFactory->getTime(), lazy: true);
+				return;
+			}
 		} catch (\OCP\DB\Exception $e) {
 			$this->logger->warning('Could not count queued new files or total eligible files', ['exception' => $e]);
 			return;
 		}
 
 		// we are still indexing files that were never indexed before.
-		if ($queuedNewFilesCount > $thresholdCount) {
-			return;
-		}
+		$this->logger->debug('Initial indexing not completed yet', [
+			'queuedNewFilesCount' => $queuedNewFilesCount,
+			'eligibleFilesCount' => $eligibleFilesCount,
+		]);
+	}
 
-		$this->logger->info('Initial index completion detected, setting last indexed time');
-		$this->appConfig->setAppValueInt('last_indexed_time', $this->timeFactory->getTime(), lazy: true);
+	private static function withinThreshold(int $current, int $total, float $threshold = self::INDEX_COMPLETION_THRESHOLD): bool {
+		return ((float)($total - $current) / (float)$total) < $threshold;
 	}
 }

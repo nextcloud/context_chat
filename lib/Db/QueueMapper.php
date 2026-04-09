@@ -75,18 +75,19 @@ class QueueMapper extends QBMapper {
 	/**
 	 * @param int $dbId
 	 * @return bool
+	 * @throws \OCP\DB\Exception
 	 */
-	public function existsQueueItemByDbId(int $dbId) : bool {
+	public function existsQueueItemsUpToDbId(int $dbId) : bool {
 		$qb = $this->db->getQueryBuilder();
 		$qb->select('id')
 			->from($this->getTableName())
-			->where($qb->expr()->eq('id', $qb->createPositionalParameter($dbId, IQueryBuilder::PARAM_INT)))
+			->where($qb->expr()->lte('id', $qb->createPositionalParameter($dbId, IQueryBuilder::PARAM_INT)))
 			->setMaxResults(1);
 
 		try {
 			$this->findEntity($qb);
 			return true;
-		} catch (DoesNotExistException|MultipleObjectsReturnedException|Exception $e) {
+		} catch (DoesNotExistException|MultipleObjectsReturnedException|Exception) {
 			return false;
 		}
 	}
