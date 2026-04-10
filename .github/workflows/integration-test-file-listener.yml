@@ -473,7 +473,7 @@ jobs:
     permissions:
       contents: none
     runs-on: ubuntu-latest-low
-    needs: [file-listener-test]
+    needs: [changes, file-listener-test]
 
     if: always()
 
@@ -482,4 +482,4 @@ jobs:
 
     steps:
       - name: Summary status
-        run: if ${{ needs.file-listener-test.result != 'success' }}; then exit 1; fi
+        run: if ${{ needs.changes.outputs.src != 'false' && needs.file-listener-test.result != 'success' }}; then exit 1; fi

@@ -366,7 +366,7 @@ jobs:
     permissions:
       contents: none
     runs-on: ubuntu-latest-low
-    needs: [scan-test]
+    needs: [changes, scan-test]
 
     if: always()
 
@@ -375,4 +375,4 @@ jobs:
 
     steps:
       - name: Summary status
-        run: if ${{ needs.scan-test.result != 'success' }}; then exit 1; fi
+        run: if ${{ needs.changes.outputs.src != 'false' && needs.scan-test.result != 'success' }}; then exit 1; fi

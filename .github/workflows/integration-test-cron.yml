@@ -365,7 +365,7 @@ jobs:
     permissions:
       contents: none
     runs-on: ubuntu-latest-low
-    needs: [cron-test]
+    needs: [changes, cron-test]
 
     if: always()
 
@@ -374,4 +374,4 @@ jobs:
 
     steps:
       - name: Summary status
-        run: if ${{ needs.cron-test.result != 'success' }}; then exit 1; fi
+        run: if ${{ needs.changes.outputs.src != 'false' && needs.cron-test.result != 'success' }}; then exit 1; fi
