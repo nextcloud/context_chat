@@ -7,7 +7,7 @@
 
 namespace OCA\ContextChat\AppInfo;
 
-use OCA\ContextChat\Listener\AddMissingIndicesListener;
+use OCA\ContextChat\Listener\AddMissingIndicesListenerFsEvents;
 use OCA\ContextChat\Listener\AppDisableListener;
 use OCA\ContextChat\Listener\FileListener;
 use OCA\ContextChat\Listener\ShareListener;
@@ -68,7 +68,7 @@ class Application extends App implements IBootstrap {
 	}
 
 	public function register(IRegistrationContext $context): void {
-		$context->registerEventListener(AddMissingIndicesEvent::class, AddMissingIndicesListener::class);
+		$context->registerEventListener(AddMissingIndicesEvent::class, AddMissingIndicesListenerFsEvents::class);
 		$context->registerEventListener(BeforeNodeDeletedEvent::class, FileListener::class);
 		$context->registerEventListener(NodeCreatedEvent::class, FileListener::class);
 		$context->registerEventListener(CacheEntryInsertedEvent::class, FileListener::class);
