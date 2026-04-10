@@ -60,6 +60,7 @@ jobs:
         databases: [ 'pgsql' ]
         server-versions: [ 'master' ]
         encryption: ['on']
+        file-deletion-method: [ 'occ', 'os' ]
 
     name: Integration test - File listener ☁️${{ matrix.server-versions }} 🐘${{ matrix.php-versions }} 🗑️${{ matrix.file-deletion-method }} 🔐:${{ matrix.encryption }}
 
