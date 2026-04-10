@@ -33,35 +33,45 @@ class Version006000000Date20260302135634 extends SimpleMigrationStep {
 	public function changeSchema(IOutput $output, Closure $schemaClosure, array $options): ?ISchemaWrapper {
 		/** @var ISchemaWrapper $schema */
 		$schema = $schemaClosure();
+		$schemaChanged = false;
 
 		if ($schema->hasTable('context_chat_action_queue')) {
 			$table = $schema->getTable('context_chat_action_queue');
-			$table->addColumn('locked_at', Types::DATETIME, [
-				'notnull' => false,
-				'default' => null,
-			]);
-			$table->addIndex(['locked_at'], 'cc_action_queue_lock');
+			if (!$table->hasColumn('locked_at')) {
+				$table->addColumn('locked_at', Types::DATETIME, [
+					'notnull' => false,
+					'default' => null,
+				]);
+				$table->addIndex(['locked_at'], 'cc_action_queue_lock');
+				$schemaChanged = true;
+			}
 		}
 
 		if ($schema->hasTable('context_chat_content_queue')) {
 			$table = $schema->getTable('context_chat_content_queue');
-			$table->addColumn('locked_at', Types::DATETIME, [
-				'notnull' => false,
-				'default' => null,
-			]);
-			$table->addIndex(['locked_at'], 'cc_content_queue_lock');
+			if (!$table->hasColumn('locked_at')) {
+				$table->addColumn('locked_at', Types::DATETIME, [
+					'notnull' => false,
+					'default' => null,
+				]);
+				$table->addIndex(['locked_at'], 'cc_content_queue_lock');
+				$schemaChanged = true;
+			}
 		}
 
 		if ($schema->hasTable('context_chat_queue')) {
 			$table = $schema->getTable('context_chat_queue');
-			$table->addColumn('locked_at', Types::DATETIME, [
-				'notnull' => false,
-				'default' => null,
-			]);
-			$table->addIndex(['locked_at'], 'cc_queue_lock');
+			if (!$table->hasColumn('locked_at')) {
+				$table->addColumn('locked_at', Types::DATETIME, [
+					'notnull' => false,
+					'default' => null,
+				]);
+				$table->addIndex(['locked_at'], 'cc_queue_lock');
+				$schemaChanged = true;
+			}
 		}
 
-		return $schema;
+		return $schemaChanged ? $schema : null;
 	}
 
 	/**
@@ -73,6 +83,7 @@ class Version006000000Date20260302135634 extends SimpleMigrationStep {
 		if (($configVal = $this->appConfig->getAppValueInt('last_indexed_file_id', -1, lazy: true)) === -1) {
 			return;
 		}
+		$this->appConfig->deleteAppValue('last_indexed_file_id');
 
 		if (($queueFile = $this->queueMapper->findQueueItemByFileId($configVal)) === null) {
 			return;
