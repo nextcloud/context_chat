@@ -207,7 +207,7 @@ jobs:
           python3 -u ./main_em.py > em_backend_logs 2>&1 &
           python3 -u ./main.py > backend_logs 2>&1 &
           echo $! > ../pid.txt          # Save the process ID (PID)
-          sleep 120 # Wait for the backend to get ready
+          sleep 60 # Wait for the backend to get ready
 
       - name: Register backend
         run: |
@@ -216,6 +216,7 @@ jobs:
           ./occ config:system:set loglevel --value 1
           ./occ app_api:daemon:register --net host manual_install "Manual Install" manual-install http localhost http://localhost:8080
           timeout 120 ./occ app_api:app:register context_chat_backend manual_install --json-info "{\"appid\":\"context_chat_backend\",\"name\":\"Context Chat Backend\",\"daemon_config_name\":\"manual_install\",\"version\":\"${{ fromJson(steps.appinfo.outputs.result).version }}\",\"secret\":\"12345\",\"port\":10034,\"scopes\":[],\"system_app\":0}" --force-scopes --wait-finish
+          sleep 60 # Wait for the embedding server to get ready
 
       - name: Checkout documentation
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
