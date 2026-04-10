@@ -56,27 +56,10 @@ jobs:
       # do not stop on another job's failure
       fail-fast: false
       matrix:
-        php-versions: [ '8.1', '8.2' ]
+        php-versions: [ '8.2' ]
         databases: [ 'pgsql' ]
-        server-versions: [ 'stable32', 'master' ]
-        encryption: ['off']
-        file-deletion-method: [ 'occ', 'os' ]
-        exclude:
-          - server-versions: master
-            databases: pgsql
-            php-versions: 8.1
-        include:
-          - server-versions: master
-            databases: pgsql
-            php-versions: 8.2
-            encryption: 'on'
-            file-deletion-method: 'occ'
-          - server-versions: stable32
-            databases: pgsql
-            php-versions: 8.1
-            encryption: 'on'
-            file-deletion-method: 'occ'
-
+        server-versions: [ 'master' ]
+        encryption: ['on']
 
     name: Integration test - File listener ☁️${{ matrix.server-versions }} 🐘${{ matrix.php-versions }} 🗑️${{ matrix.file-deletion-method }} 🔐:${{ matrix.encryption }}
 

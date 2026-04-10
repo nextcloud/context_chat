@@ -56,14 +56,10 @@ jobs:
       # do not stop on another job's failure
       fail-fast: false
       matrix:
-        php-versions: [ '8.1', '8.2' ]
+        php-versions: [ '8.2' ]
         databases: [ 'pgsql' ]
-        server-versions: [ 'stable32', 'master' ]
+        server-versions: [ 'stable32', 'stable33', 'master' ]
         encryption: ['off']
-        exclude:
-          - server-versions: master
-            databases: pgsql
-            php-versions: 8.1
         include:
           - server-versions: master
             databases: pgsql
