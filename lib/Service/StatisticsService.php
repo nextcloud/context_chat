@@ -14,7 +14,6 @@ use OCA\ContextChat\Db\QueueContentItemMapper;
 use OCA\ContextChat\Logger;
 use OCP\AppFramework\Services\IAppConfig;
 use OCP\DB\Exception;
-use OCP\Util;
 
 class StatisticsService {
 	public function __construct(

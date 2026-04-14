@@ -9,7 +9,6 @@ namespace OCA\ContextChat\Service;
 
 use OCA\ContextChat\Logger;
 use OCP\AppFramework\Services\IAppConfig;
-use OCP\Util;
 
 class DiagnosticService {
 
