@@ -292,11 +292,11 @@ jobs:
           # list all the bg jobs
           ./occ background-job:list
 
-      - name: Periodically check context_chat stats for 15 minutes to allow the backend to index the files
+      - name: Periodically check context_chat stats for 30 minutes to allow the backend to index the files
         run: |
           success=0
-          echo "::group::Checking stats periodically for 15 minutes to allow the backend to index the files"
-          for i in {1..90}; do
+          echo "::group::Checking stats periodically for 30 minutes to allow the backend to index the files"
+          for i in {1..180}; do
             echo "Checking stats, attempt $i..."
 
             stats_err=$(mktemp)
@@ -416,6 +416,7 @@ jobs:
           tail -v -n +1 context_chat_backend/persistent_storage/logs/em_server.log* || echo "No logs in logs directory"
 
       - name: Final stats log
+        if: always()
         run: |
           ./occ context_chat:stats
           ./occ context_chat:stats --json
