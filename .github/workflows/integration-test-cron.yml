@@ -124,6 +124,8 @@ jobs:
           repository: nextcloud/context_chat_backend
           path: context_chat_backend/
           persist-credentials: false
+          # todo: remove later
+          ref: feat/noid/rev-content-flow
 
       - name: Checkout viewer
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
