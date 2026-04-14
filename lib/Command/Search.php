@@ -7,7 +7,7 @@
 
 namespace OCA\ContextChat\Command;
 
-use OCA\ContextChat\TaskProcessing\ContextChatSearchTaskType;
+use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\Type\ScopeType;
 use OCP\TaskProcessing\IManager;
 use OCP\TaskProcessing\Task;
@@ -18,6 +18,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class Search extends Command {
+	private const SEARCH_TASK_TYPE_ID = Application::APP_ID . ':context_chat_search';
 
 	public function __construct(
 		private IManager $taskProcessingManager,
@@ -53,31 +54,45 @@ class Search extends Command {
 
 		if (!empty($contextProviders)) {
 			$contextProviders = preg_replace('/\s*,+\s*/', ',', $contextProviders);
-			$contextProvidersArray = array_filter(explode(',', $contextProviders), fn ($source) => !empty($source));
-			$task = new Task(ContextChatSearchTaskType::ID, [
+			if ($contextProviders === null) {
+				$output->writeln('<error>Regex comma de-duplication returned null</error>');
+				return 1;
+			}
+			if (is_array($contextProviders)) {
+				$contextProviders = $contextProviders[0];
+			}
+
+			$contextProvidersArray = array_values(array_filter(explode(',', $contextProviders), fn ($source) => !empty($source)));
+			$task = new Task(self::SEARCH_TASK_TYPE_ID, [
 				'prompt' => $prompt,
 				'scopeType' => ScopeType::PROVIDER,
 				'scopeList' => $contextProvidersArray,
 				'scopeListMeta' => '',
-			], 'context_chat', $userId);
+			], Application::APP_ID, $userId);
 		} else {
-			$task = new Task(ContextChatSearchTaskType::ID, [
+			$task = new Task(self::SEARCH_TASK_TYPE_ID, [
 				'prompt' => $prompt,
 				'scopeType' => ScopeType::NONE,
 				'scopeList' => [],
 				'scopeListMeta' => '',
-			], 'context_chat', $userId);
+			], Application::APP_ID, $userId);
 		}
 
 		$this->taskProcessingManager->scheduleTask($task);
-		while (!in_array(($task = $this->taskProcessingManager->getTask($task->getId()))->getStatus(), [Task::STATUS_FAILED, Task::STATUS_SUCCESSFUL], true)) {
-			sleep(1);
+		$taskId = $task->getId();
+		if ($taskId === null) {
+			$output->writeln('<error>Task schedule failed, taskId is null</error>');
+			return 1;
+		}
+
+		while (!in_array(($task = $this->taskProcessingManager->getTask($taskId))->getStatus(), [Task::STATUS_FAILED, Task::STATUS_SUCCESSFUL], true)) {
+			sleep(2);
 		}
 		if ($task->getStatus() === Task::STATUS_SUCCESSFUL) {
 			$output->writeln(var_export($task->getOutput(), true));
 			return 0;
 		} else {
-			$output->writeln('<error>' . $task->getErrorMessage() . '</error>');
+			$output->writeln('<error>' . ($task->getErrorMessage() ?? '(empty error message)') . '</error>');
 			return 1;
 		}
 	}
