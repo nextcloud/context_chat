@@ -69,8 +69,11 @@ class StatisticsService {
 		} catch (\RuntimeException $e) {
 			$this->logger->error($e->getMessage(), ['exception' => $e]);
 			$stats['backend_available'] = false;
+		}
+		if (empty($stats['vectordb_document_counts'] ?? [])) {
 			$stats['vectordb_document_counts'] = [ ProviderConfigService::getDefaultProviderKey() => 0 ];
 		}
+
 		try {
 			$queued_files_count = $this->queueService->count();
 		} catch (Exception $e) {
@@ -94,14 +97,14 @@ class StatisticsService {
 			$stats['queued_documents_counts'][ProviderConfigService::getDefaultProviderKey()] = $queued_files_count;
 		} catch (Exception $e) {
 			$this->logger->error($e->getMessage(), ['exception' => $e]);
-			$stats['queued_documents_counts'] = [];
+			$stats['queued_documents_counts'] = [ ProviderConfigService::getDefaultProviderKey() => 0];
 		}
 		try {
 			$stats['queued_documents_locked_counts'] = $this->contentQueue->countLocked();
 			$stats['queued_documents_locked_counts'][ProviderConfigService::getDefaultProviderKey()] = $queued_files_locked_count;
 		} catch (Exception $e) {
 			$this->logger->error($e->getMessage(), ['exception' => $e]);
-			$stats['queued_documents_locked_counts'] = [];
+			$stats['queued_documents_locked_counts'] = [ ProviderConfigService::getDefaultProviderKey() => 0];
 		}
 
 		return $stats;
