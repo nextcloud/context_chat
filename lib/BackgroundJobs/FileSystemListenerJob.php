@@ -92,9 +92,9 @@ class FileSystemListenerJob extends TimedJob {
 						'nodeId' => $fsEvent->getNodeId(),
 						'type' => $fsEvent->getType(),
 					]);
-					$node = false;
+					$node = null;
 				}
-				if ($node === false) {
+				if ($node === null) {
 					$this->logger->warning('Node with ID ' . $fsEvent->getNodeId() . ' not found for fs event "' . $fsEvent->getType() . '"', [
 						'userId' => $fsEvent->getUserId(),
 						'nodeId' => $fsEvent->getNodeId(),
