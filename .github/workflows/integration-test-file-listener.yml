@@ -170,8 +170,8 @@ jobs:
           ./occ maintenance:install --verbose --database=${{ matrix.databases }} --database-name=nextcloud --database-host=127.0.0.1 --database-port=$PGSQL_PORT --database-user=root --database-pass=rootpassword --admin-user admin --admin-pass password
           composer run serve &
 
-      - name: Enable app_api and testing
-        run: ./occ app:enable -vvv -f app_api testing
+      - name: Enable app_api, context_chat and testing
+        run: ./occ app:enable -vvv -f app_api context_chat testing
 
       - name: Enable encryption
         if: ${{ matrix.encryption == 'on' }}
