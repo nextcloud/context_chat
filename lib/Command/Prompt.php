@@ -18,7 +18,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class Prompt extends Command {
-	private const CONTEXT_CHAT_TASK_TYPE_ID = Application::APP_ID . ':context_chat_search';
+	private const CONTEXT_CHAT_TASK_TYPE_ID = Application::APP_ID . ':context_chat';
 
 	public function __construct(
 		private IManager $taskProcessingManager,
