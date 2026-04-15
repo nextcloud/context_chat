@@ -42,7 +42,7 @@ class Search extends Command {
 			->addOption(
 				'limit',
 				null,
-				InputArgument::REQUIRED,
+				InputOption::VALUE_REQUIRED,
 				'The max no. of search results to be returned'
 			)
 			->addOption(
@@ -56,7 +56,7 @@ class Search extends Command {
 	protected function execute(InputInterface $input, OutputInterface $output) {
 		$userId = $input->getArgument('uid');
 		$prompt = $input->getArgument('prompt');
-		$limit = $input->getArgument('limit');
+		$limit = $input->getOption('limit');
 		$contextProviders = $input->getOption('context-providers');
 
 		if (!empty($contextProviders)) {
