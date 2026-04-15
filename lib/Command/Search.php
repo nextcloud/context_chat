@@ -40,6 +40,12 @@ class Search extends Command {
 				'The prompt'
 			)
 			->addOption(
+				'limit',
+				null,
+				InputArgument::REQUIRED,
+				'The max no. of search results to be returned'
+			)
+			->addOption(
 				'context-providers',
 				null,
 				InputOption::VALUE_REQUIRED,
@@ -50,6 +56,7 @@ class Search extends Command {
 	protected function execute(InputInterface $input, OutputInterface $output) {
 		$userId = $input->getArgument('uid');
 		$prompt = $input->getArgument('prompt');
+		$limit = $input->getArgument('limit');
 		$contextProviders = $input->getOption('context-providers');
 
 		if (!empty($contextProviders)) {
@@ -68,6 +75,7 @@ class Search extends Command {
 				'scopeType' => ScopeType::PROVIDER,
 				'scopeList' => $contextProvidersArray,
 				'scopeListMeta' => '',
+				...($limit === null ? [] : ['limit' => $limit]),
 			], Application::APP_ID, $userId);
 		} else {
 			$task = new Task(self::SEARCH_TASK_TYPE_ID, [
@@ -75,6 +83,7 @@ class Search extends Command {
 				'scopeType' => ScopeType::NONE,
 				'scopeList' => [],
 				'scopeListMeta' => '',
+				...($limit === null ? [] : ['limit' => $limit]),
 			], Application::APP_ID, $userId);
 		}
 
