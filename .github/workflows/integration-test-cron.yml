@@ -299,8 +299,9 @@ jobs:
           for i in {1..180}; do
             echo "Checking stats, attempt $i..."
 
+            set +e # disable exit-on-error
             stats_err=$(mktemp)
-            stats=$(timeout 5 ./occ context_chat:stats --json 2>"$stats_err")
+            stats=$(timeout 10 ./occ context_chat:stats --json 2>"$stats_err")
             stats_exit=$?
             echo "Stats output:"
             echo "$stats"
@@ -310,6 +311,7 @@ jobs:
             fi
             echo "---"
             rm -f "$stats_err"
+            set -e # enable exit-on-error
 
             # Check for critical errors in output
             if [ $stats_exit -ne 0 ] || echo "$stats" | grep -q "Error during request"; then
