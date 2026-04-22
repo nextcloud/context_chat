@@ -275,6 +275,9 @@ jobs:
 
       - name: Run cron jobs
         run: |
+          ./occ config:app:set --value 10 --type integer context_chat crawl_job_interval # 10 seconds
+          ./occ config:app:set --value '10' --type string context_chat action_job_interval # 10 seconds
+          ./occ config:app:set --value '10' --type string context_chat fs_listener_job_interval # 10 seconds
           # every 10 seconds indefinitely
           while true; do
             php cron.php
