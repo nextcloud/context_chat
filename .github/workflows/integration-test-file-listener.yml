@@ -442,7 +442,7 @@ jobs:
       - name: Show context chat stats for actions changes
         run: |
           for i in {1..20}; do
-            php -v cron.php &
+            php cron.php -v
             wait
             ./occ context_chat:stats
             echo '--------------------------------------'
