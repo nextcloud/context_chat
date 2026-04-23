@@ -2,6 +2,7 @@ OC.L10N.register(
     "context_chat",
     {
     "Prompt" : "Užduotis",
+    "Sources" : "Šaltiniai",
     "Generated response" : "Generuoti atsakymą",
     "never" : "niekada",
     "{time} ago" : "Prieš {time}"
