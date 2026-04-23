@@ -116,6 +116,8 @@ jobs:
           repository: nextcloud/context_chat_backend
           path: context_chat_backend/
           persist-credentials: false
+          # todo: remove later
+          ref: feat/noid/rev-content-flow
 
       - name: Checkout viewer
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -170,8 +172,8 @@ jobs:
           ./occ maintenance:install --verbose --database=${{ matrix.databases }} --database-name=nextcloud --database-host=127.0.0.1 --database-port=$PGSQL_PORT --database-user=root --database-pass=rootpassword --admin-user admin --admin-pass password
           composer run serve &
 
-      - name: Enable app_api and testing
-        run: ./occ app:enable -vvv -f app_api testing
+      - name: Enable app_api, context_chat and testing
+        run: ./occ app:enable -vvv -f app_api context_chat testing
 
       - name: Enable encryption
         if: ${{ matrix.encryption == 'on' }}
@@ -209,21 +211,6 @@ jobs:
           ./occ app_api:daemon:register --net host manual_install "Manual Install" manual-install http localhost http://localhost:8080
           timeout 120 ./occ app_api:app:register context_chat_backend manual_install --json-info "{\"appid\":\"context_chat_backend\",\"name\":\"Context Chat Backend\",\"daemon_config_name\":\"manual_install\",\"version\":\"${{ fromJson(steps.appinfo.outputs.result).version }}\",\"secret\":\"12345\",\"port\":10034,\"scopes\":[],\"system_app\":0}" --force-scopes --wait-finish
           sleep 60 # Wait for the embedding server to get ready
-
-      - name: Enable context chat
-        run: |
-          ./occ app:enable -vvv -f ${{ env.APP_NAME }}
-          # Run cron in speed mode
-          ./occ config:app:set --value 30 --type integer context_chat indexing_job_interval # 30 seconds
-          ./occ config:app:set --value 10 --type integer context_chat crawl_job_interval # 10 seconds
-          ./occ config:app:set --value '10' --type string context_chat action_job_interval # 10 seconds
-          ./occ config:app:set --value '10' --type string context_chat fs_listener_job_interval # 10 seconds
-          # Run normal indexing jobs which will only pick up welcome.txt etc
-          for i in {1..10}; do
-          php cron.php & # Starting with stable31 we can use -v here for better visibility
-          wait
-          ./occ context_chat:stats
-          done
 
       - name: Checkout documentation
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -286,40 +273,86 @@ jobs:
         run: |
           ./occ files:scan admin # We do the scan after enabling context chat here, so we can test the file listeners
 
-      - name: Run indexer cron
+      - name: Run cron jobs
         run: |
-          for i in {1..100}; do
-            php cron.php & # Starting with stable31 we can use -v here for better visibility
-            wait
-            ./occ context_chat:stats
+          ./occ config:app:set --value 10 --type integer context_chat crawl_job_interval # 10 seconds
+          ./occ config:app:set --value '10' --type string context_chat action_job_interval # 10 seconds
+          ./occ config:app:set --value '10' --type string context_chat fs_listener_job_interval # 10 seconds
+          # every 10 seconds indefinitely
+          while true; do
+            php cron.php
+            sleep 10
+          done &
+          sleep 30
+          # list all the bg jobs
+          ./occ background-job:list
+
+      - name: Periodically check context_chat stats for 40 minutes to allow the backend to index the files
+        run: |
+          success=0
+          echo "::group::Checking stats periodically for 40 minutes to allow the backend to index the files"
+          for i in {1..240}; do
+            echo "Checking stats, attempt $i..."
+
+            set +e # disable exit-on-error
+            stats_err=$(mktemp)
+            stats=$(timeout 10 ./occ context_chat:stats --json 2>"$stats_err")
+            stats_exit=$?
+            echo "Stats output:"
+            echo "$stats"
+            if [ -s "$stats_err" ]; then
+              echo "Stderr:"
+              cat "$stats_err"
+            fi
+            echo "---"
+            rm -f "$stats_err"
+            set -e
+
+            # Check for critical errors in output
+            if [ $stats_exit -ne 0 ] || echo "$stats" | grep -q "Error during request"; then
+              echo "Backend connection error detected (exit=$stats_exit), retrying..."
+              sleep 10
+              continue
+            fi
+
+            # Extract total eligible files
+            total_eligible_files=$(echo "$stats" | jq '.eligible_files_count' || echo "")
+
+            # Extract indexed documents count (files__default)
+            indexed_count=$(echo "$stats" | jq '.vectordb_document_counts.files__default' || echo "")
+
+            echo "Total eligible files: $total_eligible_files"
+            echo "Indexed documents (files__default): $indexed_count"
+
+            diff=$((total_eligible_files - indexed_count))
+            threshold=$((total_eligible_files * 3 / 100))
+
+            # Check if difference is within tolerance
+            if [ $diff -le $threshold ]; then
+              echo "Indexing within 3% tolerance (diff=$diff, threshold=$threshold)"
+              success=1
+              break
+            else
+              progress=$((diff * 100 / total_eligible_files))
+              echo "Outside 3% tolerance: diff=$diff (${progress}%), threshold=$threshold"
+            fi
+
+            # Check if backend is still alive
+            ccb_alive=$(ps -p $(cat pid.txt) -o cmd= | grep -c "main.py" || echo "0")
+            if [ "$ccb_alive" -eq 0 ]; then
+              echo "Error: Context Chat Backend process is not running. Exiting."
+              exit 1
+            fi
+
+            sleep 10
           done
 
-      - name: Check context chat state
-        run: |
-          ./occ context_chat:stats
-          ./occ background-job:list
-          ./occ context_chat:stats | grep -q "Index complete time" || echo "Indexing did not complete"
-          ./occ context_chat:stats | awk '
-              /Total eligible files/ {
-                 total = $NF + 0  # force conversion to number
-              }
-              /files__default/ {
-                  indexed = $NF;
-                  sub(/,$/, "", indexed)  # remove trailing comma
-                  indexed = indexed + 0    # force conversion to number
-              }
-              END {
-                  low = total * 0.85;
-                  high = total * 1.15;
-                  if (indexed >= low && indexed <= high) {
-                      print "✅ Indexed files (" indexed ") are within 15% of eligible files (" total ").";
-                      exit 0;
-                  } else {
-                      print "❌ Indexed files (" indexed ") are OUTSIDE the 15% range of eligible files (" total ").";
-                      exit 1;
-                  }
-              }
-          '
+          echo "::endgroup::"
+
+          if [ $success -ne 1 ]; then
+            echo "Max attempts reached"
+            exit 1
+          fi
 
       - name: Run the prompts
         run: |
@@ -409,12 +442,13 @@ jobs:
           # list files to trigger mounting of shares
           curl -X PROPFIND -H "Depth: 0" -u 'test:test' 'http://localhost:8080/remote.php/webdav/'
 
-      - name: Run indexer cron
+      - name: Show context chat stats for actions changes
         run: |
-          for i in {1..100}; do
-            php cron.php & # Starting with stable31 we can use -v here for better visibility
+          for i in {1..20}; do
+            php cron.php -v
             wait
             ./occ context_chat:stats
+            echo '--------------------------------------'
           done
 
       - name: Run the prompts again
@@ -494,13 +528,31 @@ jobs:
         run: |
           cat data/context_chat.log
 
-      - name: Show backend logs
+      - name: Show CCB main app logs
         if: always()
         run: |
           cat context_chat_backend/backend_logs || echo "No main backend logs"
-          cat context_chat_backend/em_backend_logs || echo "No embedding server logs"
-          echo '--------------------------------------------------'
-          tail -v -n +1 context_chat_backend/persistent_storage/logs/* || echo "No logs in logs directory"
+
+      - name: Show CCB main app JSON logs
+        if: always()
+        run: |
+          tail -v -n +1 context_chat_backend/persistent_storage/logs/ccb.log* || echo "No logs in logs directory"
+
+      - name: Show CCB embedding server logs
+        if: always()
+        run: |
+          cat context_chat_backend/em_backend_logs || echo "No main backend logs"
+
+      - name: Show CCB embedding server JSON logs
+        if: always()
+        run: |
+          tail -v -n +1 context_chat_backend/persistent_storage/logs/em_server.log* || echo "No logs in logs directory"
+
+      - name: Final stats log
+        if: always()
+        run: |
+          ./occ context_chat:stats
+          ./occ context_chat:stats --json
 
   summary:
     permissions:

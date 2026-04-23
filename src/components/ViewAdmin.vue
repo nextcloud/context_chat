@@ -36,6 +36,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 				<tr>
 					<th>{{ t('context_chat', 'Content provider') }}</th>
 					<th>{{ t('context_chat', 'Queued documents including updates') }}</th>
+					<th>{{ t('context_chat', 'Locked documents in queue') }}</th>
 					<th>{{ t('context_chat', 'Documents in vector database') }}</th>
 				</tr>
 			</thead>
@@ -49,20 +50,21 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 					</template>
 				</td>
 				<td>
+					{{ stats.queued_documents_locked_counts[providerId] }}
+				</td>
+				<td>
 					{{
 						stats.backend_available
 							? stats.vectordb_document_counts[providerId]
 							: t('context_chat', 'CC Backend unavailable')
 					}}
-					<template v-if="providerId === 'files__default'">
-						{{ t('context_chat', '({count} sent)', {count: stats.recorded_indexed_files_count}) }}
-					</template>
 				</td>
 			</tr>
 		</table>
 		<p>&nbsp;</p>
 		<p>{{ t('context_chat', 'Eligible files for indexing: {count}', {count: stats.eligible_files_count}) }}</p>
 		<p>{{ t('context_chat', 'Queued content update actions: {count}', {count: stats.queued_actions_count}) }}</p>
+		<p>{{ t('context_chat', 'Locked queue content update actions: {count}', {count: stats.queued_actions_locked_count}) }}</p>
 		<p>{{ t('context_chat', 'Queued file system events: {count}', {count: stats.queued_fs_events_count}) }}</p>
 		<h3>{{ t('context_chat', 'Download Logs') }}</h3>
 		<div class="horizontal-flex">

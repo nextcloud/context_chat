@@ -45,7 +45,7 @@ class ProviderController extends Controller {
 	}
 
 	/**
-	 * @param array<string> $sources
+	 * @param list<string> $sources
 	 * @return DataResponse
 	 */
 	#[NoAdminRequired]
@@ -56,7 +56,9 @@ class ProviderController extends Controller {
 		if ($this->userId === null) {
 			return new DataResponse(['error' => 'User must be logged in to get metadata for sources'], Http::STATUS_UNAUTHORIZED);
 		}
-		$enrichedSources = $this->metadataService->getEnrichedSources($this->userId, ...$sources);
+		$enrichedSources = $this->metadataService->getEnrichedSources($this->userId, array_map(fn ($item) => [
+			'source_id' => $item,
+		], $sources));
 		return new DataResponse($enrichedSources);
 	}
 }

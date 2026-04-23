@@ -128,19 +128,21 @@ class MetadataService {
 	}
 
 	/**
+	 * @param string $userId
+	 * @param list<array{ source_id: string, title?: string }> $sources
 	 * @return list<array{ id: string, label: string, icon: string, url: string }>
 	 */
-	public function getEnrichedSources(string $userId, string ...$sources): array {
+	public function getEnrichedSources(string $userId, array $sources): array {
 		$enrichedProviders = $this->getEnrichedProviders();
 		$enrichedSources = [];
 
 		# for providers
 		foreach ($sources as $source) {
-			if (str_starts_with($source, ProviderConfigService::getDefaultProviderKey() . ': ')) {
+			if (str_starts_with($source['source_id'], ProviderConfigService::getDefaultProviderKey() . ': ')) {
 				continue;
 			}
 
-			$providerKey = explode(': ', $source, 2)[0];
+			$providerKey = explode(': ', $source['source_id'], 2)[0];
 			if (!array_key_exists($providerKey, $enrichedProviders)) {
 				$this->logger->warning('Could not find content provider by key', ['providerKey' => $providerKey, 'enrichedProviders' => $enrichedProviders]);
 				continue;
@@ -156,10 +158,10 @@ class MetadataService {
 			try {
 				/** @var IContentProvider */
 				$klass = Server::get($providerConfig['classString']);
-				$itemId = $this->getIdFromSource($source);
+				$itemId = $this->getIdFromSource($source['source_id']);
 				$url = $klass->getItemUrl($itemId);
 				$provider['url'] = $url;
-				$provider['label'] .= ' #' . $itemId;
+				$provider['label'] .= ($source['title'] ?? '') ?: ' #' . $itemId;
 				$enrichedSources[] = $provider;
 			} catch (ContainerExceptionInterface|NotFoundExceptionInterface $e) {
 				$this->logger->warning('Could not find content provider by class name', ['classString' => $providerConfig['classString'], 'exception' => $e]);
@@ -185,10 +187,10 @@ class MetadataService {
 		try {
 			# for files
 			foreach ($sources as $source) {
-				if (!str_starts_with($source, ProviderConfigService::getDefaultProviderKey() . ': ')) {
+				if (!str_starts_with($source['source_id'], ProviderConfigService::getDefaultProviderKey() . ': ')) {
 					continue;
 				}
-				$enrichedSources[] = $this->getMetadataObjectForId($userId, $source);
+				$enrichedSources[] = $this->getMetadataObjectForId($userId, $source['source_id']);
 			}
 		} catch (\Throwable $e) {
 			$this->logger->error('Error enriching file sources: ' . $e->getMessage(), ['exception' => $e]);

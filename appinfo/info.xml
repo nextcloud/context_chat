@@ -44,13 +44,11 @@ Refer to the [Context Chat Backend's readme](https://github.com/nextcloud/contex
     </dependencies>
     <background-jobs>
 		<job>OCA\ContextChat\BackgroundJobs\FileSystemListenerJob</job>
-		<job>OCA\ContextChat\BackgroundJobs\ActionJob</job>
 		<job>OCA\ContextChat\BackgroundJobs\RotateLogsJob</job>
 	</background-jobs>
 	<commands>
 		<command>OCA\ContextChat\Command\Prompt</command>
 		<command>OCA\ContextChat\Command\Search</command>
-		<command>OCA\ContextChat\Command\ScanFiles</command>
 		<command>OCA\ContextChat\Command\Statistics</command>
 	</commands>
     <repair-steps>
