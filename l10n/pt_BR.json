@@ -1,8 +1,6 @@
 { "translations": {
     "Sources referenced to generate the above response:" : "Fontes consultadas para gerar a resposta acima:",
     "Deleted file" : "Arquivo excluído",
-    "Nextcloud Assistant Context Chat Provider" : "Provedor de Context Chat para Nextcloud Assistente",
-    "Nextcloud Assistant Context Chat Search Provider" : "Provedor de Pesquisa de Context Chat para Nextcloud Assistente",
     "Context Chat search" : "Pesquisa de Context Chat",
     "Search with Context Chat." : "Pesquise com Context Chat.",
     "Prompt" : "Prompt",
@@ -38,7 +36,6 @@
     "Queued documents including updates" : "Documentos em fila, incluindo atualizações",
     "Documents in vector database" : "Documentos no banco de dados vetorial",
     "CC Backend unavailable" : "Back-end do CC indisponível",
-    "({count} sent)" : "({count} enviados)",
     "Eligible files for indexing: {count}" : "Arquivos elegíveis para indexação: {count}",
     "Queued content update actions: {count}" : "Ações de atualização de conteúdo em fila: {count}",
     "Queued file system events: {count}" : "Eventos do sistema de arquivos em fila: {count}",

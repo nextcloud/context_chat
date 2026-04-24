@@ -3,8 +3,6 @@ OC.L10N.register(
     {
     "Sources referenced to generate the above response:" : "上記の応答を生成するために参照した情報源：",
     "Deleted file" : "ファイルを削除",
-    "Nextcloud Assistant Context Chat Provider" : "Nextcloud Assistant コンテキストチャットプロバイダー",
-    "Nextcloud Assistant Context Chat Search Provider" : "Nextcloud Assistant コンテキストチャット検索プロバイダー",
     "Context Chat search" : "コンテキストチャット検索",
     "Search with Context Chat." : "コンテキスト チャットで検索します。",
     "Prompt" : "プロンプト",
@@ -40,7 +38,6 @@ OC.L10N.register(
     "Queued documents including updates" : "更新も含んだインデックス待ちのドキュメント",
     "Documents in vector database" : "ベクトルデータベース内のドキュメント",
     "CC Backend unavailable" : "コンテキストチャットバックエンドが利用できません",
-    "({count} sent)" : "（ {count}送信済み）",
     "Eligible files for indexing: {count}" : "インデックス作成対象ファイル: {count}",
     "Queued content update actions: {count}" : "コンテンツ更新キューに登録されている数: {count}",
     "Queued file system events: {count}" : "ファイルシステムイベントキューに登録されている数: {count}",

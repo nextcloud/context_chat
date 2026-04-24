@@ -3,8 +3,6 @@ OC.L10N.register(
     {
     "Sources referenced to generate the above response:" : "産生上述回應所參考的來源：",
     "Deleted file" : "已刪除的檔案",
-    "Nextcloud Assistant Context Chat Provider" : "Nextcloud 小幫手情境聊天提供者",
-    "Nextcloud Assistant Context Chat Search Provider" : "Nextcloud 小幫手情境聊天搜尋提供者",
     "Context Chat search" : "情境聊天搜尋",
     "Search with Context Chat." : "使用情境聊天搜尋。",
     "Prompt" : "提示詞",
@@ -40,7 +38,6 @@ OC.L10N.register(
     "Queued documents including updates" : "已排隊的文件（包括更新）",
     "Documents in vector database" : "在向量資料庫中的文件",
     "CC Backend unavailable" : "CC 後端無法使用",
-    "({count} sent)" : "（已傳送 {count} 個）",
     "Eligible files for indexing: {count}" : "符合索引條件的檔案：{count}",
     "Queued content update actions: {count}" : "已排隊的內容更新操作：{count}",
     "Queued file system events: {count}" : "已排隊的系統活動：{count}",

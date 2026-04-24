@@ -3,8 +3,6 @@ OC.L10N.register(
     {
     "Sources referenced to generate the above response:" : "Ülaltoodud vastuse allikateks on:",
     "Deleted file" : "Kustutatud fail",
-    "Nextcloud Assistant Context Chat Provider" : "Nextcloudi kontekstuaalse vestluse abilise teenusepakkuja",
-    "Nextcloud Assistant Context Chat Search Provider" : "Nextcloudi kontekstuaalse vestluse abilise otsinguteenuse pakkuja",
     "Context Chat search" : "Kontekstuaalse vestlus otsing",
     "Search with Context Chat." : "Otsi kontekstuaalse vestlusega.",
     "Prompt" : "Sisendvorm",
@@ -29,7 +27,6 @@ OC.L10N.register(
     "The Context Chat Backend app is not installed or not responsing." : "Kontekstuaalse vestluse taustarakendus pole paigaldatud ega vasta päringutele.",
     "Content provider" : "Sisupakkuja",
     "CC Backend unavailable" : "Kontekstuaalse vestluse taustateenus pole saadaval",
-    "({count} sent)" : "({count} on saadetud)",
     "Eligible files for indexing: {count}" : "Indekseerimiseks sobivaid faile: {count}",
     "Download Logs" : "Laadi logid alla",
     "Download the PHP App logs" : "Laadi alla PHP rakenduse logid",

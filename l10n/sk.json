@@ -1,8 +1,6 @@
 { "translations": {
     "Sources referenced to generate the above response:" : "Zdroje použité na vytvorenie vyššie uvedenej odpovede:",
     "Deleted file" : "Vymazaný súbor",
-    "Nextcloud Assistant Context Chat Provider" : "Nextcloud Assistant Context Chat Poskytovateľ",
-    "Nextcloud Assistant Context Chat Search Provider" : "Nextcloud Assistant Context Chat Poskytovateľ vyhľadávania",
     "Context Chat search" : "Context Chat vyhľadávanie",
     "Search with Context Chat." : "Vyhľadávanie s Context Chat.",
     "Prompt" : "Zadanie",
@@ -38,7 +36,6 @@
     "Queued documents including updates" : "Zaradené dokumenty vrátane aktualizácií",
     "Documents in vector database" : "Dokumenty vo vektorovej databáze",
     "CC Backend unavailable" : "CC Backend nedostupný",
-    "({count} sent)" : "({count} poslané)",
     "Eligible files for indexing: {count}" : "Súbory spôsobilé na indexovanie: {count}",
     "Queued content update actions: {count}" : "Aktualizácie obsahu v čakajúcich akciách: {count}",
     "Queued file system events: {count}" : "Udalosti v poradí súborového systému:: {count}",

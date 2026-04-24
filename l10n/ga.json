@@ -1,8 +1,6 @@
 { "translations": {
     "Sources referenced to generate the above response:" : "Foinsí a ndearnadh tagairt dóibh chun an freagra thuas a ghiniúint:",
     "Deleted file" : "Comhad scriosta",
-    "Nextcloud Assistant Context Chat Provider" : "Soláthraí Comhrá Comhthéacsúil Cúntóir Nextcloud",
-    "Nextcloud Assistant Context Chat Search Provider" : "Soláthraí Cuardaigh Comhrá Comhthéacsúil Cúntóir Nextcloud",
     "Context Chat search" : "Cuardach Comhrá Comhthéacsúil",
     "Search with Context Chat." : "Cuardaigh le Comhrá Comhthéacsúil.",
     "Prompt" : "Leid",
@@ -38,7 +36,6 @@
     "Queued documents including updates" : "Doiciméid scuaineáilte lena n-áirítear nuashonruithe",
     "Documents in vector database" : "Doiciméid i mbunachar sonraí veicteora",
     "CC Backend unavailable" : "Cúltaca CC ar fáil",
-    "({count} sent)" : "({count} seolta)",
     "Eligible files for indexing: {count}" : "Comhaid incháilithe le haghaidh innéacsú: {count}",
     "Queued content update actions: {count}" : "Gníomhartha nuashonraithe ábhair scuaineáilte: {count}",
     "Queued file system events: {count}" : "Imeachtaí córais comhad scuaineáilte: {count}",

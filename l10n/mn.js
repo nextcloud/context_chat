@@ -3,8 +3,6 @@ OC.L10N.register(
     {
     "Sources referenced to generate the above response:" : "Дээрх хариултыг үүсгэхэд ашигласан эх сурвалжууд:",
     "Deleted file" : "Устгагдсан файл",
-    "Nextcloud Assistant Context Chat Provider" : "Nextcloud туслах Context Chat нийлүүлэгч",
-    "Nextcloud Assistant Context Chat Search Provider" : "Nextcloud туслах Context Chat хайлтын нийлүүлэгч",
     "Context Chat search" : "Context Chat хайлт",
     "Search with Context Chat." : "Context Chat-аар хайх.",
     "Prompt" : "Сануулга",
@@ -40,7 +38,6 @@ OC.L10N.register(
     "Queued documents including updates" : "Шинэчлэлтүүдийг оруулсан дарааллын баримт бичгүүд",
     "Documents in vector database" : "Вектор мэдээллийн сан дахь баримт бичгүүд",
     "CC Backend unavailable" : "CC Backend боломжгүй",
-    "({count} sent)" : "({count} илгээсэн)",
     "Eligible files for indexing: {count}" : "Индексжүүлэхэд тохиромжтой файлууд: {count}",
     "Queued content update actions: {count}" : "Дараалалд буй контент шинэчлэлийн үйлдлүүд: {count}",
     "Queued file system events: {count}" : "Дараалалд буй файлын системийн үйл явдлууд: {count}",

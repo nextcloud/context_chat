@@ -3,8 +3,6 @@ OC.L10N.register(
     {
     "Sources referenced to generate the above response:" : "Sources referenced to generate the above response:",
     "Deleted file" : "Deleted file",
-    "Nextcloud Assistant Context Chat Provider" : "Nextcloud Assistant Context Chat Provider",
-    "Nextcloud Assistant Context Chat Search Provider" : "Nextcloud Assistant Context Chat Search Provider",
     "Context Chat search" : "Context Chat search",
     "Search with Context Chat." : "Search with Context Chat.",
     "Prompt" : "Prompt",
@@ -40,7 +38,6 @@ OC.L10N.register(
     "Queued documents including updates" : "Queued documents including updates",
     "Documents in vector database" : "Documents in vector database",
     "CC Backend unavailable" : "CC Backend unavailable",
-    "({count} sent)" : "({count} sent)",
     "Eligible files for indexing: {count}" : "Eligible files for indexing: {count}",
     "Queued content update actions: {count}" : "Queued content update actions: {count}",
     "Queued file system events: {count}" : "Queued file system events: {count}",

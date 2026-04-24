@@ -1,8 +1,6 @@
 { "translations": {
     "Sources referenced to generate the above response:" : "產生上述回應所參考的來源：",
     "Deleted file" : "已刪除的檔案",
-    "Nextcloud Assistant Context Chat Provider" : "Nextcloud 小幫手情境聊天提供者",
-    "Nextcloud Assistant Context Chat Search Provider" : "Nextcloud 小幫手情境聊天搜尋提供者",
     "Context Chat search" : "情境聊天搜尋",
     "Search with Context Chat." : "使用情境聊天搜尋。",
     "Prompt" : "提示詞",
@@ -38,7 +36,6 @@
     "Queued documents including updates" : "已排入佇列中的文件包含更新",
     "Documents in vector database" : "在向量資料庫中的文件",
     "CC Backend unavailable" : "CC 後端無法使用",
-    "({count} sent)" : "（已傳送 {count} 個）",
     "Eligible files for indexing: {count}" : "符合索引條件的檔案：{count}",
     "Queued content update actions: {count}" : "佇列中的內容更新動作：{count}",
     "Queued file system events: {count}" : "佇列中的檔案系統事件：{count}",
