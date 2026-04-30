@@ -11,26 +11,26 @@ namespace OCA\ContextChat\Service;
 
 use OCA\ContextChat\Db\QueueFile;
 use OCA\ContextChat\Db\QueueMapper;
-use OCP\BackgroundJob\IJobList;
+use OCP\DB\Exception;
 
 class QueueService {
 
 	public function __construct(
 		private QueueMapper $queueMapper,
-		private IJobList $jobList,
 	) {
 	}
 
 	/**
 	 * @throws \OCP\DB\Exception
+	 * @return QueueFile
 	 */
-	public function insertIntoQueue(QueueFile $file): void {
+	public function insertIntoQueue(QueueFile $file): QueueFile {
 		// Only add to queue if it's not in there already
-		if ($this->queueMapper->existsQueueItem($file)) {
-			return;
+		if ($dbFile = $this->queueMapper->findQueueItem($file)) {
+			return $dbFile;
 		}
 
-		$this->queueMapper->insertIntoQueue($file);
+		return $this->queueMapper->insertIntoQueue($file);
 	}
 
 	/**
@@ -45,5 +45,12 @@ class QueueService {
 	 */
 	public function countNewFiles(): int {
 		return $this->queueMapper->count(true);
+	}
+
+	/**
+	 * @throws Exception
+	 */
+	public function countLocked(): int {
+		return $this->queueMapper->countLocked();
 	}
 }

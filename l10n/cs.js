@@ -3,8 +3,6 @@ OC.L10N.register(
     {
     "Sources referenced to generate the above response:" : "Zdroje odkazované k vytvoření výše uvedené odpovědi:",
     "Deleted file" : "Smazaný soubor",
-    "Nextcloud Assistant Context Chat Provider" : "Poskytovatel kontextového chatu Nextcloud Asistenta",
-    "Nextcloud Assistant Context Chat Search Provider" : "Poskytovatel vyhledávání v kontextovém chatu Nextcloud Asistenta",
     "Context Chat search" : "Hledání v kontextovém chatu",
     "Search with Context Chat." : "Hledat s kontextovým chatem.",
     "Prompt" : "Výzva",
@@ -39,7 +37,6 @@ OC.L10N.register(
     "Queued documents including updates" : "Dokumenty, zařazené do fronty (včetně aktualizací)",
     "Documents in vector database" : "Dokumenty ve vektorové databázi",
     "CC Backend unavailable" : "Podpůrná vrstva CC není k dispozici",
-    "({count} sent)" : "({count} odesláno)",
     "Eligible files for indexing: {count}" : "Soubory způsobilé pro zpracování do rejstříku: {count}",
     "Queued content update actions: {count}" : "Akce aktualizace obsahu, zařazené do fronty: {count}",
     "Queued file system events: {count}" : "Události ohledně souborového systému, zařazené do fronty: {count}",

@@ -3,8 +3,6 @@ OC.L10N.register(
     {
     "Sources referenced to generate the above response:" : "Izvori na koje se poziva za generiranje gornjeg odgovora:",
     "Deleted file" : "Izbrisana datoteka",
-    "Nextcloud Assistant Context Chat Provider" : "Pružatelj kontekstualnog chata za Nextcloud Assistant",
-    "Nextcloud Assistant Context Chat Search Provider" : "Pružatelj pretraživanja kontekstualnog chata za Nextcloud Assistant",
     "Context Chat search" : "Pretraživanje kontekstualnog chata",
     "Search with Context Chat." : "Pretražujte pomoću kontekstualnog chata.",
     "Prompt" : "Upit",
@@ -40,7 +38,6 @@ OC.L10N.register(
     "Queued documents including updates" : "Dokumenti na čekanju, uključujući ažuriranja",
     "Documents in vector database" : "Dokumenti u vektorskoj bazi podataka",
     "CC Backend unavailable" : "Context Chat Backend nije dostupan",
-    "({count} sent)" : "({count} poslano)",
     "Eligible files for indexing: {count}" : "Datoteke podobne za indeksiranje: {count}",
     "Queued content update actions: {count}" : "Radnje ažuriranja sadržaja na čekanju: {count}",
     "Queued file system events: {count}" : "Događaji datotečnog sustava na čekanju: {count}",

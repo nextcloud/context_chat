@@ -1,8 +1,6 @@
 { "translations": {
     "Sources referenced to generate the above response:" : "Yukarıdaki yanıtı oluşturmak için başvurulan kaynaklar:",
     "Deleted file" : "Silinmiş dosya",
-    "Nextcloud Assistant Context Chat Provider" : "Nextcloud Yardımcı Context Chat hizmeti sağlayıcısı",
-    "Nextcloud Assistant Context Chat Search Provider" : "Nextcloud Yardımcı Context Chat arama hizmeti sağlayıcısı",
     "Context Chat search" : "Context Chat arama ",
     "Search with Context Chat." : "Context Chat arama.",
     "Prompt" : "İstem",
@@ -38,7 +36,6 @@
     "Queued documents including updates" : "Güncellemeler ile sıraya alınmış belgeler",
     "Documents in vector database" : "Vector veri tabanı içindeki belgeler",
     "CC Backend unavailable" : "Context Chat arka ucu kullanılamıyor",
-    "({count} sent)" : "({count} gönderildi)",
     "Eligible files for indexing: {count}" : "Dizine eklenmeye uygun dosyalar: {count}",
     "Queued content update actions: {count}" : "Sıraya alınmış içerik güncelleme işlemleri: {count}",
     "Queued file system events: {count}" : "Sıraya alınmış dosya sistemi etkinlikleri: {count}",

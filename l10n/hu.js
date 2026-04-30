@@ -3,6 +3,7 @@ OC.L10N.register(
     {
     "Prompt" : "Prompt",
     "Sources" : "Források",
+    "Generated response" : "Előállított válasz",
     "never" : "soha",
     "{time} ago" : "Ennyivel ezelőtt: {time}"
 },

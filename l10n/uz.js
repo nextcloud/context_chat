@@ -3,8 +3,6 @@ OC.L10N.register(
     {
     "Sources referenced to generate the above response:" : "Yuqoridagi javobni yaratish uchun havola qilingan manbalar:",
     "Deleted file" : "O'chirilgan fayl",
-    "Nextcloud Assistant Context Chat Provider" : "Nextcloud Assistant kontekst chat provayderi",
-    "Nextcloud Assistant Context Chat Search Provider" : "Nextcloud Assistant kontekst chat qidiruv provayderi",
     "Context Chat search" : "Kontekst chatida qidiruv",
     "Search with Context Chat." : "Kontekst suhbati bilan qidiruv.",
     "Prompt" : "Tezkor",
@@ -40,7 +38,6 @@ OC.L10N.register(
     "Queued documents including updates" : "Yangilanishlarni o'z ichiga olgan navbatdagi hujjatlar",
     "Documents in vector database" : "Vektor ma'lumotlar bazasidagi hujjatlar",
     "CC Backend unavailable" : "CC Backend mavjud emas",
-    "({count} sent)" : "({count} yuborildi)",
     "Eligible files for indexing: {count}" : "Indekslash uchun mos fayllar: {count}",
     "Queued content update actions: {count}" : "Navbatdagi kontentni yangilash amallari: {count}",
     "Queued file system events: {count}" : "Navbatdagi fayl tizimi hodisalari: {count}",

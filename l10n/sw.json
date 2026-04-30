@@ -1,8 +1,6 @@
 { "translations": {
     "Sources referenced to generate the above response:" : "Vyanzo vinavyorejelewa kutoa majibu hapo juu:",
     "Deleted file" : "Faili iliyofutwa",
-    "Nextcloud Assistant Context Chat Provider" : "Mtoa Gumzo wa Muktadha wa Mratibu wa Nextcloud",
-    "Nextcloud Assistant Context Chat Search Provider" : "Mtoa huduma wa Utafutaji wa Gumzo la Muktadha wa Nextcloud",
     "Context Chat search" : "Utafutaji wa Gumzo la Muktadha",
     "Search with Context Chat." : "Tafuta ukitumia Gumzo la Muktadha.",
     "Prompt" : "Haraka",
@@ -38,7 +36,6 @@
     "Queued documents including updates" : "Hati zilizowekwa kwenye foleni ikiwa ni pamoja na masasisho",
     "Documents in vector database" : "Nyaraka katika hifadhidata ya vekta",
     "CC Backend unavailable" : "CC Backend haipatikani",
-    "({count} sent)" : "({count} imetumwa)",
     "Eligible files for indexing: {count}" : "Faili zinazostahiki kuorodhesha: {count}",
     "Queued content update actions: {count}" : "Vitendo vya kusasisha maudhui yaliyo kwenye foleni: {count}",
     "Queued file system events: {count}" : "Matukio ya mfumo wa faili kwenye foleni: {count}",

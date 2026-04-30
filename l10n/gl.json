@@ -1,8 +1,6 @@
 { "translations": {
     "Sources referenced to generate the above response:" : "Fontes referenciadas para xerar a resposta anterior:",
     "Deleted file" : "Ficheiro eliminado",
-    "Nextcloud Assistant Context Chat Provider" : "Provedor de Parola de contexto do Asistente Nextcloud",
-    "Nextcloud Assistant Context Chat Search Provider" : "Provedor de busca de Parola de contexto do Asistente Nextcloud",
     "Context Chat search" : "Busca de Parola de contexto",
     "Search with Context Chat." : "Buscar con Parola de contexto.",
     "Prompt" : "Indicación",
@@ -38,7 +36,6 @@
     "Queued documents including updates" : "Documentos en cola, incluíndo actualizacións",
     "Documents in vector database" : "Documentos na base de datos de vectores",
     "CC Backend unavailable" : "A infraestrutura da Parola de contexto non está dispoñíbel",
-    "({count} sent)" : "({count} enviados)",
     "Eligible files for indexing: {count}" : "Ficheiros elixibles para a indexación: {count}",
     "Queued content update actions: {count}" : "Accións de actualización de contido en cola: {count}",
     "Queued file system events: {count}" : "Eventos do sistema de ficheiros en cola: {count}",

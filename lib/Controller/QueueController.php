@@ -10,12 +10,14 @@ declare(strict_types=1);
 
 namespace OCA\ContextChat\Controller;
 
+use OCA\ContextChat\BackgroundJobs\StorageCrawlJob;
 use OCA\ContextChat\Db\QueueActionMapper;
 use OCA\ContextChat\Db\QueueContentItem;
 use OCA\ContextChat\Db\QueueContentItemMapper;
 use OCA\ContextChat\Db\QueueFile;
 use OCA\ContextChat\Db\QueueMapper;
 use OCA\ContextChat\Service\ProviderConfigService;
+use OCA\ContextChat\Service\QueueService;
 use OCA\ContextChat\Service\StorageService;
 use OCA\ContextChat\Type\Source;
 use OCP\AppFramework\Http;
@@ -24,21 +26,34 @@ use OCP\AppFramework\Http\Attribute\ExAppRequired;
 use OCP\AppFramework\Http\DataResponse;
 use OCP\AppFramework\Http\StreamResponse;
 use OCP\AppFramework\OCSController;
+use OCP\AppFramework\Services\IAppConfig;
+use OCP\AppFramework\Utility\ITimeFactory;
+use OCP\BackgroundJob\IJobList;
 use OCP\DB\Exception;
+use OCP\Files\Config\IUserMountCache;
 use OCP\Files\File;
 use OCP\Files\IRootFolder;
+use OCP\Files\NotPermittedException;
 use OCP\IDBConnection;
 use OCP\IRequest;
 use Psr\Log\LoggerInterface;
 
 class QueueController extends OCSController {
+	private const INDEX_COMPLETION_THRESHOLD = 0.02; // 2%
+
 	public function __construct(
-		$appName,
+		string $appName,
 		IRequest $request,
-		$corsMethods = 'PUT, POST, GET, DELETE, PATCH',
-		$corsAllowedHeaders = 'Authorization, Content-Type, Accept, OCS-APIRequest',
-		$corsMaxAge = 1728000,
 		private LoggerInterface $logger,
+		private IAppConfig $appConfig,
+		private QueueService $queueService,
+		private StorageService $storageService,
+		private IJobList $jobList,
+		private ITimeFactory $timeFactory,
+		private QueueMapper $queueMapper,
+		string $corsMethods = 'PUT, POST, GET, DELETE, PATCH',
+		string $corsAllowedHeaders = 'Authorization, Content-Type, Accept, OCS-APIRequest',
+		int $corsMaxAge = 1728000,
 	) {
 		parent::__construct($appName, $request, $corsMethods, $corsAllowedHeaders, $corsMaxAge);
 	}
@@ -85,6 +100,7 @@ class QueueController extends OCSController {
 		IRootFolder $rootFolder,
 		QueueMapper $queueMapper,
 		QueueContentItemMapper $queueContentItemMapper,
+		IUserMountCache $userMountCache,
 		int $n = 64,
 	) : DataResponse {
 		if ($n <= 0) {
@@ -105,7 +121,12 @@ class QueueController extends OCSController {
 				}
 				foreach ($documents as $document) {
 					if ($queueMapper->lock($document->getId())) {
-						$files[$document->getId()] = $this->getFileSource($document, $rootFolder, $storageService);
+						try {
+							$files[$document->getId()] = $this->getFileSource($document, $rootFolder, $storageService, $userMountCache);
+						} catch (\Exception $e) {
+							$this->logger->warning($e->getMessage(), ['exception' => $e]);
+							$queueMapper->delete($document);
+						}
 					}
 				}
 			}
@@ -149,7 +170,6 @@ class QueueController extends OCSController {
 			$queueMapper->removeFromQueue($files);
 			$queueContentItemMapper->removeFromQueue($content_providers);
 			$db->commit();
-			return new DataResponse();
 		} catch (Exception $e) {
 			try {
 				$db->rollBack();
@@ -159,6 +179,14 @@ class QueueController extends OCSController {
 			$this->logger->error($e->getMessage(), ['exception' => $e]);
 			return new DataResponse([], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
+
+		try {
+			$this->setInitialIndexCompletion();
+		} catch (\Exception $e) {
+			$this->logger->warning('Could not check for initial index completion', ['exception' => $e]);
+		}
+
+		return new DataResponse();
 	}
 
 	/**
@@ -257,9 +285,19 @@ class QueueController extends OCSController {
 		}
 	}
 
-	private function getFileSource(QueueFile $document, IRootFolder $rootFolder, StorageService $storageService) : Source {
-		$file = $rootFolder->getFirstNodeById($document->getFileId());
-		if ($file === null || !($file instanceof File)) {
+	private function getFileSource(QueueFile $document, IRootFolder $rootFolder, StorageService $storageService, IUserMountCache $userMountCache) : Source {
+		$mounts = $userMountCache->getMountsForStorageId($document->getStorageId());
+		if (empty($mounts)) {
+			throw new \Exception('Couldn\'t find any mounts for this storage');
+		}
+		$userId = $mounts[0]->getUser()->getUID();
+
+		try {
+			$file = $rootFolder->getUserFolder($userId)->getFirstNodeById($document->getFileId());
+		} catch (NotPermittedException $e) {
+			throw new \Exception('Not allowed to get user folder');
+		}
+		if (!($file instanceof File)) {
 			throw new \Exception('File not found or not a file');
 		}
 		$userIds = $storageService->getUsersForFileId($document->getFileId());
@@ -288,5 +326,76 @@ class QueueController extends OCSController {
 			$providerKey,
 			strlen($document->getContent()),
 		);
+	}
+
+	/**
+	 * @template T of \OCP\BackgroundJob\Job
+	 * @psalm-param T::class $jobClass
+	 */
+	public function getJobCount(string $jobClass): int {
+		$countByClass = array_values(array_filter($this->jobList->countByClass(), fn ($row) => $row['class'] == $jobClass));
+		$jobCount = count($countByClass) > 0 ? $countByClass[0]['count'] : 0;
+		return $jobCount;
+	}
+
+	private function setInitialIndexCompletion(): void {
+		if ($this->appConfig->getAppValueInt('last_indexed_time', 0, lazy: true) !== 0) {
+			return;
+		}
+
+		try {
+			$crawlJobCount = $this->getJobCount(StorageCrawlJob::class);
+			if ($crawlJobCount > 0) {
+				$this->logger->debug('StorageCrawlJob\'s still scheduled for execution, intial indexing has not completed.');
+				return;
+			}
+		} catch (\Exception $e) {
+			$this->logger->warning('Could not get count of scheduled StorageCrawlJob jobs', ['exception' => $e]);
+			return;
+		}
+
+		try {
+			$lastEnqueuedDbId = $this->appConfig->getAppValueInt('last_enqueued_db_id', -1, lazy: true);
+			if ($lastEnqueuedDbId !== -1) {
+				$initiallyQueuedFilesExist = $this->queueMapper->existsQueueItemsUpToDbId($lastEnqueuedDbId);
+				if ($initiallyQueuedFilesExist) {
+					$this->logger->debug('Initially queued files still in the queue, intial indexing has not completed.');
+					return;
+				}
+				$this->logger->info('Initial index completion detected, setting last indexed time');
+				$this->appConfig->setAppValueInt('last_indexed_time', $this->timeFactory->getTime(), lazy: true);
+				return;
+			}
+		} catch (\Exception $e) {
+			$this->logger->warning('Could not get last enqueued file\'s DB id', ['exception' => $e]);
+		}
+
+		// last enqueued file's ID could not be retrieved, falling back to file counting method
+		try {
+			$queuedNewFilesCount = $this->queueService->countNewFiles();
+			$eligibleFilesCount = $this->storageService->countFiles();
+			// if the new files in the queue are less than 2% of the total eligible files, we consider the
+			// initial indexing complete this allows for some margin of error in case some files were
+			// added while we were indexing but still ensures that we have indexed the vast majority of
+			// files at least once
+			if (self::withinThreshold($queuedNewFilesCount, $eligibleFilesCount)) {
+				$this->logger->info('Initial index completion detected, setting last indexed time');
+				$this->appConfig->setAppValueInt('last_indexed_time', $this->timeFactory->getTime(), lazy: true);
+				return;
+			}
+		} catch (\OCP\DB\Exception $e) {
+			$this->logger->warning('Could not count queued new files or total eligible files', ['exception' => $e]);
+			return;
+		}
+
+		// we are still indexing files that were never indexed before.
+		$this->logger->debug('Initial indexing not completed yet', [
+			'queuedNewFilesCount' => $queuedNewFilesCount,
+			'eligibleFilesCount' => $eligibleFilesCount,
+		]);
+	}
+
+	private static function withinThreshold(int $current, int $total, float $threshold = self::INDEX_COMPLETION_THRESHOLD): bool {
+		return ((float)($total - $current) / (float)$total) < $threshold;
 	}
 }

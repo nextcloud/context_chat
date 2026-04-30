@@ -10,7 +10,6 @@ OC.L10N.register(
     "Generated response" : "Δημιουργημένη απάντηση",
     "never" : "ποτέ",
     "{time} ago" : "{time} πριν",
-    "({count} sent)" : "({count} αποστάλθηκε)",
     "Download Logs" : "Λήψη αρχείων καταγραφής",
     "Official documentation" : "Επίσημη τεκμηρίωση"
 },

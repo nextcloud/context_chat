@@ -7,7 +7,7 @@
 
 namespace OCA\ContextChat\Command;
 
-use OCA\ContextChat\TaskProcessing\ContextChatTaskType;
+use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\Type\ScopeType;
 use OCP\TaskProcessing\IManager;
 use OCP\TaskProcessing\Task;
@@ -18,6 +18,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class Prompt extends Command {
+	private const CONTEXT_CHAT_TASK_TYPE_ID = Application::APP_ID . ':context_chat';
 
 	public function __construct(
 		private IManager $taskProcessingManager,
@@ -64,8 +65,16 @@ class Prompt extends Command {
 
 		if (!empty($contextSources)) {
 			$contextSources = preg_replace('/\s*,+\s*/', ',', $contextSources);
-			$contextSourcesArray = array_filter(explode(',', $contextSources), fn ($source) => !empty($source));
-			$task = new Task(ContextChatTaskType::ID, [
+			if ($contextSources === null) {
+				$output->writeln('<error>Regex comma de-duplication returned null</error>');
+				return 1;
+			}
+			if (is_array($contextSources)) {
+				$contextSources = $contextSources[0];
+			}
+
+			$contextSourcesArray = array_values(array_filter(explode(',', $contextSources), fn ($source) => !empty($source)));
+			$task = new Task(self::CONTEXT_CHAT_TASK_TYPE_ID, [
 				'scopeType' => ScopeType::SOURCE,
 				'scopeList' => $contextSourcesArray,
 				'scopeListMeta' => '',
@@ -73,26 +82,45 @@ class Prompt extends Command {
 			], 'context_chat', $userId);
 		} elseif (!empty($contextProviders)) {
 			$contextProviders = preg_replace('/\s*,+\s*/', ',', $contextProviders);
-			$contextProvidersArray = array_filter(explode(',', $contextProviders), fn ($source) => !empty($source));
-			$task = new Task(ContextChatTaskType::ID, [
+			if ($contextProviders === null) {
+				$output->writeln('<error>Regex comma de-duplication returned null</error>');
+				return 1;
+			}
+			if (is_array($contextProviders)) {
+				$contextProviders = $contextProviders[0];
+			}
+
+			$contextProvidersArray = array_values(array_filter(explode(',', $contextProviders), fn ($source) => !empty($source)));
+			$task = new Task(self::CONTEXT_CHAT_TASK_TYPE_ID, [
 				'scopeType' => ScopeType::PROVIDER,
 				'scopeList' => $contextProvidersArray,
 				'scopeListMeta' => '',
 				'prompt' => $prompt,
 			], 'context_chat', $userId);
 		} else {
-			$task = new Task(ContextChatTaskType::ID, [ 'prompt' => $prompt, 'scopeType' => ScopeType::NONE, 'scopeList' => [], 'scopeListMeta' => '' ], 'context_chat', $userId);
+			$task = new Task(self::CONTEXT_CHAT_TASK_TYPE_ID, [
+				'prompt' => $prompt,
+				'scopeType' => ScopeType::NONE,
+				'scopeList' => [],
+				'scopeListMeta' => '',
+			], 'context_chat', $userId);
 		}
 
 		$this->taskProcessingManager->scheduleTask($task);
-		while (!in_array(($task = $this->taskProcessingManager->getTask($task->getId()))->getStatus(), [Task::STATUS_FAILED, Task::STATUS_SUCCESSFUL], true)) {
-			sleep(1);
+		$taskId = $task->getId();
+		if ($taskId === null) {
+			$output->writeln('<error>Task schedule failed, taskId is null</error>');
+			return 1;
+		}
+
+		while (!in_array(($task = $this->taskProcessingManager->getTask($taskId))->getStatus(), [Task::STATUS_FAILED, Task::STATUS_SUCCESSFUL], true)) {
+			sleep(2);
 		}
 		if ($task->getStatus() === Task::STATUS_SUCCESSFUL) {
 			$output->writeln(var_export($task->getOutput(), true));
 			return 0;
 		} else {
-			$output->writeln($task->getErrorMessage());
+			$output->writeln('<error>' . ($task->getErrorMessage() ?? '(empty error message)') . '</error>');
 			return 1;
 		}
 	}

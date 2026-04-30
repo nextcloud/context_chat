@@ -3,8 +3,6 @@ OC.L10N.register(
     {
     "Sources referenced to generate the above response:" : "يۇقارقى ئىنكاسنى ھاسىل قىلىش ئۈچۈن پايدىلانغان مەنبەلەر:",
     "Deleted file" : "ئۆچۈرۈلگەن ھۆججەت",
-    "Nextcloud Assistant Context Chat Provider" : "Nextcloud ياردەمچىسى مەزمۇن تەمىنلىگۈچى",
-    "Nextcloud Assistant Context Chat Search Provider" : "Nextcloud ياردەمچى مەزمۇن پاراڭلىشىش تەمىنلىگۈچى",
     "Context Chat search" : "مەزمۇن پاراڭ ئىزدەش",
     "Search with Context Chat." : "مەزمۇن پاراڭلىرى بىلەن ئىزدەش.",
     "Prompt" : "تېز",
@@ -40,7 +38,6 @@ OC.L10N.register(
     "Queued documents including updates" : "يېڭىلاشنى ئۆز ئىچىگە ئالغان ئۆچرەت ھۆججەتلەر",
     "Documents in vector database" : "ۋېكتور ساندانىدىكى ھۆججەتلەر",
     "CC Backend unavailable" : "CC Backend نى ئىشلەتكىلى بولمايدۇ",
-    "({count} sent)" : "({count} ئەۋەتىلدى)",
     "Eligible files for indexing: {count}" : "كۆرسەتكۈچكە ماس كېلىدىغان ھۆججەتلەر: {count}",
     "Queued content update actions: {count}" : "ئۆچۈرۈلگەن مەزمۇن يېڭىلاش ھەرىكىتى: {count}",
     "Queued file system events: {count}" : "ئۆچۈرۈلگەن ھۆججەت سىستېمىسى ھادىسىلىرى: {count}",

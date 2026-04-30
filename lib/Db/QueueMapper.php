@@ -72,27 +72,53 @@ class QueueMapper extends QBMapper {
 		}
 	}
 
-
 	/**
-	 * @param QueueFile $file
+	 * @param int $dbId
 	 * @return bool
+	 * @throws \OCP\DB\Exception
 	 */
-	public function existsQueueItem(QueueFile $file) : bool {
+	public function existsQueueItemsUpToDbId(int $dbId) : bool {
 		$qb = $this->db->getQueryBuilder();
-		$qb->select(QueueFile::$columns)
+		$qb->select('id')
 			->from($this->getTableName())
-			->where($qb->expr()->eq('file_id', $qb->createPositionalParameter($file->getFileId(), IQueryBuilder::PARAM_INT)))
+			->where($qb->expr()->lte('id', $qb->createPositionalParameter($dbId, IQueryBuilder::PARAM_INT)))
 			->setMaxResults(1);
 
 		try {
 			$this->findEntity($qb);
 			return true;
-		} catch (DoesNotExistException $e) {
+		} catch (DoesNotExistException|MultipleObjectsReturnedException|Exception) {
 			return false;
-		} catch (MultipleObjectsReturnedException $e) {
-			return false;
-		} catch (Exception $e) {
-			return false;
+		}
+	}
+
+	/**
+	 * @param int $fileId
+	 * @return QueueFile|null
+	 */
+	public function findQueueItemByFileId(int $fileId) : ?QueueFile {
+		return $this->internalFindQueueItemByFileId($fileId);
+	}
+
+	/**
+	 * @param QueueFile $file
+	 * @return QueueFile|null
+	 */
+	public function findQueueItem(QueueFile $file) : ?QueueFile {
+		return $this->internalFindQueueItemByFileId($file->getFileId());
+	}
+
+	private function internalFindQueueItemByFileId(int $fileId): ?QueueFile {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select(QueueFile::$columns)
+			->from($this->getTableName())
+			->where($qb->expr()->eq('file_id', $qb->createPositionalParameter($fileId, IQueryBuilder::PARAM_INT)))
+			->setMaxResults(1);
+
+		try {
+			return $this->findEntity($qb);
+		} catch (DoesNotExistException|MultipleObjectsReturnedException|Exception $e) {
+			return null;
 		}
 	}
 

@@ -3,8 +3,6 @@ OC.L10N.register(
     {
     "Sources referenced to generate the above response:" : "Sumber yang dirujuk untuk menghasilkan respons di atas:",
     "Deleted file" : "File yang dihapus",
-    "Nextcloud Assistant Context Chat Provider" : "Penyedia Chat Konteks Nextcloud Assistant",
-    "Nextcloud Assistant Context Chat Search Provider" : "Penyedia Pencarian Chat Konteks Nextcloud Assistant",
     "Context Chat search" : "Pencarian Chat Konteks",
     "Search with Context Chat." : "Cari dengan Chat Konteks.",
     "Prompt" : "Prompt",
@@ -40,7 +38,6 @@ OC.L10N.register(
     "Queued documents including updates" : "Dokumen dalam antrean termasuk pembaruan",
     "Documents in vector database" : "Dokumen di basis data vektor",
     "CC Backend unavailable" : "Backend CC tidak tersedia",
-    "({count} sent)" : "({count} terkirim)",
     "Eligible files for indexing: {count}" : "File yang memenuhi syarat untuk diindeks: {count}",
     "Queued content update actions: {count}" : "Tindakan pembaruan konten dalam antrean: {count}",
     "Queued file system events: {count}" : "Peristiwa sistem file dalam antrean: {count}",
