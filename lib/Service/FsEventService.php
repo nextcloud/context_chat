@@ -9,6 +9,7 @@ namespace OCA\ContextChat\Service;
 
 use OCA\ContextChat\Db\QueueFile;
 use OCA\ContextChat\Logger;
+use OCA\ContextChat\Service\TaskTypeService;
 use OCP\DB\Exception;
 use OCP\Files\Folder;
 use OCP\Files\InvalidPathException;

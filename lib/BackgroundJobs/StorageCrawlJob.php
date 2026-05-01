@@ -10,7 +10,6 @@ declare(strict_types=1);
 
 namespace OCA\ContextChat\BackgroundJobs;
 
-use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\Db\QueueFile;
 use OCA\ContextChat\Logger;
 use OCA\ContextChat\Service\DiagnosticService;
