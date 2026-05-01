@@ -21,6 +21,7 @@ class TaskTypeService {
 	public function __construct(
 		private Logger $logger,
 		private TaskProcessingManager $taskProcessingManager,
+		private IAppConfig $appConfig,
 	) {
 	}
 
@@ -48,6 +49,11 @@ class TaskTypeService {
 	 * @return list<string>
 	 */
 	public function getMultimodalMimetypes(bool $includingTextual = true): array {
+		$multimodalEnabled = $this->appConfig->getAppValueBool(MultimodalService::MULTIMODAL_CONFIG_KEY, false, lazy: true);
+		if (!$multimodalEnabled) {
+			return $includingTextual ? Application::MIMETYPES : [];
+		}
+
 		$imagesEnabled = $this->isOcrTaskTypeAvailable();
 		$audioEnabled = $this->isSpeechToTextTaskTypeAvailable();
 		return array_merge(
