@@ -11,11 +11,13 @@ declare(strict_types=1);
 namespace OCA\ContextChat\Controller;
 
 use OCA\ContextChat\Service\MetadataService;
+use OCA\ContextChat\Service\MultimodalService;
 use OCA\ContextChat\Service\ProviderConfigService;
 use OCA\ContextChat\Service\StorageService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\ApiRoute;
 use OCP\AppFramework\Http\Attribute\ExAppRequired;
+use OCP\AppFramework\Http\Attribute\Route;
 use OCP\AppFramework\Http\DataResponse;
 use OCP\AppFramework\OCSController;
 use OCP\Files\Folder;
@@ -28,6 +30,7 @@ class UtilController extends OCSController {
 		string $appName,
 		IRequest $request,
 		private LoggerInterface $logger,
+		private MultimodalService $multimodalService,
 		string $corsMethods = 'POST',
 		string $corsAllowedHeaders = 'Authorization, Content-Type, Accept, OCS-APIRequest',
 		int $corsMaxAge = 1728000,
@@ -96,5 +99,31 @@ class UtilController extends OCSController {
 			$this->logger->warning($e);
 			return new DataResponse([], Http::STATUS_NOT_FOUND);
 		}
+	}
+
+	/**
+	 * Enable multimodal indexing and queue existing multimodal files.
+	 *
+	 * @param bool $force Queue multimodal files even if multimodal indexing was already enabled previously.
+	 * @return DataResponse
+	 */
+	#[Route(type: Route::TYPE_FRONTPAGE, verb: 'POST', url: '/queue-multimodal-files')]
+	public function queueMultimodalFiles(bool $force = false): DataResponse {
+		$taskTypes = $this->multimodalService->checkTaskTypes();
+
+		if (!$taskTypes['ocrAvailable'] && !$taskTypes['sttAvailable']) {
+			return new DataResponse(
+				['error' => 'No multimodal task types are available. No files will be queued for indexing.'],
+				Http::STATUS_PRECONDITION_FAILED,
+			);
+		}
+
+		try {
+			$this->multimodalService->enableMultimodal($force);
+		} catch (\Exception $e) {
+			return new DataResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
+		}
+
+		return new DataResponse(['errors' => $this->multimodalService->queueExistingMultimodalFiles()]);
 	}
 }

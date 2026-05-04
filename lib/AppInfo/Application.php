@@ -61,6 +61,35 @@ class Application extends App implements IBootstrap {
 		'text/org',
 	];
 
+	public const IMAGE_MIMETYPES = [
+		'image/bmp',
+		'image/bpg',
+		'image/emf',
+		'image/gif',
+		'image/heic',
+		'image/heif',
+		'image/jp2',
+		'image/jpeg',
+		'image/png',
+		'image/svg+xml',
+		'image/tga',
+		'image/tiff',
+		'image/webp',
+		'image/x-dcraw',
+		'image/x-icon',
+	];
+
+	public const AUDIO_MIMETYPES = [
+		'audio/aac',
+		'audio/flac',
+		'audio/mp4',
+		'audio/mpeg',
+		'audio/ogg',
+		'audio/wav',
+		'audio/webm',
+		'audio/x-scpls',
+	];
+
 	public function __construct(array $urlParams = []) {
 		parent::__construct(self::APP_ID, $urlParams);
 	}

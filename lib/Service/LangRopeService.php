@@ -19,6 +19,7 @@ use OCP\IL10N;
 use OCP\IURLGenerator;
 use OCP\IUserManager;
 use OCP\Server;
+use PHPUnit\Event\Runtime\Runtime;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use RuntimeException;
@@ -130,6 +131,13 @@ class LangRopeService {
 			$params,
 			$options,
 		);
+
+		if (is_array($response)) {
+			if (isset($response['error'])) {
+				throw new RuntimeException('Error received from Context Chat Backend (ExApp): ' . $response['error']);
+			}
+			return ['response' => $response];
+		}
 
 		$resContentType = $response->getHeader('Content-Type');
 		if (strpos($resContentType, 'application/json') !== false) {
