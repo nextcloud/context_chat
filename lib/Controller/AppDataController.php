@@ -42,7 +42,8 @@ class AppDataController extends OCSController {
 	 */
 	#[ExAppRequired]
 	#[ApiRoute(verb: 'POST', url: '/upload_files')]
-	public function uploadTempFile(array $files) : DataResponse {
+	public function uploadTempFile() : DataResponse {
+		$files = $this->request->files;
 		if (count($files) === 0) {
 			return new DataResponse('No files provided.', Http::STATUS_BAD_REQUEST);
 		}
@@ -104,7 +105,7 @@ class AppDataController extends OCSController {
 
 		return new DataResponse([
 			'fileIds' => $fileIds,
-			'errors' => $errors,
+			'errors' => (object)$errors,
 		]);
 	}
 
@@ -125,6 +126,7 @@ class AppDataController extends OCSController {
 			}
 		}
 
+		// file handle is closed in the newFile call
 		$tempFileHandle = fopen($tempFileLocation, 'rb');
 		if ($tempFileHandle === false) {
 			throw new \RuntimeException('Failed to open temporary file');
@@ -132,7 +134,6 @@ class AppDataController extends OCSController {
 
 		$targetFileName = 'cc_temp_' . time() . '_' . random_int(100000, 999999);
 		$targetFile = $this->appDataFolder->newFile($targetFileName, $tempFileHandle);
-		fclose($tempFileHandle);
 
 		return $targetFile->getId(); // polymorphic call to SimpleFile
 	}
