@@ -41,11 +41,10 @@ class Version005003002Date20260320093628 extends SimpleMigrationStep {
 		$totalRowsDeleted = 0;
 		$qb = $this->db->getQueryBuilder();
 		$qb->select('app_id', 'provider_id', 'item_id')
-			->selectAlias($qb->func()->count('*'), 'count')
 			->selectAlias($qb->func()->max('id'), 'keep_id')
 			->from('context_chat_content_queue')
 			->groupBy('app_id', 'provider_id', 'item_id')
-			->having($qb->expr()->gt('count', $qb->createNamedParameter(1)));
+			->having($qb->expr()->gt($qb->func()->count('*'), $qb->createNamedParameter(1)));
 		$selectQuery = $qb->executeQuery();
 
 		$qb2 = $this->db->getQueryBuilder();
