@@ -1,0 +1,277 @@
+# SPDX-FileCopyrightText: 2026 Nextcloud GmbH and Nextcloud contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+name: Migration test
+
+on:
+  pull_request:
+    branches:
+      - main
+      - stable*
+
+env:
+  APP_NAME: context_chat
+  PHP_EXTENSIONS: bz2, ctype, curl, dom, fileinfo, gd, iconv, intl, json, libxml, mbstring, openssl, pcntl, posix, session, simplexml, xmlreader, xmlwriter, zip, zlib, sqlite, pdo_sqlite, pgsql, pdo_pgsql, mysql, pdo_mysql, oci8
+
+permissions:
+  contents: read
+
+concurrency:
+  group: migration-test-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest-low
+    permissions:
+      contents: read
+      pull-requests: read
+
+    outputs:
+      src: ${{ steps.changes.outputs.src }}
+
+    steps:
+      - uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4.0.1
+        id: changes
+        continue-on-error: true
+        with:
+          filters: |
+            src:
+              - '.github/workflows/migration-test.yml'
+              - 'lib/Migration/**'
+              - 'lib/Repair/**'
+
+  migration-test:
+    runs-on: ubuntu-latest
+
+    needs: changes
+    if: needs.changes.outputs.src != 'false'
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - db: sqlite
+            db-type: sqlite
+            db-port: ''
+          - db: pgsql
+            db-type: pgsql
+            db-port: '4445'
+          - db: mysql
+            db-type: mysql
+            db-port: '4444'
+          - db: mariadb
+            db-type: mysql
+            db-port: '4446'
+          - db: oci21
+            db-type: oci
+            db-port: '1521'
+            oci-version: '21'
+            oci-flavour: xe
+            oci-name: XE
+          - db: oci23
+            db-type: oci
+            db-port: '1521'
+            oci-version: '23'
+            oci-flavour: free
+            oci-name: FREE
+
+    name: Migration test ${{ matrix.db }}
+
+    steps:
+      - name: Start postgres
+        if: matrix.db == 'pgsql'
+        run: |
+          docker run -d --name db \
+            -e POSTGRES_USER=root \
+            -e POSTGRES_PASSWORD=rootpassword \
+            -e POSTGRES_DB=nextcloud \
+            -p 4445:5432 \
+            postgres:17 # zizmor: ignore[unpinned-images]
+          timeout 60 bash -c 'until docker exec db pg_isready -U root; do sleep 1; done'
+
+      - name: Start mysql
+        if: matrix.db == 'mysql'
+        run: |
+          docker run -d --name db \
+            -e MYSQL_ROOT_PASSWORD=rootpassword \
+            -p 4444:3306 \
+            mysql:8.4 # zizmor: ignore[unpinned-images]
+          timeout 60 bash -c 'until docker exec db mysqladmin ping -prootpassword --silent; do sleep 1; done'
+
+      - name: Start mariadb
+        if: matrix.db == 'mariadb'
+        run: |
+          docker run -d --name db \
+            -e MARIADB_ROOT_PASSWORD=rootpassword \
+            -p 4446:3306 \
+            mariadb:11.4 # zizmor: ignore[unpinned-images]
+          timeout 60 bash -c 'until docker exec db mariadb-admin ping -prootpassword --silent; do sleep 1; done'
+
+      - name: Start oracle
+        if: startsWith(matrix.db, 'oci')
+        run: |
+          docker run -d --name db \
+            -e ORACLE_PASSWORD=oracle \
+            -p 1521:1521 \
+            ghcr.io/gvenzl/oracle-${{ matrix.oci-flavour }}:${{ matrix.oci-version }} # zizmor: ignore[unpinned-images]
+          timeout 300 bash -c 'until docker exec db healthcheck.sh; do sleep 5; done'
+
+      - name: Checkout server
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: nextcloud/server
+          ref: ${{ github.base_ref == 'main' && 'master' || github.base_ref }}
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Checkout viewer
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: nextcloud/viewer
+          path: apps/viewer
+          ref: ${{ github.base_ref == 'main' && 'master' || github.base_ref }}
+          persist-credentials: false
+
+      - name: Set up php 8.2
+        uses: shivammathur/setup-php@7c071dfe9dc99bdf297fa79cb49ea005b9fcadbc # 2.37.1
+        with:
+          php-version: '8.2'
+          extensions: ${{ env.PHP_EXTENSIONS }}
+          coverage: none
+          ini-file: development
+          ini-values: disable_functions=
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Checkout app and fetch all tags
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: nextcloud/${{ env.APP_NAME }}
+          path: apps/${{ env.APP_NAME }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Switch to previous release tag
+        id: prev-tag
+        working-directory: apps/${{ env.APP_NAME }}
+        run: |
+          PREV_TAG=$(git tag --sort=-version:refname | grep -E '^v?[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
+          if [ -z "$PREV_TAG" ]; then
+            echo "No previous release tag found"
+            exit 1
+          fi
+          echo "tag=${PREV_TAG}" >> $GITHUB_OUTPUT
+          git checkout "$PREV_TAG"
+
+      - name: Set up Nextcloud (${{ matrix.db }})
+        run: |
+          mkdir -p data
+          if [ "${{ matrix.db }}" = "sqlite" ]; then
+            ./occ maintenance:install --verbose \
+              --database=sqlite --database-name=nextcloud \
+              --admin-user admin --admin-pass admin
+          elif [ "${{ matrix.db-type }}" = "oci" ]; then
+            ./occ maintenance:install --verbose \
+              --database=oci \
+              --database-name=${{ matrix.oci-name }} \
+              --database-host=127.0.0.1 \
+              --database-port=${{ matrix.db-port }} \
+              --database-user=system \
+              --database-pass=oracle \
+              --admin-user admin --admin-pass admin
+          else
+            ./occ maintenance:install --verbose \
+              --database=${{ matrix.db-type }} \
+              --database-name=nextcloud \
+              --database-host=127.0.0.1 \
+              --database-port=${{ matrix.db-port }} \
+              --database-user=root \
+              --database-pass=rootpassword \
+              --admin-user admin --admin-pass admin
+          fi
+          ./occ config:system:set debug --value true
+          ./occ config:system:set loglevel --value 1
+
+      - name: Enable app (previous version ${{ steps.prev-tag.outputs.tag }})
+        run: ./occ app:enable --force ${{ env.APP_NAME }}
+
+      - name: Check if the previous version installed correctly
+        run: |
+          ./occ status
+          ./occ app:list --output json | jq -e '.enabled | has("${{ env.APP_NAME }}")'
+          ./occ migrations:status ${{ env.APP_NAME }}
+
+      - name: Dump database before upgrade
+        if: always()
+        run: |
+          if [ "${{ matrix.db }}" = "sqlite" ]; then
+            cp data/nextcloud.db /tmp/${{ matrix.db }}_before.db
+          elif [ "${{ matrix.db }}" = "pgsql" ]; then
+            docker exec db pg_dump -U root nextcloud > /tmp/${{ matrix.db }}_before.sql
+          elif [ "${{ matrix.db }}" = "mysql" ]; then
+            docker exec db mysqldump -uroot -prootpassword nextcloud > /tmp/${{ matrix.db }}_before.sql
+          elif [ "${{ matrix.db }}" = "mariadb" ]; then
+            docker exec db mariadb-dump -uroot -prootpassword nextcloud > /tmp/${{ matrix.db }}_before.sql
+          elif [[ "${{ matrix.db }}" == oci* ]]; then
+            docker exec db expdp system/oracle@${{ matrix.oci-name }} directory=DATA_PUMP_DIR dumpfile=${{ matrix.db }}_before.dmp logfile=${{ matrix.db }}_before_expdp.log schemas=NEXTCLOUD || true
+            docker cp db:/opt/oracle/admin/${{ matrix.oci-name }}/dpdump/${{ matrix.db }}_before.dmp /tmp/ || true
+          fi
+
+      - name: Checkout app at PR version
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          path: apps/${{ env.APP_NAME }}
+          persist-credentials: false
+
+      - name: Run occ upgrade
+        run: ./occ upgrade -vvv
+
+      - name: Check if the PR version upgraded correctly
+        run: |
+          ./occ status
+          ./occ app:list --output json | jq -e '.enabled | has("${{ env.APP_NAME }}")'
+          ./occ migrations:status ${{ env.APP_NAME }}
+
+      - name: Dump database after upgrade
+        if: always()
+        run: |
+          if [ "${{ matrix.db }}" = "sqlite" ]; then
+            cp data/nextcloud.db /tmp/${{ matrix.db }}_after.db
+          elif [ "${{ matrix.db }}" = "pgsql" ]; then
+            docker exec db pg_dump -U root nextcloud > /tmp/${{ matrix.db }}_after.sql
+          elif [ "${{ matrix.db }}" = "mysql" ]; then
+            docker exec db mysqldump -uroot -prootpassword nextcloud > /tmp/${{ matrix.db }}_after.sql
+          elif [ "${{ matrix.db }}" = "mariadb" ]; then
+            docker exec db mariadb-dump -uroot -prootpassword nextcloud > /tmp/${{ matrix.db }}_after.sql
+          elif [[ "${{ matrix.db }}" == oci* ]]; then
+            docker exec db expdp system/oracle@${{ matrix.oci-name }} directory=DATA_PUMP_DIR dumpfile=${{ matrix.db }}_after.dmp logfile=${{ matrix.db }}_after_expdp.log schemas=NEXTCLOUD || true
+            docker cp db:/opt/oracle/admin/${{ matrix.oci-name }}/dpdump/${{ matrix.db }}_after.dmp /tmp/ || true
+          fi
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ${{ matrix.db }}-artifacts
+          path: |
+            /tmp/${{ matrix.db }}_before.*
+            /tmp/${{ matrix.db }}_after.*
+            data/nextcloud.log
+            data/context_chat.log
+          if-no-files-found: ignore
+
+
+  summary:
+    permissions:
+      contents: none
+    runs-on: ubuntu-latest-low
+    needs: [changes, migration-test]
+
+    if: always()
+
+    name: migration-test-summary
+
+    steps:
+      - name: Summary status
+        run: if ${{ needs.changes.outputs.src != 'false' && needs.migration-test.result != 'success' }}; then exit 1; fi
