@@ -48,6 +48,9 @@ class Version004004000Date20250523135634 extends SimpleMigrationStep {
 			]);
 
 			$table->setPrimaryKey(['id'], 'cc_fs_events_id');
+			// Added post-release to ensure new installations get the index
+			// (existing installations get it via AddMissingIndicesListenerFsEvents)
+			$table->addIndex(['user_id', 'type', 'node_id'], 'cc_fs_events_full_idx');
 		}
 
 		return $schema;
