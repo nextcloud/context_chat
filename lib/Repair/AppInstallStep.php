@@ -37,12 +37,15 @@ class AppInstallStep implements IRepairStep {
 		if ($this->appConfig->getAppValueInt('installed_time', 0, lazy: true) === 0) {
 			$this->logger->info('Setting up Context Chat for the first time');
 			$this->appConfig->setAppValueInt('installed_time', time(), lazy: true);
+
+			// do not add SchedulerJob on every enable of the app
+			// so files are not added to the queue again when app is disabled and enabled
+			// in normal operation
+			$this->jobList->add(SchedulerJob::class);
 		}
 
 		$providerConfigService = new ProviderConfigService($this->appConfig);
 		/** @psalm-suppress ArgumentTypeCoercion, UndefinedClass  */
 		$providerConfigService->updateProvider('files', 'default', '', true);
-
-		$this->jobList->add(SchedulerJob::class);
 	}
 }
