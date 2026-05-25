@@ -33,12 +33,11 @@ use OCP\User\Events\UserDeletedEvent;
 class Application extends App implements IBootstrap {
 
 	public const APP_ID = 'context_chat';
-	public const MIN_APP_API_VERSION = '3.0.0';
 
-	public const CC_DEFAULT_REQUEST_TIMEOUT = 60 * 50; // 50 mins
+	public const CC_DEFAULT_REQUEST_TIMEOUT = 60 * 30; // 30 mins
 	// max size per file + max size of the batch of files to be embedded in a single request
 	public const CC_MAX_SIZE = 100 * 1024 * 1024; // 100MB
-	public const CC_MAX_FILES = 25;
+	// public const CC_MAX_FILES = 25;
 	public const MIMETYPES = [
 		'text/plain',
 		'text/markdown',

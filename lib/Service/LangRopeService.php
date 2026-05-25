@@ -11,14 +11,11 @@ use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\Exceptions\FatalRequestException;
 use OCA\ContextChat\Exceptions\RetryIndexException;
 use OCA\ContextChat\Logger;
-use OCA\ContextChat\Public\IContentProvider;
-use OCA\ContextChat\Type\Source;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Services\IAppConfig;
 use OCP\IL10N;
 use OCP\IURLGenerator;
 use OCP\IUserManager;
-use OCP\Server;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use RuntimeException;
@@ -50,17 +47,14 @@ class LangRopeService {
 		string $method = 'POST',
 		array $params = [],
 		?string $contentType = null,
+		array $extraOptions = [],
 	): array {
 		$user = $this->userId === null ? null : $this->userMan->get($this->userId);
 		if (!$this->appManager->isEnabledForUser('app_api', $user)) {
 			throw new RuntimeException('AppAPI is not enabled, please enable it or install the AppAPI app from the Nextcloud AppStore');
 		}
 
-		if (version_compare($this->appManager->getAppVersion('app_api', false), Application::MIN_APP_API_VERSION, '<')) {
-			throw new RuntimeException('AppAPI app version is too old, please update it to at least ' . Application::MIN_APP_API_VERSION);
-		}
-
-		// todo: app_api is always available now (composer update)
+		// app_api may not be always enabled
 		try {
 			$appApiFunctions = \OCP\Server::get(\OCA\AppAPI\PublicFunctions::class);
 		} catch (ContainerExceptionInterface|NotFoundExceptionInterface $e) {
@@ -104,6 +98,8 @@ class LangRopeService {
 		);
 		$options = [
 			'timeout' => $timeout,
+			// assumed it is not be a nested array
+			...$extraOptions,
 		];
 
 		if ($contentType === null) {
@@ -185,7 +181,7 @@ class LangRopeService {
 	 * @throws \RuntimeException
 	 */
 	public function getIndexedDocumentsCounts(): array {
-		$response = $this->requestToExApp('/countIndexedDocuments', 'POST');
+		$response = $this->requestToExApp('/countIndexedDocuments', 'POST', extraOptions: ['timeout' => 10]);
 		if ($response === []) {
 			// No documents indexed yet
 			return [];
@@ -277,164 +273,5 @@ class LangRopeService {
 			'sourceId' => $sourceId,
 		];
 		$this->requestToExApp('/updateAccessDeclarative', 'POST', $params);
-	}
-
-	/**
-	 * @param Source[] $sources
-	 * @return array{loaded_sources: array<string>, sources_to_retry: array<string>}
-	 * @throws RuntimeException|RetryIndexException
-	 */
-	public function indexSources(array $sources): array {
-		if (count($sources) === 0) {
-			return ['loaded_sources' => [], 'sources_to_retry' => []];
-		}
-
-		$params = array_map(function (Source $source) {
-			return [
-				'name' => 'sources',
-				'filename' => $source->reference, // eg. 'files__default: 555'
-				'contents' => $source->content,
-				'headers' => [
-					'userIds' => implode(',', $source->userIds),
-					'title' => $source->title,
-					'type' => $source->type,
-					'modified' => $source->modified,
-					'provider' => $source->provider, // eg. 'files__default'
-				],
-			];
-		}, $sources);
-
-		try {
-			$response = $this->requestToExApp('/loadSources', 'PUT', $params, 'multipart/form-data');
-		} catch (FatalRequestException $e) {
-			// do not retry on 4xx errors
-			$this->logger->warning('Error while indexing sources: ' . $e->getMessage(), [
-				'exception' => $e,
-				'sourceIds' => array_map(fn (Source $source) => $source->reference, $sources),
-			]);
-			return ['loaded_sources' => [], 'sources_to_retry' => []];
-		}
-
-		if (
-			!isset($response['loaded_sources']) || !is_array($response['loaded_sources'])
-			|| !isset($response['sources_to_retry']) || !is_array($response['sources_to_retry'])
-		) {
-			throw new RuntimeException('Error during request to Context Chat Backend (ExApp): Expected keys "loaded_sources" and "sources_to_retry" in response. Please upgrade the Context Chat Backend app to the latest version.');
-		}
-		return ['loaded_sources' => $response['loaded_sources'], 'sources_to_retry' => $response['sources_to_retry']];
-	}
-
-	/**
-	 * @param string $userId
-	 * @param string $prompt
-	 * @param bool $useContext
-	 * @param ?string $scopeType
-	 * @param ?array<string> $scopeList
-	 * @return array
-	 * @throws RuntimeException
-	 */
-	public function query(string $userId, string $prompt, bool $useContext = true, ?string $scopeType = null, ?array $scopeList = null): array {
-		$params = [
-			'query' => $prompt,
-			'userId' => $userId,
-			'useContext' => $useContext,
-		];
-		if ($scopeType !== null && $scopeList !== null) {
-			$params['useContext'] = true;
-			$params['scopeType'] = $scopeType;
-			$params['scopeList'] = $scopeList;
-		}
-
-		return $this->requestToExApp('/query', 'POST', $params);
-	}
-
-	/**
-	 * @param string $userId
-	 * @param string $prompt
-	 * @param ?string $scopeType
-	 * @param ?array<string> $scopeList
-	 * @param int|null $limit
-	 * @return array
-	 */
-	public function docSearch(string $userId, string $prompt, ?string $scopeType = null, ?array $scopeList = null, ?int $limit = null): array {
-		$params = [
-			'query' => $prompt,
-			'userId' => $userId,
-		];
-		if ($scopeType !== null && $scopeList !== null) {
-			$params['scopeType'] = $scopeType;
-			$params['scopeList'] = $scopeList;
-		}
-		if ($limit !== null) {
-			$params['ctxLimit'] = $limit;
-		}
-
-		return $this->requestToExApp('/docSearch', 'POST', $params);
-	}
-
-	/**
-	 * @param string $userId
-	 * @param string $prompt
-	 * @param bool $useContext
-	 * @param ?string $scopeType
-	 * @param ?array<string> $scopeList
-	 * @return array
-	 * @throws RuntimeException
-	 */
-	public function textProcessingQuery(string $userId, string $prompt, bool $useContext = true, ?string $scopeType = null, ?array $scopeList = null): array {
-		[$output, $sources] = $this->query($userId, $prompt, $useContext, $scopeType, $scopeList);
-		return ['message' => $this->getWithPresentableSources($output ?? '', ...($sources ?? []))];
-	}
-
-	public function getWithPresentableSources(string $llmResponse, string ...$sourceRefs): string {
-		if (count($sourceRefs) === 0) {
-			return $llmResponse;
-		}
-
-		$output = str_repeat(PHP_EOL, 3) . $this->l10n->t('Sources referenced to generate the above response:') . PHP_EOL;
-
-		$emptyFilesSourceId = ProviderConfigService::getSourceId('');
-		foreach ($sourceRefs as $source) {
-			if (str_starts_with($source, $emptyFilesSourceId) && is_numeric($fileId = substr($source, strlen($emptyFilesSourceId)))) {
-				// use `overwritehost` setting in config.php to overwrite the host
-				$output .= $this->urlGenerator->linkToRouteAbsolute('files.View.showFile', ['fileid' => $fileId]) . PHP_EOL;
-			} elseif (str_contains($source, '__')) {
-				// source id ($appId__$providerId: $itemId)
-				/** @var string[] */
-				$sourceValues = explode(': ', $source, 2);
-
-				if (empty($sourceValues)) {
-					$this->logger->warning('Invalid source id', ['source' => $source]);
-					continue;
-				}
-
-				[$identifier, $itemId] = $sourceValues;
-
-				$provider = $this->providerService->getProvider($identifier);
-				if ($provider === null) {
-					$this->logger->warning("No provider found for source id $identifier");
-					continue;
-				}
-
-				if (!isset($provider['classString'])) {
-					$this->logger->warning('Provider does not have a class string', ['provider' => $provider]);
-					continue;
-				}
-
-				$classString = $provider['classString'];
-
-				try {
-					/** @var IContentProvider */
-					$providerObj = Server::get($classString);
-				} catch (ContainerExceptionInterface|NotFoundExceptionInterface $e) {
-					$this->logger->warning('Could not run initial import for content provider', ['exception' => $e]);
-					continue;
-				}
-
-				$output .= $providerObj->getItemUrl($itemId) . PHP_EOL;
-			}
-		}
-
-		return $llmResponse . $output;
 	}
 }
