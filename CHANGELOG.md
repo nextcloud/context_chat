@@ -10,6 +10,24 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [5.4.0-beta0] - 2026-05-26
+
+### Added
+* reverse content/indexing flow for kubernetes support (#226) @marcelklehr @kyteinsky
+
+### Changed
+* fix(FsEvents): add cc_fs_events_full_idx index in the existing migration for new installs (#238) @kyteinsky
+* update readme and remove unused code chunks (#240) @kyteinsky
+
+### Fixed
+* fix(uncommited db transaction) FsEventMapper::insertRow() must not return from within an active transaction. (#224) @rotdrop
+* improve request 4xx error handling (#228) @kyteinsky
+* getFirstNodeById returns null when node is not found (#229) @kyteinsky
+* make the content providers queue unique (#230) @kyteinsky
+* do not add the queue files again on disable+enable of the app (#237) @kyteinsky
+* fix migration for postgres (#234) @lukasdotcom
+
+
 ## [5.3.1] - 2026-02-19
 
 ### Fixed
