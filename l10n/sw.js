@@ -1,7 +1,6 @@
 OC.L10N.register(
     "context_chat",
     {
-    "Sources referenced to generate the above response:" : "Vyanzo vinavyorejelewa kutoa majibu hapo juu:",
     "Deleted file" : "Faili iliyofutwa",
     "Context Chat search" : "Utafutaji wa Gumzo la Muktadha",
     "Search with Context Chat." : "Tafuta ukitumia Gumzo la Muktadha.",

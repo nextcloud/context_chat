@@ -1,7 +1,6 @@
 OC.L10N.register(
     "context_chat",
     {
-    "Sources referenced to generate the above response:" : "Zdroje odkazované k vytvoření výše uvedené odpovědi:",
     "Deleted file" : "Smazaný soubor",
     "Context Chat search" : "Hledání v kontextovém chatu",
     "Search with Context Chat." : "Hledat s kontextovým chatem.",

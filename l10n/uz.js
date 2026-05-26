@@ -1,7 +1,6 @@
 OC.L10N.register(
     "context_chat",
     {
-    "Sources referenced to generate the above response:" : "Yuqoridagi javobni yaratish uchun havola qilingan manbalar:",
     "Deleted file" : "O'chirilgan fayl",
     "Context Chat search" : "Kontekst chatida qidiruv",
     "Search with Context Chat." : "Kontekst suhbati bilan qidiruv.",

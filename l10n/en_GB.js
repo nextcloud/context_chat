@@ -1,7 +1,6 @@
 OC.L10N.register(
     "context_chat",
     {
-    "Sources referenced to generate the above response:" : "Sources referenced to generate the above response:",
     "Deleted file" : "Deleted file",
     "Context Chat search" : "Context Chat search",
     "Search with Context Chat." : "Search with Context Chat.",

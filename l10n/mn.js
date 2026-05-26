@@ -1,7 +1,6 @@
 OC.L10N.register(
     "context_chat",
     {
-    "Sources referenced to generate the above response:" : "Дээрх хариултыг үүсгэхэд ашигласан эх сурвалжууд:",
     "Deleted file" : "Устгагдсан файл",
     "Context Chat search" : "Context Chat хайлт",
     "Search with Context Chat." : "Context Chat-аар хайх.",

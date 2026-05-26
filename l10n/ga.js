@@ -1,7 +1,6 @@
 OC.L10N.register(
     "context_chat",
     {
-    "Sources referenced to generate the above response:" : "Foinsí a ndearnadh tagairt dóibh chun an freagra thuas a ghiniúint:",
     "Deleted file" : "Comhad scriosta",
     "Context Chat search" : "Cuardach Comhrá Comhthéacsúil",
     "Search with Context Chat." : "Cuardaigh le Comhrá Comhthéacsúil.",

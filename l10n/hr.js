@@ -1,7 +1,6 @@
 OC.L10N.register(
     "context_chat",
     {
-    "Sources referenced to generate the above response:" : "Izvori na koje se poziva za generiranje gornjeg odgovora:",
     "Deleted file" : "Izbrisana datoteka",
     "Context Chat search" : "Pretraživanje kontekstualnog chata",
     "Search with Context Chat." : "Pretražujte pomoću kontekstualnog chata.",

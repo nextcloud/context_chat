@@ -1,7 +1,6 @@
 OC.L10N.register(
     "context_chat",
     {
-    "Sources referenced to generate the above response:" : "上記の応答を生成するために参照した情報源：",
     "Deleted file" : "ファイルを削除",
     "Context Chat search" : "コンテキストチャット検索",
     "Search with Context Chat." : "コンテキスト チャットで検索します。",

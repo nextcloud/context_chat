@@ -1,7 +1,6 @@
 OC.L10N.register(
     "context_chat",
     {
-    "Sources referenced to generate the above response:" : "Ülaltoodud vastuse allikateks on:",
     "Deleted file" : "Kustutatud fail",
     "Context Chat search" : "Kontekstuaalse vestluse otsing",
     "Search with Context Chat." : "Otsi kontekstuaalse vestlusega.",

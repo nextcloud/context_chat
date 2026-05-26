@@ -1,7 +1,6 @@
 OC.L10N.register(
     "context_chat",
     {
-    "Sources referenced to generate the above response:" : "يۇقارقى ئىنكاسنى ھاسىل قىلىش ئۈچۈن پايدىلانغان مەنبەلەر:",
     "Deleted file" : "ئۆچۈرۈلگەن ھۆججەت",
     "Context Chat search" : "مەزمۇن پاراڭ ئىزدەش",
     "Search with Context Chat." : "مەزمۇن پاراڭلىرى بىلەن ئىزدەش.",

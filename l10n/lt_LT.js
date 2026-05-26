@@ -1,7 +1,6 @@
 OC.L10N.register(
     "context_chat",
     {
-    "Sources referenced to generate the above response:" : "Šaltiniai, kuriais remiantis buvo parengtas aukščiau pateiktas atsakymas:",
     "Deleted file" : "Ištrintas failas",
     "Context Chat search" : "„Context Chat' paieška",
     "Search with Context Chat." : "Paieška naudojant „Context Chat“.",

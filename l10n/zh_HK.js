@@ -1,7 +1,6 @@
 OC.L10N.register(
     "context_chat",
     {
-    "Sources referenced to generate the above response:" : "産生上述回應所參考的來源：",
     "Deleted file" : "已刪除的檔案",
     "Context Chat search" : "情境聊天搜尋",
     "Search with Context Chat." : "使用情境聊天搜尋。",
