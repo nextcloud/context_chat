@@ -6,7 +6,7 @@ OC.L10N.register(
     "list of providers" : "lista di fornitori",
     "Max result number" : "Numero massimo di risultati",
     "Sources" : "Sorgenti",
-    "Context Chat" : "Chat contestual",
+    "Context Chat" : "Chat contestuale",
     "Ask a question about your data." : "Poni una domanda sui tuoi dati.",
     "Ask a question about your documents, files and more" : "Poni una domanda riguardo i tuoi documenti, file e altro",
     "list of sources or providers" : "lista di fonti o fornitori",
