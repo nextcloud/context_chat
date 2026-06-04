@@ -127,6 +127,13 @@ class LangRopeService {
 			$options,
 		);
 
+		if (is_array($response)) {
+			if (isset($response['error'])) {
+				throw new RuntimeException('Error received from Context Chat Backend (ExApp): ' . $response['error']);
+			}
+			return ['response' => $response];
+		}
+
 		$resContentType = $response->getHeader('Content-Type');
 		if (strpos($resContentType, 'application/json') !== false) {
 			$body = $response->getBody();
