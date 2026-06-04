@@ -71,18 +71,18 @@ class QueueController extends OCSController {
 		try {
 			$file = $rootFolder->getUserFolder($userId)->getFirstNodeById($fileId);
 			if (!$file || !$file instanceof \OCP\Files\File) {
-				return new DataResponse([], Http::STATUS_NOT_FOUND);
+				return new DataResponse(['error' => 'Node is not a file or could not be found.'], Http::STATUS_NOT_FOUND);
 			}
 
 			$stream = $file->fopen('r');
 			if (!$stream) {
-				return new DataResponse([], Http::STATUS_NOT_FOUND);
+				return new DataResponse(['error' => 'File could not be opened for reading.'], Http::STATUS_UNPROCESSABLE_ENTITY);
 			}
 
 			return new Http\StreamResponse($stream);
 		} catch (\Throwable $e) {
-			// Avoid leaking filesystem details; keep behavior consistent with other failure paths.
-			return new DataResponse([], Http::STATUS_NOT_FOUND);
+			$this->logger->error('Unknown error trying to read a file for indexing: ' . $e->getMessage(), ['exception' => $e]);
+			return new DataResponse(['error' => 'Unknown error occurred.'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 	}
 
