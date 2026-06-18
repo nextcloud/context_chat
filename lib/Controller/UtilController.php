@@ -52,7 +52,7 @@ class UtilController extends OCSController {
 			$newScopeList = [];
 			foreach ($source_ids as $source_id) {
 				// Check whether this is a files source, if not just pass it through
-				if (!str_starts_with($providerConfigService::getDefaultProviderKey(), $source_id)) {
+				if (!str_starts_with($source_id, $providerConfigService::getDefaultProviderKey())) {
 					$newScopeList[] = $source_id;
 					continue;
 				}
