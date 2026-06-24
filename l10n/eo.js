@@ -1,7 +1,6 @@
 OC.L10N.register(
     "context_chat",
     {
-    "Sources" : "Fontoj",
     "never" : "neniam",
     "{time} ago" : "antaŭ {time}"
 },

@@ -1,5 +1,4 @@
 { "translations": {
-    "Sources" : "Fontoj",
     "never" : "neniam",
     "{time} ago" : "antaŭ {time}"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"

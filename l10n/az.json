@@ -1,0 +1,5 @@
+{ "translations": {
+    "never" : "heç vaxt",
+    "{time} ago" : "{time} əvvəl"
+},"pluralForm" :"nplurals=2; plural=(n != 1);"
+}
