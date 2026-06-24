@@ -10,6 +10,34 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [5.4.0] - 2026-06-24
+
+### Highlights
+* The indexing direction has been reversed now. Instead of the context_chat PHP app sending documents to the context_chat_backend ExApp, the ExApp downloads the documents from the server according to a list obtained from the PHP app. This also means that the `occ context_chat:scan` command serves no purpose and has been removed. Indexing should be smoother and run continuously now.
+* Kubernetes support to scale the CPU computation
+* Separate docker images for CPU, CUDA and ROCM (uses Vulkan) instead of one heavy CUDA/CPU image
+* CUDA 12.8 is shipped in the CUDA image so the host drivers should be updated to this at the minimum.
+
+### Added
+* reverse content/indexing flow for kubernetes support (#226) @marcelklehr @kyteinsky
+
+### Changed
+* fix(FsEvents): add cc_fs_events_full_idx index in the existing migration for new installs (#238) @kyteinsky
+* update readme and remove unused code chunks (#240) @kyteinsky
+* better error messages for file serving endpoint (#242) @kyteinsky
+* move task types to the backend (#248) @kyteinsky
+
+### Fixed
+* fix(uncommited db transaction) FsEventMapper::insertRow() must not return from within an active transaction. (#224) @rotdrop
+* improve request 4xx error handling (#228) @kyteinsky
+* getFirstNodeById returns null when node is not found (#229) @kyteinsky
+* make the content providers queue unique (#230) @kyteinsky
+* do not add the queue files again on disable+enable of the app (#237) @kyteinsky
+* fix migration for postgres (#234) @lukasdotcom
+* handle array response in ex-app requests (#243) @kyteinsky
+* use correct arg order with str_starts_with (#247) @kyteinsky
+
+
 ## [5.4.0-beta0] - 2026-05-26
 
 ### Added
