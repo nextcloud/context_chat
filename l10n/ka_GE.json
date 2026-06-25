@@ -1,0 +1,5 @@
+{ "translations": {
+    "never" : "არასდროს",
+    "{time} ago" : "{time}-ის წინ"
+},"pluralForm" :"nplurals=2; plural=(n!=1);"
+}
