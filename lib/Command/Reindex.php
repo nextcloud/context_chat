@@ -16,14 +16,14 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
- * Re-seed the one-shot crawl chain on demand.
+ * Re-seed the one-shot filesystem crawl/index on demand.
  *
  * SchedulerJob -> StorageCrawlJob -> IndexerJob is seeded only by the <install> repair step and
  * removes itself once the initial crawl finishes. There is otherwise no way to re-enumerate
  * mounts (e.g. after installing on an instance whose files predate the app, or to recover a crawl
  * that did not complete) short of reinstalling the app. This command re-adds SchedulerJob so the
  * full enumeration runs again; it is a no-op if one is already scheduled, and already-indexed
- * files are skipped (the queue de-duplicates).
+ * files are skipped.
  */
 class Reindex extends Command {
 
@@ -35,7 +35,7 @@ class Reindex extends Command {
 
 	protected function configure() {
 		$this->setName('context_chat:reindex')
-			->setDescription('Schedule a full re-crawl of all mounts (re-seeds the indexing chain; indexed files are skipped)');
+			->setDescription('Schedule a full re-crawl of all mounts. Indexed files are not re-indexed when compared against context_chat_backend\'s vector DB.');
 	}
 
 	protected function execute(InputInterface $input, OutputInterface $output): int {
