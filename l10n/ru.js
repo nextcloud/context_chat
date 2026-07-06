@@ -1,10 +1,6 @@
 OC.L10N.register(
     "context_chat",
     {
-    "Prompt" : "Подсказка",
-    "Sources" : "Источники",
-    "Ask a question about your data." : "Задать вопрос о ваших данных.",
-    "Generated response" : "Сгенерированный ответ",
     "never" : "никогда",
     "{time} ago" : "{time} назад"
 },

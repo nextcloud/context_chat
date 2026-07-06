@@ -1,7 +1,4 @@
 { "translations": {
-    "Prompt" : "Uppmaning",
-    "Sources" : "Källor",
-    "Generated response" : "Genererat svar",
     "never" : "aldrig",
     "{time} ago" : "{time} sedan"
 },"pluralForm" :"nplurals=2; plural=(n != 1);"

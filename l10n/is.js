@@ -1,8 +1,6 @@
 OC.L10N.register(
     "context_chat",
     {
-    "Prompt" : "Kvaðning",
-    "Sources" : "Uppruni",
     "never" : "aldrei",
     "{time} ago" : "fyrir {time} síðan"
 },

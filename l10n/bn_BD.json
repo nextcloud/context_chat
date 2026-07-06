@@ -1,0 +1,5 @@
+{ "translations": {
+    "never" : "কখনোই নয়",
+    "{time} ago" : "{time} পূর্বে"
+},"pluralForm" :"nplurals=2; plural=(n != 1);"
+}

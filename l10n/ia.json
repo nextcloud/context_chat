@@ -1,0 +1,5 @@
+{ "translations": {
+    "never" : "nunquam",
+    "{time} ago" : "{time} retro"
+},"pluralForm" :"nplurals=2; plural=(n != 1);"
+}

@@ -1,0 +1,5 @@
+{ "translations": {
+    "never" : "enxamás",
+    "{time} ago" : "hai {time}"
+},"pluralForm" :"nplurals=2; plural=(n != 1);"
+}
