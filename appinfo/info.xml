@@ -50,6 +50,7 @@ Refer to the [Context Chat Backend's readme](https://github.com/nextcloud/contex
 		<command>OCA\ContextChat\Command\Prompt</command>
 		<command>OCA\ContextChat\Command\Search</command>
 		<command>OCA\ContextChat\Command\Statistics</command>
+		<command>OCA\ContextChat\Command\Reindex</command>
 	</commands>
     <repair-steps>
         <install>
