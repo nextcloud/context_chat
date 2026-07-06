@@ -56,7 +56,7 @@ jobs:
       # do not stop on another job's failure
       fail-fast: false
       matrix:
-        php-versions: [ '8.2' ]
+        php-versions: [ '8.3' ]
         databases: [ 'pgsql' ]
         server-versions: [ 'master' ]
         encryption: ['on']
@@ -124,6 +124,14 @@ jobs:
           path: apps/viewer
           persist-credentials: false
           ref: ${{ matrix.server-versions }}
+
+      - name: Checkout app_api
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: nextcloud/app_api
+          ref: ${{ matrix.server-versions == 'master' && 'main' || matrix.server-versions }}
+          path: apps/app_api
+          persist-credentials: false
 
       - name: Get backend app version
         id: appinfo
