@@ -58,12 +58,12 @@ jobs:
       matrix:
         php-versions: [ '8.2' ]
         databases: [ 'pgsql' ]
-        server-versions: [ 'stable32', 'stable33', 'master' ]
+        server-versions: [ 'stable32', 'stable33', 'stable34' ]
         encryption: ['off']
         include:
           - server-versions: master
             databases: pgsql
-            php-versions: 8.2
+            php-versions: 8.3
             encryption: 'on'
           - server-versions: stable32
             databases: pgsql
@@ -132,6 +132,14 @@ jobs:
           path: apps/viewer
           persist-credentials: false
           ref: ${{ matrix.server-versions }}
+
+      - name: Checkout app_api
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: nextcloud/app_api
+          ref: ${{ matrix.server-versions == 'master' && 'main' || matrix.server-versions }}
+          path: apps/app_api
+          persist-credentials: false
 
       - name: Get backend app version
         id: appinfo
