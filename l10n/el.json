@@ -1,9 +1,29 @@
 { "translations": {
     "Deleted file" : "Διαγραμμένο αρχείο",
+    "Nextcloud Assistant Context Chat" : "Συνομιλία περιεχομένου Βοηθού Nextcloud",
+    "Chat with your documents" : "Συνομιλήστε με τα έγγραφά σας",
     "never" : "ποτέ",
     "{time} ago" : "{time} πριν",
-    "Context Chat" : "Συνομιλία Πλαισίου",
+    "Context Chat" : "Συνομιλία πλαισίου",
+    "Indexing Status" : "Κατάσταση ευρετηρίασης",
+    "The initial indexing run finished {date}." : "Η αρχική εκτέλεση ευρετηρίασης ολοκληρώθηκε στις {date}.",
+    "The initial indexing is still running." : "Η αρχική ευρετηρίαση εκτελείται ακόμη.",
+    "The Context Chat Backend app is installed and responsive." : "Η εφαρμογή Context Chat Backend είναι εγκατεστημένη και ανταποκρίνεται.",
+    "The Context Chat Backend app is not installed or not responsing." : "Η εφαρμογή Context Chat Backend δεν είναι εγκατεστημένη ή δεν ανταποκρίνεται.",
+    "Less files were indexed than expected. Only {percent}% files out of {eligibleCount} are in the VectorDB." : "Ευρετηριάστηκαν λιγότερα αρχεία από το αναμενόμενο. Μόνο το {percent}% των αρχείων από τα {eligibleCount} βρίσκονται στη βάση VectorDB.",
+    "Content provider" : "Πάροχος περιεχομένου",
+    "Queued documents including updates" : "Έγγραφα στην ουρά αναμονής, συμπεριλαμβανομένων των ενημερώσεων",
+    "Locked documents in queue" : "Κλειδωμένα έγγραφα στην ουρά αναμονής",
+    "Documents in vector database" : "Έγγραφα στη βάση δεδομένων διανυσμάτων (vector database)",
+    "CC Backend unavailable" : "Το CC Backend δεν είναι διαθέσιμο",
+    "Eligible files for indexing: {count}" : "Κατάλληλα αρχεία προς ευρετηρίαση: {count}",
+    "Queued content update actions: {count}" : "Ενέργειες ενημέρωσης περιεχομένου στην ουρά αναμονής: {count}",
+    "Locked queue content update actions: {count}" : "Κλειδωμένες ενέργειες ενημέρωσης περιεχομένου στην ουρά αναμονής: {count}",
+    "Queued file system events: {count}" : "Συμβάντα συστήματος αρχείων στην ουρά αναμονής: {count}",
     "Download Logs" : "Λήψη αρχείων καταγραφής",
-    "Official documentation" : "Επίσημη τεκμηρίωση"
+    "Download the PHP App logs" : "Λήψη αρχείων καταγραφής της εφαρμογής PHP",
+    "Download the Ex-App Backend logs" : "Λήψη αρχείων καταγραφής του Ex-App Backend",
+    "Official documentation" : "Επίσημη τεκμηρίωση",
+    "_({count} new file)_::_({count} new files)_" : ["({count} νέο αρχείο)","({count} νέα αρχεία)"]
 },"pluralForm" :"nplurals=2; plural=(n != 1);"
 }
