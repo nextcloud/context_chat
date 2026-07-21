@@ -1,5 +1,30 @@
 { "translations": {
+    "Deleted file" : "Borttagen fil",
+    "Nextcloud Assistant Context Chat" : "Nextcloud Assistant Kontextchatt",
+    "Chat with your documents" : "Chatta med dina dokument",
+    "Ask questions to Nextcloud Assistant about the content of your documents.\n\nInstall the given apps for Context Chat to work as desired **in the given order**:\n- [AppAPI from the Apps page](https://apps.nextcloud.com/apps/app_api)\n- [Context Chat Backend (same major and minor version as Context Chat app below) from the External Apps page](https://apps.nextcloud.com/apps/context_chat_backend)\n- [Context Chat (same major and minor version as the backend) from the Apps page](https://apps.nextcloud.com/apps/context_chat)\n- [Assistant from the Apps page](https://apps.nextcloud.com/apps/assistant). The OCS API or the `occ` commands can also be used to interact with this app but it recommended to do that through a Task Processing OCP API consumer like the Assistant app, which is also the officially supported universal UI for all the AI providers.\n- Text2Text Task Processing Provider like [llm2 from the External Apps page](https://apps.nextcloud.com/apps/llm2) or [integration_openai from the Apps page](https://apps.nextcloud.com/apps/integration_openai)\n\nSetup background job workers as described here: https://docs.nextcloud.com/server/latest/admin_manual/ai/overview.html#improve-ai-task-pickup-speed\n\nNote:\nRefer to the [Context Chat Backend's readme](https://github.com/nextcloud/context_chat_backend/?tab=readme-ov-file) and the [AppAPI's documentation](https://cloud-py-api.github.io/app_api/) for help with setup of AppAPI's deploy daemon." : "Ställ frågor till Nextcloud Assistant om innehållet i dina dokument.\n\nInstallera följande appar för att Kontextchatt ska fungera som avsett, **i angiven ordning**:\n- [AppAPI från sidan Appar](https://apps.nextcloud.com/apps/app_api)\n- [Kontextchattsservern (samma huvud- och delversion som Kontextchatt-appen nedan) från sidan Externa appar](https://apps.nextcloud.com/apps/context_chat_backend)\n- [Kontextchatt (samma huvud- och delversion som servern) från sidan Appar](https://apps.nextcloud.com/apps/context_chat)\n- [Assistent från sidan Appar](https://apps.nextcloud.com/apps/assistant). OCS-API:t eller `occ`-kommandon kan också användas för att interagera med appen, men det rekommenderas att göra det genom en OCP API-konsument för uppgiftsbehandling, såsom Assistent-appen. Den är även det officiellt stödda universella gränssnittet för alla AI-leverantörer.\n- En Text2Text-leverantör för uppgiftsbehandling, till exempel [llm2 från sidan Externa appar](https://apps.nextcloud.com/apps/llm2) eller [integration_openai från sidan Appar](https://apps.nextcloud.com/apps/integration_openai)\n\nKonfigurera arbetare för bakgrundsjobb enligt beskrivningen här: https://docs.nextcloud.com/server/latest/admin_manual/ai/overview.html#improve-ai-task-pickup-speed\n\nObservera:\nSe [Kontextchattsserverns readme](https://github.com/nextcloud/context_chat_backend/?tab=readme-ov-file) och [AppAPI-dokumentationen](https://cloud-py-api.github.io/app_api/) för hjälp med att konfigurera AppAPI:s distributionsdemon.",
     "never" : "aldrig",
-    "{time} ago" : "{time} sedan"
+    "{time} ago" : "{time} sedan",
+    "Context Chat" : "Kontextchatt",
+    "Indexing Status" : "Indexeringsstatus",
+    "The initial indexing run finished {date}." : "Den första indexeringen slutfördes {date}.",
+    "The initial indexing is still running." : "Den första indexeringen pågår fortfarande.",
+    "The Context Chat Backend app is installed and responsive." : "Appen Kontextchattsserver är installerad och svarar.",
+    "The Context Chat Backend app is not installed or not responsing." : "Appen Kontextchattsserver är inte installerad eller svarar inte.",
+    "Less files were indexed than expected. Only {percent}% files out of {eligibleCount} are in the VectorDB." : "Färre filer indexerades än förväntat. Endast {percent} % av {eligibleCount} filer finns i VectorDB.",
+    "Content provider" : "Innehållsleverantör",
+    "Queued documents including updates" : "Köade dokument inklusive uppdateringar",
+    "Locked documents in queue" : "Låsta dokument i kön",
+    "Documents in vector database" : "Dokument i vektordatabasen",
+    "CC Backend unavailable" : "Kontextchattsservern är inte tillgänglig",
+    "Eligible files for indexing: {count}" : "Filer som kan indexeras: {count}",
+    "Queued content update actions: {count}" : "Köade åtgärder för innehållsuppdatering: {count}",
+    "Locked queue content update actions: {count}" : "Låsta köade åtgärder för innehållsuppdatering: {count}",
+    "Queued file system events: {count}" : "Köade filsystemshändelser: {count}",
+    "Download Logs" : "Hämta loggar",
+    "Download the PHP App logs" : "Hämta PHP-appens loggar",
+    "Download the Ex-App Backend logs" : "Hämta den externa appserverns loggar",
+    "Official documentation" : "Officiell dokumentation",
+    "_({count} new file)_::_({count} new files)_" : ["({count} ny fil)","({count} nya filer)"]
 },"pluralForm" :"nplurals=2; plural=(n != 1);"
 }
