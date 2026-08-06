@@ -53,7 +53,7 @@ class Search extends Command {
 			);
 	}
 
-	protected function execute(InputInterface $input, OutputInterface $output) {
+	protected function execute(InputInterface $input, OutputInterface $output): int {
 		$userId = $input->getArgument('uid');
 		$prompt = $input->getArgument('prompt');
 		$limit = $input->getOption('limit');
