@@ -10,6 +10,8 @@ declare(strict_types=1);
 namespace OCA\ContextChat\Db;
 
 use OCA\ContextChat\Service\ProviderConfigService;
+use OCP\AppFramework\Db\DoesNotExistException;
+use OCP\AppFramework\Db\MultipleObjectsReturnedException;
 use OCP\AppFramework\Db\QBMapper;
 use OCP\DB\Exception;
 use OCP\DB\QueryBuilder\IQueryBuilder;
@@ -121,6 +123,34 @@ class QueueContentItemMapper extends QBMapper {
 			$stats[$provider] = $row['count'];
 		}
 		return $stats;
+	}
+
+	/**
+	 * Finds the existing queue item for a given (app_id, provider_id, item_id)
+	 * triple, matching the table's unique index. Used to look up the real id
+	 * of an already-indexed item before updating it, since insertOrUpdate()
+	 * can only fall back to update() correctly when the entity's id is known
+	 * ahead of time.
+	 *
+	 * @throws Exception
+	 */
+	public function findByUniqueKey(string $appId, string $providerId, string $itemId): ?QueueContentItem {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select(QueueContentItem::$columns)
+			->from($this->getTableName())
+			->where($qb->expr()->eq('app_id', $qb->createNamedParameter($appId)))
+			->andWhere($qb->expr()->eq('provider_id', $qb->createNamedParameter($providerId)))
+			->andWhere($qb->expr()->eq('item_id', $qb->createNamedParameter($itemId)));
+
+		try {
+			return $this->findEntity($qb);
+		} catch (DoesNotExistException) {
+			return null;
+		} catch (MultipleObjectsReturnedException) {
+			// Should not happen given the unique index, but fall back to
+			// "not found" rather than crashing the caller.
+			return null;
+		}
 	}
 
 	/**

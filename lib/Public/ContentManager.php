@@ -126,18 +126,31 @@ class ContentManager implements IContentManager {
 				continue;
 			}
 
-			$dbItem = new QueueContentItem();
-			$dbItem->setItemId($item->itemId);
-			$dbItem->setAppId($appId);
-			$dbItem->setProviderId($item->providerId);
-			$dbItem->setTitle($item->title);
-			$dbItem->setContent($item->content);
-			$dbItem->setDocumentType($item->documentType);
-			$dbItem->setLastModified($item->lastModified);
-			$dbItem->setUsers(implode(',', $item->users));
-
 			try {
-				$this->mapper->insertOrUpdate($dbItem);
+				// Re-use the existing row (and its id) when this item was
+				// already indexed before, instead of always constructing a
+				// fresh entity. insertOrUpdate() only knows how to fall back
+				// to update() when the entity's id is already known, which a
+				// freshly-built entity never has, so it would otherwise fail
+				// with "Entity which should be updated has no id" on every
+				// re-submission of already-indexed content.
+				$dbItem = $this->mapper->findByUniqueKey($appId, $item->providerId, $item->itemId)
+					?? new QueueContentItem();
+
+				$dbItem->setItemId($item->itemId);
+				$dbItem->setAppId($appId);
+				$dbItem->setProviderId($item->providerId);
+				$dbItem->setTitle($item->title);
+				$dbItem->setContent($item->content);
+				$dbItem->setDocumentType($item->documentType);
+				$dbItem->setLastModified($item->lastModified);
+				$dbItem->setUsers(implode(',', $item->users));
+
+				if ($dbItem->getId() === null) {
+					$this->mapper->insert($dbItem);
+				} else {
+					$this->mapper->update($dbItem);
+				}
 			} catch (Exception $e) {
 				$this->logger->error($e->getMessage(), ['exception' => $e]);
 			}
