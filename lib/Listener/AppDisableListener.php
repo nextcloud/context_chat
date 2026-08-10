@@ -48,7 +48,9 @@ class AppDisableListener implements IEventListener {
 			}
 
 			$this->providerConfig->removeProvider($appId, $providerId);
-			$this->actionService->deleteProvider($providerId);
+			// deleteProvider() expects the full provider key (appId__providerId),
+			// not the bare provider id; $key already holds that full key.
+			$this->actionService->deleteProvider($key);
 		}
 	}
 }
