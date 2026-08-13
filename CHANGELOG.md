@@ -10,6 +10,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [5.5.0-beta0] - 2026-08-13
+
+### Added
+* add context_chat:reindex to re-seed the crawl on demand (#246) @bygadd
+* add NC 35 support (#256) @kyteinsky
+
+### Fixed
+* refactor(commands): Add type hinting to execute method in search command (#259) @CarlSchwan
+* fix(AppDisableListener): pass full provider key to deleteProvider (#265) @weltmaister
+
+
 ## [5.4.0] - 2026-06-24
 
 ### Highlights
