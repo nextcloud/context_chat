@@ -64,7 +64,10 @@ class ActionScheduler {
 	}
 
 	/**
-	 * @param string $providerKey
+	 * @param string $providerKey The full provider key in the form appId__providerId
+	 *                            (e.g. "mail__mail"), as returned by
+	 *                            ProviderConfigService::getConfigKey(). Passing a bare
+	 *                            provider id makes the backend reject the whole action batch.
 	 * @return void
 	 * @throws Exception
 	 */
