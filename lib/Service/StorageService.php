@@ -83,6 +83,7 @@ class StorageService {
 			return 0;
 		}
 
+		// checks if multimodal is enabled internally
 		$mimeTypes = $this->taskTypeService->getMultimodalMimetypes();
 		$mimeTypesIds = array_map(fn ($mimeType) => $this->mimeTypes->getId($mimeType), $mimeTypes);
 
