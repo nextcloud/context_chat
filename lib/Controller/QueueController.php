@@ -290,12 +290,17 @@ class QueueController extends OCSController {
 		if (empty($mounts)) {
 			throw new \Exception('Couldn\'t find any mounts for this storage');
 		}
-		$userId = $mounts[0]->getUser()->getUID();
-
-		try {
-			$file = $rootFolder->getUserFolder($userId)->getFirstNodeById($document->getFileId());
-		} catch (NotPermittedException $e) {
-			throw new \Exception('Not allowed to get user folder');
+		$file = null;
+		foreach ($mounts as $mount) {
+			$userId = $mount->getUser()->getUID();
+			try {
+				$file = $rootFolder->getUserFolder($userId)->getFirstNodeById($document->getFileId());
+			} catch (NotPermittedException $e) {
+				throw new \Exception('Not allowed to get user folder');
+			}
+			if ($file instanceof File) {
+				break;
+			}
 		}
 		if (!($file instanceof File)) {
 			throw new \Exception('File not found or not a file');
