@@ -35,7 +35,7 @@ class Reindex extends Command {
 
 	protected function configure() {
 		$this->setName('context_chat:reindex')
-			->setDescription('Schedule a full re-crawl of all mounts. Indexed files are not re-indexed when compared against context_chat_backend\'s vector DB.');
+			->setDescription('Schedule a full re-crawl of all the files in all the mounts. Indexed files are not re-indexed when compared against context_chat_backend\'s vector DB. Content providers are not re-indexed.');
 	}
 
 	protected function execute(InputInterface $input, OutputInterface $output): int {
