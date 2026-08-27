@@ -22,7 +22,7 @@ body:
   - type: input
     attributes:
       label: Which version of backend context_chat are you using?
-      description: 'Can be found with the command `occ app:list | grep context_chat_backend`. For example: 1.0.0'
+      description: 'Can be found with the command `occ app_api:app:list | grep context_chat_backend`. For example: 1.0.0'
     validations:
       required: true
   - type: input
