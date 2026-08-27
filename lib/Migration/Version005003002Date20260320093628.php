@@ -88,8 +88,10 @@ class Version005003002Date20260320093628 extends SimpleMigrationStep {
 
 		if ($schema->hasTable('context_chat_content_queue')) {
 			$table = $schema->getTable('context_chat_content_queue');
-			$table->addUniqueIndex(['app_id', 'provider_id', 'item_id'], 'ccc_q_provider');
-			$schemaChanged = true;
+			if (!$table->hasIndex('ccc_q_provider')) {
+				$table->addUniqueIndex(['app_id', 'provider_id', 'item_id'], 'ccc_q_provider');
+				$schemaChanged = true;
+			}
 		}
 
 		return $schemaChanged ? $schema : null;
