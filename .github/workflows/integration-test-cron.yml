@@ -65,6 +65,10 @@ jobs:
             databases: pgsql
             php-versions: 8.3
             encryption: 'on'
+          - server-versions: stable35
+            databases: pgsql
+            php-versions: 8.3
+            encryption: 'on'
           - server-versions: stable32
             databases: pgsql
             php-versions: 8.1
