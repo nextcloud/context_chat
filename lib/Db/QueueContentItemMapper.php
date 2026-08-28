@@ -10,8 +10,6 @@ declare(strict_types=1);
 namespace OCA\ContextChat\Db;
 
 use OCA\ContextChat\Service\ProviderConfigService;
-use OCP\AppFramework\Db\DoesNotExistException;
-use OCP\AppFramework\Db\MultipleObjectsReturnedException;
 use OCP\AppFramework\Db\QBMapper;
 use OCP\DB\Exception;
 use OCP\DB\QueryBuilder\IQueryBuilder;
@@ -126,31 +124,30 @@ class QueueContentItemMapper extends QBMapper {
 	}
 
 	/**
-	 * Finds the existing queue item for a given (app_id, provider_id, item_id)
-	 * triple, matching the table's unique index. Used to look up the real id
-	 * of an already-indexed item before updating it, since insertOrUpdate()
-	 * can only fall back to update() correctly when the entity's id is known
-	 * ahead of time.
+	 * Finds the id of the queue item for a given (app_id, provider_id, item_id)
+	 * triple, matching the table's unique index. Used to look up the id of an
+	 * already-queued item before updating it, since update() needs the id and
+	 * every other column is overwritten anyway.
 	 *
 	 * @throws Exception
 	 */
-	public function findByUniqueKey(string $appId, string $providerId, string $itemId): ?QueueContentItem {
+	public function findIdByUniqueKey(string $appId, string $providerId, string $itemId): ?int {
 		$qb = $this->db->getQueryBuilder();
-		$qb->select(QueueContentItem::$columns)
+		$qb->select('id')
 			->from($this->getTableName())
 			->where($qb->expr()->eq('app_id', $qb->createNamedParameter($appId)))
 			->andWhere($qb->expr()->eq('provider_id', $qb->createNamedParameter($providerId)))
-			->andWhere($qb->expr()->eq('item_id', $qb->createNamedParameter($itemId)));
+			->andWhere($qb->expr()->eq('item_id', $qb->createNamedParameter($itemId)))
+			->setMaxResults(1);
 
-		try {
-			return $this->findEntity($qb);
-		} catch (DoesNotExistException) {
-			return null;
-		} catch (MultipleObjectsReturnedException) {
-			// Should not happen given the unique index, but fall back to
-			// "not found" rather than crashing the caller.
+		$result = $qb->executeQuery();
+		$id = $result->fetchOne();
+		$result->closeCursor();
+
+		if ($id === false) {
 			return null;
 		}
+		return (int)$id;
 	}
 
 	/**
