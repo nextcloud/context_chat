@@ -12,7 +12,7 @@ namespace OCA\ContextChat\Tests;
 use DateTime;
 use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\BackgroundJobs\InitialContentImportJob;
-use OCA\ContextChat\BackgroundJobs\SubmitContentJob;
+use OCA\ContextChat\Db\QueueContentItem;
 use OCA\ContextChat\Db\QueueContentItemMapper;
 use OCA\ContextChat\Event\ContentProviderRegisterEvent;
 use OCA\ContextChat\Logger;
@@ -21,6 +21,7 @@ use OCA\ContextChat\Public\ContentManager;
 use OCA\ContextChat\Public\IContentProvider;
 use OCA\ContextChat\Service\ActionScheduler;
 use OCA\ContextChat\Service\ProviderConfigService;
+use OCP\AppFramework\Services\IAppConfig;
 use OCP\BackgroundJob\IJobList;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IServerContainer;
@@ -31,6 +32,8 @@ use Symfony\Component\EventDispatcher\EventDispatcher as SymfonyDispatcher;
 use Test\TestCase;
 
 class ContentManagerTest extends TestCase {
+	/** @var MockObject | IAppConfig */
+	private IAppConfig $appConfig;
 	/** @var MockObject | QueueContentItemMapper */
 	private QueueContentItemMapper $mapper;
 	/** @var MockObject | ProviderConfigService */
@@ -52,6 +55,7 @@ class ContentManagerTest extends TestCase {
 		$this->jobList = Server::get(IJobList::class);
 		$this->logger = Server::get(LoggerInterface::class);
 
+		$this->appConfig = $this->createMock(IAppConfig::class);
 		$this->mapper = $this->createMock(QueueContentItemMapper::class);
 		$this->providerConfig = $this->createMock(ProviderConfigService::class);
 		$this->actionService = $this->createMock(ActionScheduler::class);
@@ -92,6 +96,7 @@ class ContentManagerTest extends TestCase {
 
 		$this->contentManager = new ContentManager(
 			$this->jobList,
+			$this->appConfig,
 			$this->providerConfig,
 			$this->mapper,
 			$this->actionService,
@@ -169,15 +174,62 @@ class ContentManagerTest extends TestCase {
 
 		$this->mapper
 			->expects($this->once())
+			->method('findIdByUniqueKey')
+			->with($appId, 'provider-id', 'item-id')
+			->willReturn(null);
+
+		$this->mapper
+			->expects($this->once())
 			->method('insert');
 
-		$this->jobList->remove(SubmitContentJob::class, null);
-		$this->assertFalse($this->jobList->has(SubmitContentJob::class, null));
+		$this->mapper
+			->expects($this->never())
+			->method('update');
 
 		$this->contentManager->submitContent($appId, $items);
+	}
 
-		$this->assertTrue($this->jobList->has(SubmitContentJob::class, null));
-		$this->jobList->remove(SubmitContentJob::class, null);
+	public function testSubmitContentUpdatesAlreadyQueuedItem(): void {
+		$appId = 'test';
+		$items = [
+			new ContentItem(
+				'item-id',
+				'provider-id',
+				'new title',
+				'new content',
+				'email-file',
+				new DateTime(),
+				['user1', 'user2'],
+			),
+		];
+
+		$this->mapper
+			->expects($this->once())
+			->method('findIdByUniqueKey')
+			->with($appId, 'provider-id', 'item-id')
+			->willReturn(42);
+
+		$this->mapper
+			->expects($this->never())
+			->method('insert');
+
+		$this->mapper
+			->expects($this->once())
+			->method('update')
+			->with($this->callback(function (QueueContentItem $dbItem) use ($appId) {
+				// update() needs the id of the already queued row, otherwise
+				// QBMapper throws "Entity which should be updated has no id"
+				$this->assertSame(42, $dbItem->getId());
+				$this->assertSame($appId, $dbItem->getAppId());
+				$this->assertSame('provider-id', $dbItem->getProviderId());
+				$this->assertSame('item-id', $dbItem->getItemId());
+				$this->assertSame('new title', $dbItem->getTitle());
+				$this->assertSame('new content', $dbItem->getContent());
+				$this->assertSame('user1,user2', $dbItem->getUsers());
+				return true;
+			}));
+
+		$this->contentManager->submitContent($appId, $items);
 	}
 }
 

@@ -124,6 +124,33 @@ class QueueContentItemMapper extends QBMapper {
 	}
 
 	/**
+	 * Finds the id of the queue item for a given (app_id, provider_id, item_id)
+	 * triple, matching the table's unique index. Used to look up the id of an
+	 * already-queued item before updating it, since update() needs the id and
+	 * every other column is overwritten anyway.
+	 *
+	 * @throws Exception
+	 */
+	public function findIdByUniqueKey(string $appId, string $providerId, string $itemId): ?int {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('id')
+			->from($this->getTableName())
+			->where($qb->expr()->eq('app_id', $qb->createNamedParameter($appId)))
+			->andWhere($qb->expr()->eq('provider_id', $qb->createNamedParameter($providerId)))
+			->andWhere($qb->expr()->eq('item_id', $qb->createNamedParameter($itemId)))
+			->setMaxResults(1);
+
+		$result = $qb->executeQuery();
+		$id = $result->fetchOne();
+		$result->closeCursor();
+
+		if ($id === false) {
+			return null;
+		}
+		return (int)$id;
+	}
+
+	/**
 	 * @throws Exception
 	 */
 	public function lock(int $id) : bool {

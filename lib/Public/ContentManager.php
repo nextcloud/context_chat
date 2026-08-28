@@ -137,9 +137,23 @@ class ContentManager implements IContentManager {
 			$dbItem->setUsers(implode(',', $item->users));
 
 			try {
-				$this->mapper->insertOrUpdate($dbItem);
+				// insertOrUpdate() can only fall back to update() when the entity's
+				// id is already known, which a freshly built entity never has, so it
+				// fails with "Entity which should be updated has no id" whenever the
+				// unique index on (app_id, provider_id, item_id) is hit. Look up the
+				// id of the already-queued row first and update that row instead.
+				$id = $this->mapper->findIdByUniqueKey($appId, $item->providerId, $item->itemId);
+				if ($id === null) {
+					$this->mapper->insert($dbItem);
+				} else {
+					$dbItem->setId($id);
+					$this->mapper->update($dbItem);
+				}
 			} catch (Exception $e) {
-				$this->logger->error($e->getMessage(), ['exception' => $e]);
+				$this->logger->error(
+					"Error adding content item id {$item->itemId} from app {$appId}: {$e->getMessage()}",
+					['exception' => $e],
+				);
 			}
 		}
 	}
