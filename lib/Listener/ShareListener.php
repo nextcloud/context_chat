@@ -10,12 +10,12 @@ declare(strict_types=1);
 
 namespace OCA\ContextChat\Listener;
 
-use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\Logger;
 use OCA\ContextChat\Public\UpdateAccessOp;
 use OCA\ContextChat\Service\ActionScheduler;
 use OCA\ContextChat\Service\ProviderConfigService;
 use OCA\ContextChat\Service\StorageService;
+use OCA\ContextChat\Service\TaskTypeService;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use OCP\Files\FileInfo;
@@ -37,6 +37,7 @@ class ShareListener implements IEventListener {
 		private IManager $shareManager,
 		private ActionScheduler $actionService,
 		private IGroupManager $groupManager,
+		private TaskTypeService $taskTypeService,
 	) {
 	}
 
@@ -145,6 +146,7 @@ class ShareListener implements IEventListener {
 
 	private function allowedMimeType(Node $file): bool {
 		$mimeType = $file->getMimeType();
-		return in_array($mimeType, Application::MIMETYPES, true);
+		$mimeTypes = $this->taskTypeService->getMultimodalMimetypes();
+		return in_array($mimeType, $mimeTypes, true);
 	}
 }

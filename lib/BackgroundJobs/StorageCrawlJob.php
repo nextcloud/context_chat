@@ -15,6 +15,7 @@ use OCA\ContextChat\Logger;
 use OCA\ContextChat\Service\DiagnosticService;
 use OCA\ContextChat\Service\QueueService;
 use OCA\ContextChat\Service\StorageService;
+use OCA\ContextChat\Service\TaskTypeService;
 use OCP\AppFramework\Services\IAppConfig;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\IJobList;
@@ -33,12 +34,13 @@ class StorageCrawlJob extends QueuedJob {
 		private StorageService $storageService,
 		private DiagnosticService $diagnosticService,
 		private IAppConfig $appConfig,
+		private TaskTypeService $taskTypeService,
 	) {
 		parent::__construct($timeFactory);
 	}
 
 	/**
-	 * @param array{storage_id:int, root_id:int, overridden_root:int|null, override_root:int|null, last_file_id:int|null} $argument
+	 * @param array{storage_id:int, root_id:int, overridden_root:int|null, override_root:int|null, last_file_id:int|null, only_non_textual?:bool} $argument
 	 * @return void
 	 */
 	protected function run($argument): void {
@@ -46,6 +48,8 @@ class StorageCrawlJob extends QueuedJob {
 		$rootId = $argument['root_id'];
 		$overrideRoot = $argument['overridden_root'] ?? $argument['override_root'] ?? $rootId;
 		$lastFileId = ($argument['last_file_id'] ?? null) === null ? 0 : $argument['last_file_id'];
+		$onlyNonTextual = $argument['only_non_textual'] ?? false;
+		$mimeTypes = $this->taskTypeService->getMultimodalMimetypes(!$onlyNonTextual);
 
 		// Remove current iteration
 		$this->jobList->remove(self::class, $argument);
@@ -57,7 +61,7 @@ class StorageCrawlJob extends QueuedJob {
 			$mountFilesCount = 0;
 			$lastSuccessfulDbId = -1;
 			$queueFile = null;
-			foreach ($this->storageService->getFilesInMount($storageId, $overrideRoot ?? $rootId, $lastFileId, self::BATCH_SIZE) as $fileId) {
+			foreach ($this->storageService->getFilesInMount($storageId, $overrideRoot ?? $rootId, $lastFileId, self::BATCH_SIZE, $mimeTypes) as $fileId) {
 				$queueFile = new QueueFile();
 				$queueFile->setStorageId($storageId);
 				$queueFile->setRootId($rootId);

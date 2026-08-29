@@ -7,6 +7,7 @@
 
 namespace OCA\ContextChat\Controller;
 
+use OCA\ContextChat\Service\MultimodalService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\DataResponse;
