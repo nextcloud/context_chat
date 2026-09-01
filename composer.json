@@ -37,7 +37,7 @@
 		"psalm:clear": "psalm --clear-cache && psalm --clear-global-cache",
 		"psalm:fix": "psalm --alter --issues=InvalidReturnType,InvalidNullableReturnType,MissingParamType,InvalidFalsableReturnType",
 		"test": "@test:unit",
-		"test:unit": "phpunit --configuration tests/phpunit.xml"
+		"test:unit": "phpunit --configuration tests/phpunit.xml --no-coverage"
 	},
 	"config": {
 		"optimize-autoloader": true,

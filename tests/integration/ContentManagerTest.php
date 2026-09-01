@@ -26,11 +26,16 @@ use OCP\BackgroundJob\IJobList;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IServerContainer;
 use OCP\Server;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\EventDispatcher as SymfonyDispatcher;
-use Test\TestCase;
 
+/**
+ * The test uses the real IJobList, so it needs a working database connection.
+ */
+#[Group('DB')]
 class ContentManagerTest extends TestCase {
 	/** @var MockObject | IAppConfig */
 	private IAppConfig $appConfig;
