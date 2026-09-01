@@ -133,10 +133,10 @@ jobs:
           ref: ${{ github.base_ref == 'main' && 'master' || github.base_ref }}
           persist-credentials: false
 
-      - name: Set up php 8.2
+      - name: Set up php 8.3
         uses: shivammathur/setup-php@7c071dfe9dc99bdf297fa79cb49ea005b9fcadbc # 2.37.1
         with:
-          php-version: '8.2'
+          php-version: '8.3'
           extensions: ${{ env.PHP_EXTENSIONS }}
           coverage: none
           ini-file: development
