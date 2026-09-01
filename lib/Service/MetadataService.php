@@ -7,6 +7,7 @@
 
 namespace OCA\ContextChat\Service;
 
+use InvalidArgumentException;
 use OC\Files\SetupManager;
 use OCA\ContextChat\Logger;
 use OCA\ContextChat\Public\ContentManager;
@@ -111,9 +112,15 @@ class MetadataService {
 			];
 		}
 
-		$user = $this->userManager->get($userId);
-		$assistantEnabled = $this->appManager->isEnabledForUser('assistant', $user);
 		$node = $nodes[0];
+		$user = $this->userManager->get($userId);
+		if ($user === null) {
+			# should not happen since $userId is always present but to handle all cases
+			$assistantEnabled = $this->appManager->isEnabledForAnyone('assistant');
+		} else {
+			$assistantEnabled = $this->appManager->isEnabledForUser('assistant', $user);
+		}
+
 		return [
 			'id' => $sourceId,
 			'label' => $node->getName(),
@@ -159,17 +166,30 @@ class MetadataService {
 				/** @var IContentProvider */
 				$klass = Server::get($providerConfig['classString']);
 				$itemId = $this->getIdFromSource($source['source_id']);
-				$url = $klass->getItemUrl($itemId);
-				$provider['url'] = $url;
-				$provider['label'] .= ($source['title'] ?? '') ?: ' #' . $itemId;
-				$enrichedSources[] = $provider;
 			} catch (ContainerExceptionInterface|NotFoundExceptionInterface $e) {
 				$this->logger->warning('Could not find content provider by class name', ['classString' => $providerConfig['classString'], 'exception' => $e]);
 				continue;
+			} catch (InvalidArgumentException $e) {
+				$this->logger->warning('Could not extract item id from the source id', ['source_id' => $source['source_id'], 'exception' => $e]);
+				continue;
 			}
+			try {
+				$url = $klass->getItemUrl($itemId);
+			} catch (\Throwable $e) {
+				$this->logger->warning('Could not get the item url from the provider', ['provider' => $provider['id'], 'exception' => $e]);
+				$url = '';
+			}
+			$provider['url'] = $url;
+			$provider['label'] .= ($source['title'] ?? '') ?: ' #' . $itemId;
+			$enrichedSources[] = $provider;
 		}
 
-		$setupManager = \OCP\Server::get(SetupManager::class);
+		try {
+			$setupManager = \OCP\Server::get(SetupManager::class);
+		} catch (ContainerExceptionInterface|NotFoundExceptionInterface $e) {
+			$this->logger->error('Error getting SetupManager: ' . $e->getMessage(), ['exception' => $e]);
+			return $enrichedSources;
+		}
 		$user = $this->userManager->get($userId);
 
 		if ($user === null) {
@@ -190,7 +210,16 @@ class MetadataService {
 				if (!str_starts_with($source['source_id'], ProviderConfigService::getDefaultProviderKey() . ': ')) {
 					continue;
 				}
-				$enrichedSources[] = $this->getMetadataObjectForId($userId, $source['source_id']);
+				try {
+					$enrichedSources[] = $this->getMetadataObjectForId($userId, $source['source_id']);
+				} catch (\Throwable $e) {
+					$this->logger->warning('Error enriching source for user: ' . $e->getMessage(), [
+						'userId' => $userId,
+						'source_id' => $source['source_id'],
+						'exception' => $e,
+					]);
+					continue;
+				}
 			}
 		} catch (\Throwable $e) {
 			$this->logger->error('Error enriching file sources: ' . $e->getMessage(), ['exception' => $e]);
