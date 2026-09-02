@@ -10,12 +10,12 @@ declare(strict_types=1);
 
 namespace OCA\ContextChat\Controller;
 
-use OCA\ContextChat\BackgroundJobs\StorageCrawlJob;
 use OCA\ContextChat\Db\QueueActionMapper;
 use OCA\ContextChat\Db\QueueContentItem;
 use OCA\ContextChat\Db\QueueContentItemMapper;
 use OCA\ContextChat\Db\QueueFile;
 use OCA\ContextChat\Db\QueueMapper;
+use OCA\ContextChat\Service\IndexCompletionService;
 use OCA\ContextChat\Service\ProviderConfigService;
 use OCA\ContextChat\Service\QueueService;
 use OCA\ContextChat\Service\StorageService;
@@ -39,7 +39,6 @@ use OCP\IRequest;
 use Psr\Log\LoggerInterface;
 
 class QueueController extends OCSController {
-	private const INDEX_COMPLETION_THRESHOLD = 0.02; // 2%
 
 	public function __construct(
 		string $appName,
@@ -51,6 +50,7 @@ class QueueController extends OCSController {
 		private IJobList $jobList,
 		private ITimeFactory $timeFactory,
 		private QueueMapper $queueMapper,
+		private IndexCompletionService $indexCompletionService,
 		string $corsMethods = 'PUT, POST, GET, DELETE, PATCH',
 		string $corsAllowedHeaders = 'Authorization, Content-Type, Accept, OCS-APIRequest',
 		int $corsMaxAge = 1728000,
@@ -112,6 +112,7 @@ class QueueController extends OCSController {
 			$n = $maxN;
 		}
 		try {
+			$this->indexCompletionService->checkAndMarkComplete();
 			$files = [];
 			while (count($files) < $n) {
 				$limit = $n - count($files);
@@ -181,7 +182,7 @@ class QueueController extends OCSController {
 		}
 
 		try {
-			$this->setInitialIndexCompletion();
+			$this->indexCompletionService->checkAndMarkComplete();
 		} catch (\Exception $e) {
 			$this->logger->warning('Could not check for initial index completion', ['exception' => $e]);
 		}
@@ -326,76 +327,5 @@ class QueueController extends OCSController {
 			$providerKey,
 			strlen($document->getContent()),
 		);
-	}
-
-	/**
-	 * @template T of \OCP\BackgroundJob\Job
-	 * @psalm-param T::class $jobClass
-	 */
-	public function getJobCount(string $jobClass): int {
-		$countByClass = array_values(array_filter($this->jobList->countByClass(), fn ($row) => $row['class'] == $jobClass));
-		$jobCount = count($countByClass) > 0 ? $countByClass[0]['count'] : 0;
-		return $jobCount;
-	}
-
-	private function setInitialIndexCompletion(): void {
-		if ($this->appConfig->getAppValueInt('last_indexed_time', 0, lazy: true) !== 0) {
-			return;
-		}
-
-		try {
-			$crawlJobCount = $this->getJobCount(StorageCrawlJob::class);
-			if ($crawlJobCount > 0) {
-				$this->logger->debug('StorageCrawlJob\'s still scheduled for execution, intial indexing has not completed.');
-				return;
-			}
-		} catch (\Exception $e) {
-			$this->logger->warning('Could not get count of scheduled StorageCrawlJob jobs', ['exception' => $e]);
-			return;
-		}
-
-		try {
-			$lastEnqueuedDbId = $this->appConfig->getAppValueInt('last_enqueued_db_id', -1, lazy: true);
-			if ($lastEnqueuedDbId !== -1) {
-				$initiallyQueuedFilesExist = $this->queueMapper->existsQueueItemsUpToDbId($lastEnqueuedDbId);
-				if ($initiallyQueuedFilesExist) {
-					$this->logger->debug('Initially queued files still in the queue, intial indexing has not completed.');
-					return;
-				}
-				$this->logger->info('Initial index completion detected, setting last indexed time');
-				$this->appConfig->setAppValueInt('last_indexed_time', $this->timeFactory->getTime(), lazy: true);
-				return;
-			}
-		} catch (\Exception $e) {
-			$this->logger->warning('Could not get last enqueued file\'s DB id', ['exception' => $e]);
-		}
-
-		// last enqueued file's ID could not be retrieved, falling back to file counting method
-		try {
-			$queuedNewFilesCount = $this->queueService->countNewFiles();
-			$eligibleFilesCount = $this->storageService->countFiles();
-			// if the new files in the queue are less than 2% of the total eligible files, we consider the
-			// initial indexing complete this allows for some margin of error in case some files were
-			// added while we were indexing but still ensures that we have indexed the vast majority of
-			// files at least once
-			if (self::withinThreshold($queuedNewFilesCount, $eligibleFilesCount)) {
-				$this->logger->info('Initial index completion detected, setting last indexed time');
-				$this->appConfig->setAppValueInt('last_indexed_time', $this->timeFactory->getTime(), lazy: true);
-				return;
-			}
-		} catch (\OCP\DB\Exception $e) {
-			$this->logger->warning('Could not count queued new files or total eligible files', ['exception' => $e]);
-			return;
-		}
-
-		// we are still indexing files that were never indexed before.
-		$this->logger->debug('Initial indexing not completed yet', [
-			'queuedNewFilesCount' => $queuedNewFilesCount,
-			'eligibleFilesCount' => $eligibleFilesCount,
-		]);
-	}
-
-	private static function withinThreshold(int $current, int $total, float $threshold = self::INDEX_COMPLETION_THRESHOLD): bool {
-		return ((float)($total - $current) / (float)$total) < $threshold;
 	}
 }

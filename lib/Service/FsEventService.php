@@ -10,12 +10,16 @@ namespace OCA\ContextChat\Service;
 use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\Db\QueueFile;
 use OCA\ContextChat\Logger;
+use OCP\AppFramework\Services\IAppConfig;
 use OCP\DB\Exception;
 use OCP\Files\Folder;
 use OCP\Files\InvalidPathException;
 use OCP\Files\IRootFolder;
 use OCP\Files\Node;
 use OCP\Files\NotFoundException;
+use OCP\SystemTag\ISystemTagManager;
+use OCP\SystemTag\ISystemTagObjectMapper;
+use OCP\SystemTag\TagNotFoundException;
 
 class FsEventService {
 
@@ -25,6 +29,9 @@ class FsEventService {
 		private ActionScheduler $actionService,
 		private StorageService $storageService,
 		private IRootFolder $rootFolder,
+		private ISystemTagManager $tagManager,
+		private IAppConfig $appConfig,
+		private ISystemTagObjectMapper $tagMapper,
 	) {
 
 	}
@@ -99,6 +106,9 @@ class FsEventService {
 		if (!$this->allowedPath($node)) {
 			return;
 		}
+		if (!$this->hasAiKnowledgeTag($node)) {
+			return;
+		}
 		if ($node instanceof Folder) {
 			if (!$recurse) {
 				return;
@@ -130,6 +140,46 @@ class FsEventService {
 				$this->logger->error('Failed to add file to queue', ['exception' => $e]);
 			}
 		}
+	}
+
+	public function hasAiKnowledgeTag(Node $node): bool {
+		$mode = $this->appConfig->getAppValueString('index_mode', 'all', lazy: true);
+		if ($mode !== 'tag_only') {
+			// Default mode: index everything, as before.
+			return true;
+		}
+
+		try {
+			$tag = $this->tagManager->getTag('AI knowledge', true, true);
+		} catch (TagNotFoundException $e) {
+			return false;
+		}
+
+		$current = $node;
+		$depth = 0;
+		$maxDepth = 50;
+		while ($current !== null && $depth < $maxDepth) {
+			try {
+				if ($this->tagMapper->haveTag((string)$current->getId(), 'files', $tag->getId())) {
+					return true;
+				}
+			} catch (TagNotFoundException|InvalidPathException|NotFoundException $e) {
+				return false;
+			}
+
+			if ($current->getPath() === '/' || $current->getInternalPath() === '') {
+				break;
+			}
+
+			try {
+				$current = $current->getParent();
+			} catch (\Throwable $e) {
+				break;
+			}
+			$depth++;
+		}
+
+		return false;
 	}
 
 	private function allowedMimeType(Node $file): bool {
