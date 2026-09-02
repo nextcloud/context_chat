@@ -4,6 +4,7 @@
 		resolveFromConfigFile="true"
 		findUnusedCode="false"
 		findUnusedBaselineEntry="false"
+		findUnusedIssueHandlerSuppression="false"
 		phpVersion="8.1"
 		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 		xmlns="https://getpsalm.org/schema/config"
@@ -31,6 +32,12 @@
 		<directory name="vendor" />
 	</extraFiles>
 	<issueHandlers>
+		<!--
+		Needed for the older supported server versions, whose ISchemaWrapper
+		docblocks still reference the Doctrine schema classes directly. Newer
+		versions return OCP\DB\Schema\ITable instead, so these suppressions go
+		unused there, hence findUnusedIssueHandlerSuppression is turned off.
+		-->
 		<UndefinedDocblockClass>
 			<errorLevel type="suppress">
 				<referencedClass name="OC\AppFramework\OCS\BaseResponse"/>

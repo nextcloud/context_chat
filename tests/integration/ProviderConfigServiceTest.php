@@ -9,21 +9,20 @@ declare(strict_types=1);
 
 namespace OCA\ContextChat\Tests;
 
-use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\Service\ProviderConfigService;
-use OCP\IConfig;
+use OCP\AppFramework\Services\IAppConfig;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 class ProviderConfigServiceTest extends TestCase {
-	/** @var MockObject | IConfig */
-	private IConfig $config;
+	/** @var MockObject | IAppConfig */
+	private IAppConfig $appConfig;
 
 	private ProviderConfigService $providerConfig;
 
 	public function setUp(): void {
-		$this->config = $this->createMock(IConfig::class);
-		$this->providerConfig = new ProviderConfigService($this->config);
+		$this->appConfig = $this->createMock(IAppConfig::class);
+		$this->providerConfig = new ProviderConfigService($this->appConfig);
 	}
 
 	public function testGetConfigKey(): void {
@@ -60,10 +59,10 @@ class ProviderConfigServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testGetProviders(string $returnVal, array $providers): void {
-		$this->config
+		$this->appConfig
 			->expects($this->once())
-			->method('getAppValue')
-			->with(Application::APP_ID, 'providers')
+			->method('getAppValueString')
+			->with('providers', '', true)
 			->willReturn($returnVal);
 
 		$this->assertEquals($providers, $this->providerConfig->getProviders());
@@ -94,16 +93,16 @@ class ProviderConfigServiceTest extends TestCase {
 			default => json_encode($extendedProviders),
 		};
 
-		$this->config
+		$this->appConfig
 			->expects($this->once())
-			->method('getAppValue')
-			->with(Application::APP_ID, 'providers')
+			->method('getAppValueString')
+			->with('providers', '', true)
 			->willReturn($returnVal);
 
-		$this->config
+		$this->appConfig
 			->expects($returnVal === 'invalid' ? $this->exactly(2) : $this->once())
-			->method('setAppValue')
-			->with(Application::APP_ID, 'providers', $this->logicalOr($this->equalTo(''), $this->equalTo($setProvidersValue)));
+			->method('setAppValueString')
+			->with('providers', $this->logicalOr($this->equalTo(''), $this->equalTo($setProvidersValue)), true);
 
 		$this->providerConfig->updateProvider($appId, $providerId, $providerClass, $isInitiated);
 	}
@@ -119,23 +118,23 @@ class ProviderConfigServiceTest extends TestCase {
 		$providerId = 'provider1';
 		$identifier = ProviderConfigService::getConfigKey($appId, $providerId);
 
-		$this->config
+		$this->appConfig
 			->expects($this->once())
-			->method('getAppValue')
-			->with(Application::APP_ID, 'providers')
+			->method('getAppValueString')
+			->with('providers', '', true)
 			->willReturn($returnVal);
 
 		if (isset($providers[$identifier])) {
 			unset($providers[$identifier]);
 		}
 
-		$this->config
+		$this->appConfig
 			->expects($returnVal === 'invalid' ? $this->exactly(2) : $this->once())
-			->method('setAppValue')
-			->with(Application::APP_ID, 'providers', $this->logicalOr(
+			->method('setAppValueString')
+			->with('providers', $this->logicalOr(
 				$this->equalTo(''),
 				$this->equalTo(json_encode($providers))
-			));
+			), true);
 
 		$this->providerConfig->removeProvider($appId, $providerId);
 	}
@@ -150,10 +149,10 @@ class ProviderConfigServiceTest extends TestCase {
 		$appId = 'app1';
 		$providerId = 'provider1';
 
-		$this->config
+		$this->appConfig
 			->expects($this->once())
-			->method('getAppValue')
-			->with(Application::APP_ID, 'providers')
+			->method('getAppValueString')
+			->with('providers', '', true)
 			->willReturn($returnVal);
 
 		$expected = match ($returnVal) {
