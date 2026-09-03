@@ -4,6 +4,7 @@ OC.L10N.register(
     "Deleted file" : "Silinmiş dosya",
     "Nextcloud Assistant Context Chat" : "Nextcloud Yardımcı Context Chat",
     "Chat with your documents" : "Belgelerinizle sohbet edin",
+    "Ask questions to Nextcloud Assistant about the content of your documents.\n\n\nSee [the Admin docs](https://docs.nextcloud.com/server/latest/admin_manual/ai/app_context_chat.html) for installation steps and requirements.\n\nSetup background job workers as described here: https://docs.nextcloud.com/server/latest/admin_manual/ai/overview.html#improve-ai-task-pickup-speed\n\nNote:\nRefer to the [Context Chat Backend's readme](https://github.com/nextcloud/context_chat_backend/?tab=readme-ov-file) and the [AppAPI's documentation](https://cloud-py-api.github.io/app_api/) for help with setup of AppAPI's deploy daemon." : "Nextcloud Yardımcıya belgelerinizin içeriği ile ilgili sorular sorun.\n\n\nKurulum adımları ve gereksinimleri için [Yönetici belgeleri](https://docs.nextcloud.com/server/latest/admin_manual/ai/app_context_chat.html) bölümüne bakın.\n\nArka plan işleyicileri şurada açıklandığı gibi ayarlayın: https://docs.nextcloud.com/server/latest/admin_manual/ai/overview.html#improve-ai-task-pickup-speed\n\nNot:\n\n[Context Chat arka ucu readme](https://github.com/nextcloud/context_chat_backend/?tab=readme-ov-file) ve AppAPI dağıtım arka plan programının kurulumuyla ilgili yardım almak için [AppAPI belgeleri](https://cloud-py-api.github.io/app_api/).",
     "never" : "asla",
     "{time} ago" : "{time} önce",
     "Context Chat" : "Context Chat",

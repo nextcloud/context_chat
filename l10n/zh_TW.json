@@ -2,6 +2,7 @@
     "Deleted file" : "已刪除的檔案",
     "Nextcloud Assistant Context Chat" : "Nextcloud 小幫手情境聊天",
     "Chat with your documents" : "與您的文件對話",
+    "Ask questions to Nextcloud Assistant about the content of your documents.\n\n\nSee [the Admin docs](https://docs.nextcloud.com/server/latest/admin_manual/ai/app_context_chat.html) for installation steps and requirements.\n\nSetup background job workers as described here: https://docs.nextcloud.com/server/latest/admin_manual/ai/overview.html#improve-ai-task-pickup-speed\n\nNote:\nRefer to the [Context Chat Backend's readme](https://github.com/nextcloud/context_chat_backend/?tab=readme-ov-file) and the [AppAPI's documentation](https://cloud-py-api.github.io/app_api/) for help with setup of AppAPI's deploy daemon." : "向 Nextcloud 小幫手詢問關於您文件內容的問題。\n\n\n請見[管理員文件](https://docs.nextcloud.com/server/latest/admin_manual/ai/app_context_chat.html)取得安裝步驟與系統需求的資訊。\n\n請依照此處所述設定背景工作 worker：https://docs.nextcloud.com/server/latest/admin_manual/ai/overview.html#improve-ai-task-pickup-speed\n\n注意：\n關於 AppAPI 部署幕後程式的設定協助，請參閱 [Context Chat Backend 的 readme](https://github.com/nextcloud/context_chat_backend/?tab=readme-ov-file) 以及 [AppAPI 的文件](https://cloud-py-api.github.io/app_api/)。",
     "never" : "永不",
     "{time} ago" : "{time}以前",
     "Context Chat" : "情境聊天",
