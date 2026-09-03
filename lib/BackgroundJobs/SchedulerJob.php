@@ -34,6 +34,12 @@ class SchedulerJob extends QueuedJob {
 	 * @throws Exception
 	 */
 	protected function run($argument): void {
+		if ($this->appConfig->getAppValueString('auto_indexing', 'true', lazy: true) === 'false') {
+			$this->logger->debug('Skipping StorageCrawlJob scheduling because auto_indexing is disabled');
+			$this->jobList->remove(self::class);
+			return;
+		}
+
 		$this->appConfig->setAppValueInt('last_indexed_time', 0, lazy: true);
 		foreach ($this->storageService->getMounts() as $mount) {
 			$this->logger->debug('Scheduling StorageCrawlJob storage_id=' . $mount['storage_id'] . ' root_id=' . $mount['root_id' ] . 'override_root=' . $mount['overridden_root']);
