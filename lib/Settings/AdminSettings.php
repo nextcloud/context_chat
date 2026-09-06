@@ -6,6 +6,7 @@
  */
 namespace OCA\ContextChat\Settings;
 
+use OCA\ContextChat\Service\MultimodalService;
 use OCA\ContextChat\Service\StatisticsService;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\AppFramework\Services\IInitialState;
@@ -15,6 +16,7 @@ class AdminSettings implements ISettings {
 	public function __construct(
 		private IInitialState $initialState,
 		private StatisticsService $statisticsService,
+		private MultimodalService $multimodalService,
 	) {
 	}
 
@@ -24,6 +26,12 @@ class AdminSettings implements ISettings {
 	public function getForm(): TemplateResponse {
 		$stats = $this->statisticsService->getStatistics();
 		$this->initialState->provideInitialState('stats', $stats);
+
+		$taskTypes = $this->multimodalService->checkTaskTypes();
+		$this->initialState->provideInitialState('multimodal_enabled', $this->multimodalService->isMultimodalEnabled());
+		$this->initialState->provideInitialState('ocr_available', $taskTypes['ocrAvailable']);
+		$this->initialState->provideInitialState('stt_available', $taskTypes['sttAvailable']);
+
 		return new TemplateResponse('context_chat', 'admin');
 	}
 
