@@ -2,6 +2,7 @@
     "Deleted file" : "Comhad scriosta",
     "Nextcloud Assistant Context Chat" : "Comhrá Comhthéacsúil Cúntóir Nextcloud",
     "Chat with your documents" : "Comhráigh le do dhoiciméid",
+    "Ask questions to Nextcloud Assistant about the content of your documents.\n\n\nSee [the Admin docs](https://docs.nextcloud.com/server/latest/admin_manual/ai/app_context_chat.html) for installation steps and requirements.\n\nSetup background job workers as described here: https://docs.nextcloud.com/server/latest/admin_manual/ai/overview.html#improve-ai-task-pickup-speed\n\nNote:\nRefer to the [Context Chat Backend's readme](https://github.com/nextcloud/context_chat_backend/?tab=readme-ov-file) and the [AppAPI's documentation](https://cloud-py-api.github.io/app_api/) for help with setup of AppAPI's deploy daemon." : "Cuir ceisteanna ar Chúntóir Nextcloud faoi ábhar do dhoiciméad.\n\nFéach ar [na doiciméid Riaracháin](https://docs.nextcloud.com/server/latest/admin_manual/ai/app_context_chat.html) le haghaidh céimeanna agus riachtanais suiteála.\n\nSocraigh oibrithe poist chúlra mar a thuairiscítear anseo: https://docs.nextcloud.com/server/latest/admin_manual/ai/overview.html#improve-ai-task-pickup-speed\n\nNóta:\nFéach ar [readme an Chomhaid Chomhrá Comhthéacsúil](https://github.com/nextcloud/context_chat_backend/?tab=readme-ov-file) agus ar [dhoiciméadacht an AppAPI](https://cloud-py-api.github.io/app_api/) le haghaidh cabhrach le socrú daemon imscartha an AppAPI.",
     "never" : "riamh",
     "{time} ago" : "{time} ó shin",
     "Context Chat" : "Comhrá Comhthéacs",
