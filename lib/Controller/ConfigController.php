@@ -49,6 +49,21 @@ class ConfigController extends Controller {
 		return new DataResponse(1);
 	}
 
+	private function handleIndexModeChange(array $values): void {
+		if (!isset($values['index_mode'])) {
+			return;
+		}
+		$oldMode = $this->appConfig->getAppValueString('index_mode', 'all', lazy: true);
+		$newMode = $values['index_mode'];
+		if ($newMode === $oldMode) {
+			return;
+		}
+		if ($newMode === 'tag_only') {
+			$this->jobList->add(UntaggedCleanupSchedulerJob::class);
+		} else {
+			$this->jobList->add(SchedulerJob::class);
+		}
+	}
 	/**
 	 * Set admin config values
 	 *
@@ -56,17 +71,7 @@ class ConfigController extends Controller {
 	 * @return DataResponse
 	 */
 	public function setAdminConfig(array $values): DataResponse {
-		if (isset($values['index_mode'])) {
-			$oldMode = $this->appConfig->getAppValueString('index_mode', 'all', lazy: true);
-			$newMode = $values['index_mode'];
-			if ($newMode !== $oldMode) {
-				if ($newMode === 'tag_only') {
-					$this->jobList->add(UntaggedCleanupSchedulerJob::class);
-				} else {
-					$this->jobList->add(SchedulerJob::class);
-				}
-			}
-		}
+		$this->handleIndexModeChange($values);
 		foreach ($values as $key => $value) {
 			$this->appConfig->setAppValueString($key, $value, lazy: true);
 		}
