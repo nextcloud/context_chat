@@ -7,10 +7,14 @@
 
 namespace OCA\ContextChat\Controller;
 
+use OCA\ContextChat\BackgroundJobs\SchedulerJob;
+use OCA\ContextChat\BackgroundJobs\UntaggedCleanupSchedulerJob;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\DataResponse;
 use OCP\AppFramework\Services\IAppConfig;
+use OCP\BackgroundJob\IJobList;
+use OCP\IAppConfig as ICoreAppConfig;
 use OCP\IRequest;
 use OCP\PreConditionNotMetException;
 
@@ -20,6 +24,8 @@ class ConfigController extends Controller {
 		string $appName,
 		IRequest $request,
 		private IAppConfig $appConfig,
+		private IJobList $jobList,
+		private ICoreAppConfig $coreAppConfig,
 		private ?string $userId,
 	) {
 		parent::__construct($appName, $request);
@@ -43,6 +49,21 @@ class ConfigController extends Controller {
 		return new DataResponse(1);
 	}
 
+	private function handleIndexModeChange(array $values): void {
+		if (!isset($values['index_mode'])) {
+			return;
+		}
+		$oldMode = $this->appConfig->getAppValueString('index_mode', 'all', lazy: true);
+		$newMode = $values['index_mode'];
+		if ($newMode === $oldMode) {
+			return;
+		}
+		if ($newMode === 'tag_only') {
+			$this->jobList->add(UntaggedCleanupSchedulerJob::class);
+		} else {
+			$this->jobList->add(SchedulerJob::class);
+		}
+	}
 	/**
 	 * Set admin config values
 	 *
@@ -50,9 +71,11 @@ class ConfigController extends Controller {
 	 * @return DataResponse
 	 */
 	public function setAdminConfig(array $values): DataResponse {
+		$this->handleIndexModeChange($values);
 		foreach ($values as $key => $value) {
 			$this->appConfig->setAppValueString($key, $value, lazy: true);
 		}
+		$this->coreAppConfig->clearCache();
 		return new DataResponse(1);
 	}
 }

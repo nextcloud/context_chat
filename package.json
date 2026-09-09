@@ -37,6 +37,8 @@
 	},
 	"type": "module",
 	"dependencies": {
+		"@nextcloud/axios": "2.5.1",
+		"@nextcloud/dialogs": "^7.3.0",
 		"@nextcloud/initial-state": "^2.2.0",
 		"@nextcloud/router": "^3.0.1",
 		"@nextcloud/vue": "^9.0.0-rc.9",

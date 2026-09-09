@@ -8,6 +8,7 @@ namespace OCA\ContextChat\Settings;
 
 use OCA\ContextChat\Service\StatisticsService;
 use OCP\AppFramework\Http\TemplateResponse;
+use OCP\AppFramework\Services\IAppConfig;
 use OCP\AppFramework\Services\IInitialState;
 use OCP\Settings\ISettings;
 
@@ -15,6 +16,7 @@ class AdminSettings implements ISettings {
 	public function __construct(
 		private IInitialState $initialState,
 		private StatisticsService $statisticsService,
+		private IAppConfig $appConfig,
 	) {
 	}
 
@@ -24,6 +26,8 @@ class AdminSettings implements ISettings {
 	public function getForm(): TemplateResponse {
 		$stats = $this->statisticsService->getStatistics();
 		$this->initialState->provideInitialState('stats', $stats);
+		$indexMode = $this->appConfig->getAppValueString('index_mode', 'all', lazy: true);
+		$this->initialState->provideInitialState('index_mode', $indexMode);
 		return new TemplateResponse('context_chat', 'admin');
 	}
 
