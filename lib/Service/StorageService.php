@@ -55,7 +55,11 @@ class StorageService {
 	public function countFiles(): int {
 		$totalCount = 0;
 		foreach ($this->getMounts() as $mount) {
-			$totalCount += $this->countFilesInMount($mount['storage_id'], $mount['root_id']);
+			// use the overridden root so home mounts are counted from their `files/` folder, the
+			// same root the crawl in getFilesInMount() uses; counting from the storage root would
+			// also include `uploads/`, `cache/`, `files_encryption/` and friends, which are never
+			// queued for indexing
+			$totalCount += $this->countFilesInMount($mount['storage_id'], $mount['overridden_root'] ?? $mount['root_id']);
 		}
 		return $totalCount;
 	}

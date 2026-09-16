@@ -73,6 +73,24 @@ class QueueMapper extends QBMapper {
 	}
 
 	/**
+	 * @return int|null The highest queue item id, or null if the queue is empty
+	 * @throws \OCP\DB\Exception
+	 */
+	public function getMaxId(): ?int {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('id')
+			->from($this->getTableName())
+			->orderBy('id', 'DESC')
+			->setMaxResults(1);
+
+		$result = $qb->executeQuery();
+		$id = $result->fetchOne();
+		$result->closeCursor();
+
+		return ($id === false || $id === null) ? null : (int)$id;
+	}
+
+	/**
 	 * @param int $dbId
 	 * @return bool
 	 * @throws \OCP\DB\Exception

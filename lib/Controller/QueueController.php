@@ -40,6 +40,7 @@ use Psr\Log\LoggerInterface;
 
 class QueueController extends OCSController {
 	private const INDEX_COMPLETION_THRESHOLD = 0.02; // 2%
+	private const INDEX_COMPLETION_CHECK_INTERVAL = 60 * 60; // 1 hour
 
 	public function __construct(
 		string $appName,
@@ -182,7 +183,7 @@ class QueueController extends OCSController {
 
 		try {
 			$this->setInitialIndexCompletion();
-		} catch (\Exception $e) {
+		} catch (\Throwable $e) {
 			$this->logger->warning('Could not check for initial index completion', ['exception' => $e]);
 		}
 
@@ -356,21 +357,48 @@ class QueueController extends OCSController {
 
 		try {
 			$lastEnqueuedDbId = $this->appConfig->getAppValueInt('last_enqueued_db_id', -1, lazy: true);
-			if ($lastEnqueuedDbId !== -1) {
-				$initiallyQueuedFilesExist = $this->queueMapper->existsQueueItemsUpToDbId($lastEnqueuedDbId);
-				if ($initiallyQueuedFilesExist) {
-					$this->logger->debug('Initially queued files still in the queue, intial indexing has not completed.');
+			if ($lastEnqueuedDbId === -1) {
+				// Instances that completed their crawl before this value was introduced never got
+				// it set, and the migration only backfills it while the referenced file is still
+				// queued. Seed it from the queue instead of falling through to counting every file
+				// in the file cache on every single request.
+				$maxQueuedDbId = $this->queueMapper->getMaxId();
+				if ($maxQueuedDbId === null) {
+					// no crawl jobs left and nothing queued, so everything has been indexed once
+					$this->logger->info('Initial index completion detected, setting last indexed time');
+					$this->appConfig->setAppValueInt('last_indexed_time', $this->timeFactory->getTime(), lazy: true);
 					return;
 				}
-				$this->logger->info('Initial index completion detected, setting last indexed time');
-				$this->appConfig->setAppValueInt('last_indexed_time', $this->timeFactory->getTime(), lazy: true);
+				$this->appConfig->setAppValueInt('last_enqueued_db_id', $maxQueuedDbId, lazy: true);
+				$lastEnqueuedDbId = $maxQueuedDbId;
+			}
+
+			$initiallyQueuedFilesExist = $this->queueMapper->existsQueueItemsUpToDbId($lastEnqueuedDbId);
+			if ($initiallyQueuedFilesExist) {
+				$this->logger->debug('Initially queued files still in the queue, intial indexing has not completed.');
 				return;
 			}
+			$this->logger->info('Initial index completion detected, setting last indexed time');
+			$this->appConfig->setAppValueInt('last_indexed_time', $this->timeFactory->getTime(), lazy: true);
+			return;
 		} catch (\Exception $e) {
 			$this->logger->warning('Could not get last enqueued file\'s DB id', ['exception' => $e]);
 		}
 
-		// last enqueued file's ID could not be retrieved, falling back to file counting method
+		// last enqueued file's ID could not be retrieved, falling back to file counting method.
+		// countFiles() walks every mount of the instance, so it must never run per request.
+		try {
+			$now = $this->timeFactory->getTime();
+			$lastCheck = $this->appConfig->getAppValueInt('last_index_completion_check', 0, lazy: true);
+			if ($now - $lastCheck < self::INDEX_COMPLETION_CHECK_INTERVAL) {
+				return;
+			}
+			$this->appConfig->setAppValueInt('last_index_completion_check', $now, lazy: true);
+		} catch (\Exception $e) {
+			$this->logger->warning('Could not throttle the initial index completion check', ['exception' => $e]);
+			return;
+		}
+
 		try {
 			$queuedNewFilesCount = $this->queueService->countNewFiles();
 			$eligibleFilesCount = $this->storageService->countFiles();
@@ -396,6 +424,10 @@ class QueueController extends OCSController {
 	}
 
 	private static function withinThreshold(int $current, int $total, float $threshold = self::INDEX_COMPLETION_THRESHOLD): bool {
-		return ((float)($total - $current) / (float)$total) < $threshold;
+		if ($total <= 0) {
+			// nothing is eligible for indexing, so there is nothing left to wait for
+			return true;
+		}
+		return ((float)$current / (float)$total) < $threshold;
 	}
 }
