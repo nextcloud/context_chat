@@ -66,6 +66,28 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 		<p>{{ t('context_chat', 'Queued content update actions: {count}', {count: stats.queued_actions_count}) }}</p>
 		<p>{{ t('context_chat', 'Locked queue content update actions: {count}', {count: stats.queued_actions_locked_count}) }}</p>
 		<p>{{ t('context_chat', 'Queued file system events: {count}', {count: stats.queued_fs_events_count}) }}</p>
+
+		<h3>{{ t('context_chat', 'Indexing mode') }}</h3>
+		<NcCheckboxRadioSwitch
+			:model-value="indexMode"
+			value="all"
+			name="index_mode_radio"
+			type="radio"
+			@update:model-value="onIndexModeChange('all')">
+			{{ t('context_chat', 'Index all documents') }}
+		</NcCheckboxRadioSwitch>
+		<NcCheckboxRadioSwitch
+			:model-value="indexMode"
+			value="tag_only"
+			name="index_mode_radio"
+			type="radio"
+			@update:model-value="onIndexModeChange('tag_only')">
+			{{ t('context_chat', "Index only documents tagged 'AI knowledge'") }}
+		</NcCheckboxRadioSwitch>
+		<NcNoteCard type="warning">
+			{{ t('context_chat', "When 'Index only documents tagged AI knowledge' is selected, only documents with that tag are indexed, and any previously indexed documents without it are removed from the index. Add the tag to any document you want indexed.") }}
+		</NcNoteCard>
+
 		<h3>{{ t('context_chat', 'Download Logs') }}</h3>
 		<div class="horizontal-flex">
 			<NcButton :href="downloadURLNextcloudLogs">
@@ -85,20 +107,24 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 </template>
 
 <script>
+import axios from '@nextcloud/axios'
+import { showError, showSuccess } from '@nextcloud/dialogs'
+import '@nextcloud/dialogs/style.css'
 import { loadState } from '@nextcloud/initial-state'
 import { generateUrl } from '@nextcloud/router'
-import { NcButton, NcNoteCard, NcSettingsSection } from '@nextcloud/vue'
+import { NcButton, NcCheckboxRadioSwitch, NcNoteCard, NcSettingsSection } from '@nextcloud/vue'
 import humanizeDuration from 'humanize-duration'
 
 const MAX_RELATIVE_DATE = 1000 * 60 * 60 * 24 * 7 // one week
 
 export default {
 	name: 'ViewAdmin',
-	components: { NcSettingsSection, NcNoteCard, NcButton },
+	components: { NcSettingsSection, NcNoteCard, NcButton, NcCheckboxRadioSwitch },
 
 	data() {
 		return {
 			stats: {},
+			indexMode: 'all',
 			downloadURLNextcloudLogs: generateUrl('/apps/context_chat/download-logs-nextcloud'),
 			downloadURLDockerLogs: generateUrl('/apps/app_api/proxy/context_chat_backend/downloadLogs'),
 		}
@@ -112,6 +138,7 @@ export default {
 	},
 	async created() {
 		this.stats = loadState('context_chat', 'stats')
+		this.indexMode = loadState('context_chat', 'index_mode')
 	},
 
 	methods: {
@@ -131,6 +158,22 @@ export default {
 				return this.t('context_chat', '{time} ago', { time: duration })
 			} else {
 				return date.toLocaleDateString()
+			}
+		},
+		async onIndexModeChange(newValue) {
+			if (newValue === this.indexMode) {
+				return
+			}
+			const previousValue = this.indexMode
+			this.indexMode = newValue
+			try {
+				await axios.put(generateUrl('/apps/context_chat/admin-config'), {
+					values: { index_mode: newValue },
+				})
+				showSuccess(this.t('context_chat', 'Context Chat admin options saved'))
+			} catch (error) {
+				this.indexMode = previousValue
+				showError(this.t('context_chat', 'Failed to save indexing mode'))
 			}
 		},
 	},
