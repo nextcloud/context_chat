@@ -17,7 +17,6 @@ use OCA\ContextChat\Db\QueueContentItemMapper;
 use OCA\ContextChat\Db\QueueFile;
 use OCA\ContextChat\Db\QueueMapper;
 use OCA\ContextChat\Service\ProviderConfigService;
-use OCA\ContextChat\Service\QueueService;
 use OCA\ContextChat\Service\StorageService;
 use OCA\ContextChat\Type\Source;
 use OCP\AppFramework\Http;
@@ -39,16 +38,11 @@ use OCP\IRequest;
 use Psr\Log\LoggerInterface;
 
 class QueueController extends OCSController {
-	private const INDEX_COMPLETION_THRESHOLD = 0.02; // 2%
-	private const INDEX_COMPLETION_CHECK_INTERVAL = 60 * 60; // 1 hour
-
 	public function __construct(
 		string $appName,
 		IRequest $request,
 		private LoggerInterface $logger,
 		private IAppConfig $appConfig,
-		private QueueService $queueService,
-		private StorageService $storageService,
 		private IJobList $jobList,
 		private ITimeFactory $timeFactory,
 		private QueueMapper $queueMapper,
@@ -385,49 +379,15 @@ class QueueController extends OCSController {
 			$this->logger->warning('Could not get last enqueued file\'s DB id', ['exception' => $e]);
 		}
 
-		// last enqueued file's ID could not be retrieved, falling back to file counting method.
-		// countFiles() walks every mount of the instance, so it must never run per request.
+		// last enqueued file's ID could not be retrieved, fall back to checking whether the queue is
+		// empty. With no crawl jobs left, nothing more will be queued for the initial index.
 		try {
-			$now = $this->timeFactory->getTime();
-			$lastCheck = $this->appConfig->getAppValueInt('last_index_completion_check', 0, lazy: true);
-			if ($now - $lastCheck < self::INDEX_COMPLETION_CHECK_INTERVAL) {
-				return;
-			}
-			$this->appConfig->setAppValueInt('last_index_completion_check', $now, lazy: true);
-		} catch (\Exception $e) {
-			$this->logger->warning('Could not throttle the initial index completion check', ['exception' => $e]);
-			return;
-		}
-
-		try {
-			$queuedNewFilesCount = $this->queueService->countNewFiles();
-			$eligibleFilesCount = $this->storageService->countFiles();
-			// if the new files in the queue are less than 2% of the total eligible files, we consider the
-			// initial indexing complete this allows for some margin of error in case some files were
-			// added while we were indexing but still ensures that we have indexed the vast majority of
-			// files at least once
-			if (self::withinThreshold($queuedNewFilesCount, $eligibleFilesCount)) {
+			if ($this->queueMapper->getMaxId() === null) {
 				$this->logger->info('Initial index completion detected, setting last indexed time');
 				$this->appConfig->setAppValueInt('last_indexed_time', $this->timeFactory->getTime(), lazy: true);
-				return;
 			}
-		} catch (\OCP\DB\Exception $e) {
-			$this->logger->warning('Could not count queued new files or total eligible files', ['exception' => $e]);
-			return;
+		} catch (\Exception $e) {
+			$this->logger->warning('Could not check whether the queue is empty', ['exception' => $e]);
 		}
-
-		// we are still indexing files that were never indexed before.
-		$this->logger->debug('Initial indexing not completed yet', [
-			'queuedNewFilesCount' => $queuedNewFilesCount,
-			'eligibleFilesCount' => $eligibleFilesCount,
-		]);
-	}
-
-	private static function withinThreshold(int $current, int $total, float $threshold = self::INDEX_COMPLETION_THRESHOLD): bool {
-		if ($total <= 0) {
-			// nothing is eligible for indexing, so there is nothing left to wait for
-			return true;
-		}
-		return ((float)$current / (float)$total) < $threshold;
 	}
 }

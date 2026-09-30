@@ -59,7 +59,7 @@ class StorageService {
 			// same root the crawl in getFilesInMount() uses; counting from the storage root would
 			// also include `uploads/`, `cache/`, `files_encryption/` and friends, which are never
 			// queued for indexing
-			$totalCount += $this->countFilesInMount($mount['storage_id'], $mount['overridden_root'] ?? $mount['root_id']);
+			$totalCount += $this->countFilesInMount($mount['storage_id'], $mount['overridden_root']);
 		}
 		return $totalCount;
 	}

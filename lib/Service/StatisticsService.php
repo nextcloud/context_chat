@@ -13,9 +13,12 @@ use OCA\ContextChat\Db\FsEventMapper;
 use OCA\ContextChat\Db\QueueContentItemMapper;
 use OCA\ContextChat\Logger;
 use OCP\AppFramework\Services\IAppConfig;
+use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\DB\Exception;
 
 class StatisticsService {
+	private const ELIGIBLE_FILES_COUNT_TTL = 60 * 60; // 1 hour
+
 	public function __construct(
 		private IAppConfig $appConfig,
 		private ActionScheduler $actionService,
@@ -25,6 +28,7 @@ class StatisticsService {
 		private QueueContentItemMapper $contentQueue,
 		private Logger $logger,
 		private FsEventMapper $fsEventMapper,
+		private ITimeFactory $timeFactory,
 	) {
 	}
 
@@ -39,12 +43,7 @@ class StatisticsService {
 			$stats['intial_indexing_completed_at'] = $this->appConfig->getAppValueInt('last_indexed_time', 0, lazy: true);
 		}
 
-		try {
-			$stats['eligible_files_count'] = $this->storageService->countFiles();
-		} catch (Exception $e) {
-			$this->logger->error($e->getMessage(), ['exception' => $e]);
-			$stats['eligible_files_count'] = 0;
-		}
+		$stats['eligible_files_count'] = $this->getEligibleFilesCount();
 		try {
 			$stats['queued_actions_count'] = $this->actionService->count();
 		} catch (Exception $e) {
@@ -108,5 +107,26 @@ class StatisticsService {
 		}
 
 		return $stats;
+	}
+
+	/**
+	 * countFiles() walks every mount of the instance, so its result is cached for an hour
+	 */
+	private function getEligibleFilesCount(): int {
+		$now = $this->timeFactory->getTime();
+		$countedAt = $this->appConfig->getAppValueInt('eligible_files_count_time', 0, lazy: true);
+		if ($now - $countedAt < self::ELIGIBLE_FILES_COUNT_TTL) {
+			return $this->appConfig->getAppValueInt('eligible_files_count', 0, lazy: true);
+		}
+
+		try {
+			$count = $this->storageService->countFiles();
+		} catch (Exception $e) {
+			$this->logger->error($e->getMessage(), ['exception' => $e]);
+			return 0;
+		}
+		$this->appConfig->setAppValueInt('eligible_files_count', $count, lazy: true);
+		$this->appConfig->setAppValueInt('eligible_files_count_time', $now, lazy: true);
+		return $count;
 	}
 }

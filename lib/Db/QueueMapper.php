@@ -105,7 +105,7 @@ class QueueMapper extends QBMapper {
 		try {
 			$this->findEntity($qb);
 			return true;
-		} catch (DoesNotExistException|MultipleObjectsReturnedException|Exception) {
+		} catch (DoesNotExistException|MultipleObjectsReturnedException) {
 			return false;
 		}
 	}
