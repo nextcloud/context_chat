@@ -24,11 +24,11 @@ use OCA\ContextChat\Service\ProviderConfigService;
 use OCP\AppFramework\Services\IAppConfig;
 use OCP\BackgroundJob\IJobList;
 use OCP\EventDispatcher\IEventDispatcher;
-use OCP\IServerContainer;
 use OCP\Server;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\EventDispatcher as SymfonyDispatcher;
 
@@ -51,7 +51,7 @@ class ContentManagerTest extends TestCase {
 	private IJobList $jobList;
 	private IEventDispatcher $eventDispatcher;
 	private SymfonyDispatcher $dispatcher;
-	private IServerContainer $serverContainer;
+	private ContainerInterface $serverContainer;
 
 	// private bool $initCalled = false;
 	private static string $providerClass = 'OCA\ContextChat\Tests\ContentProvider';
@@ -67,7 +67,7 @@ class ContentManagerTest extends TestCase {
 
 		// new dispatcher for each test
 		$this->dispatcher = new SymfonyDispatcher();
-		$this->serverContainer = Server::get(IServerContainer::class);
+		$this->serverContainer = Server::get(ContainerInterface::class);
 		$this->eventDispatcher = new \OC\EventDispatcher\EventDispatcher(
 			$this->dispatcher,
 			$this->serverContainer,
