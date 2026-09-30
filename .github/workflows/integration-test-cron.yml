@@ -217,6 +217,7 @@ jobs:
           cp example.env .env
           echo "NEXTCLOUD_URL=http://localhost:8080" >> .env
           python3 -u ./main_em.py > em_backend_logs 2>&1 &
+          echo $! > ../em_pid.txt       # Save the embedding server process ID (PID)
           python3 -u ./main.py > backend_logs 2>&1 &
           echo $! > ../pid.txt          # Save the process ID (PID)
           sleep 60 # Wait for the backend to get ready
@@ -356,6 +357,13 @@ jobs:
             ccb_alive=$(ps -p $(cat pid.txt) -o cmd= | grep -c "main.py" || echo "0")
             if [ "$ccb_alive" -eq 0 ]; then
               echo "Error: Context Chat Backend process is not running. Exiting."
+              exit 1
+            fi
+
+            # Check if the embedding server is still alive
+            em_alive=$(ps -p $(cat em_pid.txt) -o cmd= | grep -c "main_em.py" || echo "0")
+            if [ "$em_alive" -eq 0 ]; then
+              echo "Error: Context Chat embedding server process is not running. Exiting."
               exit 1
             fi
 
