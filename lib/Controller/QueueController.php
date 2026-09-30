@@ -10,6 +10,7 @@ declare(strict_types=1);
 
 namespace OCA\ContextChat\Controller;
 
+use OC\User\NoUserException;
 use OCA\ContextChat\BackgroundJobs\StorageCrawlJob;
 use OCA\ContextChat\Db\QueueActionMapper;
 use OCA\ContextChat\Db\QueueContentItem;
@@ -29,6 +30,7 @@ use OCP\AppFramework\Services\IAppConfig;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\IJobList;
 use OCP\DB\Exception;
+use OCP\Files\Config\ICachedMountInfo;
 use OCP\Files\Config\IUserMountCache;
 use OCP\Files\File;
 use OCP\Files\IRootFolder;
@@ -91,7 +93,6 @@ class QueueController extends OCSController {
 	#[ExAppRequired]
 	#[ApiRoute(verb: 'GET', url: '/queues/documents/')]
 	public function getDocumentsQueueItems(
-		StorageService $storageService,
 		IRootFolder $rootFolder,
 		QueueMapper $queueMapper,
 		QueueContentItemMapper $queueContentItemMapper,
@@ -117,7 +118,7 @@ class QueueController extends OCSController {
 				foreach ($documents as $document) {
 					if ($queueMapper->lock($document->getId())) {
 						try {
-							$files[$document->getId()] = $this->getFileSource($document, $rootFolder, $storageService, $userMountCache);
+							$files[$document->getId()] = $this->getFileSource($document, $rootFolder, $userMountCache);
 						} catch (\Exception $e) {
 							$this->logger->warning($e->getMessage(), ['exception' => $e]);
 							$queueMapper->delete($document);
@@ -280,22 +281,31 @@ class QueueController extends OCSController {
 		}
 	}
 
-	private function getFileSource(QueueFile $document, IRootFolder $rootFolder, StorageService $storageService, IUserMountCache $userMountCache) : Source {
-		$mounts = $userMountCache->getMountsForStorageId($document->getStorageId());
+	private function getFileSource(QueueFile $document, IRootFolder $rootFolder, IUserMountCache $userMountCache) : Source {
+		$mounts = $userMountCache->getMountsForFileId($document->getFileId());
 		if (empty($mounts)) {
-			throw new \Exception('Couldn\'t find any mounts for this storage');
+			throw new \Exception('Couldn\'t find any mounts for file ' . $document->getFileId());
 		}
-		$userId = $mounts[0]->getUser()->getUID();
+		$userIds = array_values(array_unique(array_map(
+			static fn (ICachedMountInfo $mountInfo) => $mountInfo->getUser()->getUID(),
+			$mounts,
+		)));
 
-		try {
-			$file = $rootFolder->getUserFolder($userId)->getFirstNodeById($document->getFileId());
-		} catch (NotPermittedException $e) {
-			throw new \Exception('Not allowed to get user folder');
+		$file = null;
+		foreach ($userIds as $userId) {
+			try {
+				$node = $rootFolder->getUserFolder($userId)->getFirstNodeById($document->getFileId());
+			} catch (NotPermittedException|NoUserException) {
+				continue;
+			}
+			if ($node instanceof File) {
+				$file = $node;
+				break;
+			}
 		}
-		if (!($file instanceof File)) {
-			throw new \Exception('File not found or not a file');
+		if ($file === null) {
+			throw new \Exception('File ' . $document->getFileId() . ' not found or not a file (tried users: ' . implode(', ', $userIds) . ')');
 		}
-		$userIds = $storageService->getUsersForFileId($document->getFileId());
 
 		return new Source(
 			$userIds,

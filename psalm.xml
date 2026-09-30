@@ -52,5 +52,10 @@
 				<directory name="lib" />
 			</errorLevel>
 		</MissingOverrideAttribute>
+		<UndefinedClass>
+			<errorLevel type="suppress">
+				<referencedClass name="OC\User\NoUserException" />
+			</errorLevel>
+		</UndefinedClass>
 	</issueHandlers>
 </psalm>
