@@ -300,7 +300,7 @@ class QueueController extends OCSController {
 		foreach ($userIds as $userId) {
 			try {
 				$node = $rootFolder->getUserFolder($userId)->getFirstNodeById($document->getFileId());
-			} catch (NotPermittedException|NoUserException $e) {
+			} catch (NotPermittedException|NoUserException) {
 				continue;
 			}
 			if ($node instanceof File) {
