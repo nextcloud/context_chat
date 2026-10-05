@@ -55,7 +55,11 @@ class StorageService {
 	public function countFiles(): int {
 		$totalCount = 0;
 		foreach ($this->getMounts() as $mount) {
-			$totalCount += $this->countFilesInMount($mount['storage_id'], $mount['root_id']);
+			// use the overridden root so home mounts are counted from their `files/` folder, the
+			// same root the crawl in getFilesInMount() uses; counting from the storage root would
+			// also include `uploads/`, `cache/`, `files_encryption/` and friends, which are never
+			// queued for indexing
+			$totalCount += $this->countFilesInMount($mount['storage_id'], $mount['overridden_root']);
 		}
 		return $totalCount;
 	}
@@ -66,50 +70,33 @@ class StorageService {
 	 * @return int
 	 */
 	public function countFilesInMount(int $storageId, int $rootId): int {
-		$qb = $this->getCacheQueryBuilder();
-		try {
-			$qb->selectFileCache();
-			$qb->andWhere($qb->expr()->eq('filecache.fileid', $qb->createNamedParameter($rootId, IQueryBuilder::PARAM_INT)));
-			$result = $qb->executeQuery();
-			/** @var array{path:string}|false $root */
-			$root = $result->fetch();
-			$result->closeCursor();
-		} catch (DBException $e) {
-			$this->logger->error('Could not fetch storage root', ['exception' => $e]);
-			return 0;
-		}
-
-		if ($root === false) {
+		$rootPath = $this->getPathOfFileId($rootId);
+		if ($rootPath === null) {
 			$this->logger->error('Could not fetch storage root');
 			return 0;
 		}
 
 		$mimeTypes = array_map(fn ($mimeType) => $this->mimeTypes->getId($mimeType), Application::MIMETYPES);
+		$path = $rootPath === '' ? '' : $rootPath . '/';
+		// `_` and `%` are LIKE wildcards. Group folder roots start with two underscores
+		// (`__groupfolders/28/`), so an unescaped pattern has no literal prefix at all and
+		// fs_storage_path_prefix degenerates into a scan of the entire storage.
+		$pathPattern = $this->db->escapeLikeParameter($path) . '%';
 
-		$qb = $this->getCacheQueryBuilder();
+		$qb = $this->db->getQueryBuilder();
 
 		try {
-			$path = $root['path'] === '' ? '' : $root['path'] . '/';
-
 			$qb->select($qb->func()->count('*'))
-				->from('filecache', 'filecache');
-
-			// End to end encrypted files are descendants of a folder with encrypted=1
-			// Use a subquery to check the `encrypted` status of the parent folder
-			$subQuery = $this->getCacheQueryBuilder()->select('p.encrypted')
-				->from('filecache', 'p')
-				->andWhere($qb->expr()->eq('p.fileid', 'filecache.parent'))
-				->getSQL();
-
-			$qb->andWhere(
-				$qb->expr()->eq($qb->createFunction(sprintf('(%s)', $subQuery)), $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT))
-			);
-			$qb->andWhere($qb->expr()->eq('filecache.storage', $qb->createNamedParameter($storageId, IQueryBuilder::PARAM_INT)));
-			$qb
-				->andWhere($qb->expr()->like('filecache.path', $qb->createNamedParameter($path . '%')))
-				->andWhere($qb->expr()->notLike('filecache.path', $qb->createNamedParameter('files_versions/%')))
-				->andWhere($qb->expr()->notLike('filecache.path', $qb->createNamedParameter('files_trashbin/%')))
-				->andWhere($qb->expr()->eq('filecache.storage', $qb->createNamedParameter($storageId)))
+				->from('filecache', 'filecache')
+				// End to end encrypted files are descendants of a folder with encrypted=1.
+				// `fileid` is the primary key, so joining the parent row matches at most one row
+				// and is equivalent to the correlated subquery this replaces, except that the
+				// planner can satisfy it with a primary key lookup instead of re-running a
+				// subquery for every candidate row.
+				->innerJoin('filecache', 'filecache', 'p', $qb->expr()->eq('p.fileid', 'filecache.parent'))
+				->where($qb->expr()->eq('p.encrypted', $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT)))
+				->andWhere($qb->expr()->eq('filecache.storage', $qb->createNamedParameter($storageId, IQueryBuilder::PARAM_INT)))
+				->andWhere($qb->expr()->like('filecache.path', $qb->createNamedParameter($pathPattern)))
 				->andWhere($qb->expr()->in('filecache.mimetype', $qb->createNamedParameter($mimeTypes, IQueryBuilder::PARAM_INT_ARRAY)))
 				->andWhere($qb->expr()->lte('filecache.size', $qb->createNamedParameter(Application::CC_MAX_SIZE, IQueryBuilder::PARAM_INT)))
 				->andWhere($qb->expr()->gt('filecache.size', $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT)));
@@ -125,7 +112,28 @@ class StorageService {
 			$this->logger->warning('Could not count files in mount: storage=' . $storageId . ' root=' . $rootId);
 			return 0;
 		}
-		return $countInMount;
+		return (int)$countInMount;
+	}
+
+	/**
+	 * @param int $fileId
+	 * @return string|null The file cache path, or null if the row does not exist or is unreadable
+	 */
+	private function getPathOfFileId(int $fileId): ?string {
+		$qb = $this->db->getQueryBuilder();
+		try {
+			$qb->select('path')
+				->from('filecache')
+				->where($qb->expr()->eq('fileid', $qb->createNamedParameter($fileId, IQueryBuilder::PARAM_INT)));
+			$result = $qb->executeQuery();
+			$path = $result->fetchOne();
+			$result->closeCursor();
+		} catch (DBException $e) {
+			$this->logger->error('Could not fetch path of file ' . $fileId, ['exception' => $e]);
+			return null;
+		}
+
+		return $path === false ? null : (string)$path;
 	}
 
 	private function isFileAccessAvailable(): bool {
@@ -269,7 +277,7 @@ class StorageService {
 				$qb->expr()->eq($qb->createFunction(sprintf('(%s)', $subQuery)), $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT))
 			);
 			$qb
-				->andWhere($qb->expr()->like('filecache.path', $qb->createNamedParameter($path . '%')))
+				->andWhere($qb->expr()->like('filecache.path', $qb->createNamedParameter($this->db->escapeLikeParameter($path) . '%')))
 				->andWhere($qb->expr()->eq('filecache.storage', $qb->createNamedParameter($storageId)))
 				->andWhere($qb->expr()->gt('filecache.fileid', $qb->createNamedParameter($lastFileId)))
 				->andWhere($qb->expr()->in('filecache.mimetype', $qb->createNamedParameter($mimeTypes, IQueryBuilder::PARAM_INT_ARRAY)));
