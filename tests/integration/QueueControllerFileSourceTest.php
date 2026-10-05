@@ -84,16 +84,11 @@ class QueueControllerFileSourceTest extends TestCase {
 
 		$this->shareWithRecipient($ownerFolder->get('shared1'));
 		$this->shareWithRecipient($ownerFolder->get('shared2'));
-		// set up the recipient's filesystem so its share mounts are registered in oc_mounts
-		$this->rootFolder->getUserFolder($this->recipient)->getDirectoryListing();
+		$this->setUpFilesystemOf($this->recipient);
 
 		// mirror #281: owner's home mount is the LAST row for this storage
 		$this->moveMountsToEnd([$this->owner]);
-		$this->assertSame(
-			[$this->recipient, $this->recipient, $this->owner],
-			$this->mountUsersInDbOrder(),
-			'Fixture: share mounts must come before the owner\'s home mount',
-		);
+		$this->assertFixtureMountLayout();
 
 		// context_chat's own listeners queue the files created above; start every test from an empty queue
 		$this->queueMapper->clearQueue();
@@ -135,10 +130,16 @@ class QueueControllerFileSourceTest extends TestCase {
 	 * i.e. what StorageService::getUsersForFileId() used to return, without duplicates.
 	 */
 	public function testAccessListContainsExactlyUsersWhoCanSeeTheFile(): void {
-		// userB gets a second mount covering shared1/sub/ -> two recipient mounts cover nested.txt
-		$this->shareWithRecipient($this->rootFolder->getUserFolder($this->owner)->get('shared1/sub'));
-		$this->rootFolder->getUserFolder($this->recipient)->getDirectoryListing();
+		// the recipient gets a third mount covering shared1/sub/ -> two of its mounts cover nested.txt
+		$sub = $this->rootFolder->getUserFolder($this->owner)->get('shared1/sub');
+		$this->shareWithRecipient($sub);
+		$this->setUpFilesystemOf($this->recipient);
 		$this->moveMountsToEnd([$this->owner]);
+		$this->assertContains(
+			$sub->getId(),
+			array_column($this->mountsInDbOrder(), 'root_id'),
+			'Fixture: the shared1/sub mount must be registered',
+		);
 		$this->queueMapper->clearQueue();
 
 		$queued = $this->enqueue(array_keys($this->files));
@@ -174,7 +175,7 @@ class QueueControllerFileSourceTest extends TestCase {
 			'mount_provider_class' => $qb->createNamedParameter('OC\Files\Mount\LocalHomeMountProvider'),
 		])->executeStatement();
 		$this->moveMountsToEnd([$this->recipient, $this->owner]);
-		$this->assertSame('cc_ghost_user', $this->mountUsersInDbOrder()[0], 'Fixture: ghost mount must come first');
+		$this->assertSame('cc_ghost_user', $this->mountsInDbOrder()[0]['user_id'], 'Fixture: ghost mount must come first');
 
 		$queued = $this->enqueue(array_keys($this->files));
 		$sources = $this->fetchQueueItems();
@@ -262,19 +263,81 @@ class QueueControllerFileSourceTest extends TestCase {
 		}
 	}
 
-	/** @return list<string> */
-	private function mountUsersInDbOrder(): array {
+	/**
+	 * Sets the user's filesystem up from scratch, which registers its mounts in oc_mounts.
+	 *
+	 * Setting up the filesystem is what writes the rows, but SetupManager remembers per user
+	 * whether that already happened. In a full suite run that state can carry over from an earlier
+	 * test, so the share mounts were sometimes considered set up while no row had been written for
+	 * this storage, and the fixture failed depending on what ran before it. Tearing the filesystem
+	 * down first drops the memoised state, the same way the server's own sharing tests do it.
+	 */
+	private function setUpFilesystemOf(string $userId): void {
+		\OC_Util::tearDownFS();
+		\OC_Util::setupFS($userId);
+		$this->rootFolder->getUserFolder($userId)->getDirectoryListing();
+	}
+
+	/**
+	 * The precondition of #281: the owner's home mount must not be the first mount of the storage,
+	 * because that is what made the old `$mounts[0]` lookup pick a share recipient.
+	 *
+	 * Asserted per mount rather than on the bare list of user ids: the two share mounts belong to
+	 * the same user, so a list of ids cannot tell them apart and reports a missing mount as an
+	 * ordering problem.
+	 */
+	private function assertFixtureMountLayout(): void {
+		$mounts = $this->mountsInDbOrder();
+		$byRootId = array_column($mounts, 'user_id', 'root_id');
+
+		$ownerFolder = $this->rootFolder->getUserFolder($this->owner);
+		$homeRootId = $ownerFolder->getMountPoint()->getStorageRootId();
+		$shared1RootId = $ownerFolder->get('shared1')->getId();
+		$shared2RootId = $ownerFolder->get('shared2')->getId();
+		$expected = [
+			$homeRootId => $this->owner,
+			$shared1RootId => $this->recipient,
+			$shared2RootId => $this->recipient,
+		];
+		foreach ($expected as $rootId => $userId) {
+			$this->assertArrayHasKey($rootId, $byRootId, "Fixture: no mount registered for root id $rootId");
+			$this->assertSame($userId, $byRootId[$rootId], "Fixture: mount of root id $rootId belongs to the wrong user");
+		}
+
+		// The ordering moveMountsToEnd() establishes, and the precondition of #281: both share
+		// mounts come first, the owner's home mount last. Compared by root id so the message names
+		// the mount that is out of place; the two share mounts are not ordered against each other
+		// because the sharing mount provider does not guarantee an order between them.
+		$rootIds = array_column($mounts, 'root_id');
+		$this->assertSame(
+			$homeRootId,
+			end($rootIds),
+			'Fixture: the owner\'s home mount must be the last mount of the storage',
+		);
+		$this->assertEqualsCanonicalizing(
+			[$shared1RootId, $shared2RootId],
+			array_slice($rootIds, 0, -1),
+			'Fixture: both share mounts must come before the owner\'s home mount',
+		);
+	}
+
+	/** @return list<array{id: int, root_id: int, user_id: string}> */
+	private function mountsInDbOrder(): array {
 		$qb = $this->db->getQueryBuilder();
-		$result = $qb->select('user_id')->from('mounts')
+		$result = $qb->select('id', 'root_id', 'user_id')->from('mounts')
 			->where($qb->expr()->eq('storage_id', $qb->createNamedParameter($this->storageId)))
 			->orderBy('id')
 			->executeQuery();
-		$users = [];
-		while (($user = $result->fetchOne()) !== false) {
-			$users[] = (string)$user;
-		}
+		$mounts = array_map(
+			static fn (array $row): array => [
+				'id' => (int)$row['id'],
+				'root_id' => (int)$row['root_id'],
+				'user_id' => (string)$row['user_id'],
+			],
+			$result->fetchAll(),
+		);
 		$result->closeCursor();
-		return $users;
+		return $mounts;
 	}
 
 	/**
