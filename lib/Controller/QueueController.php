@@ -18,7 +18,6 @@ use OCA\ContextChat\Db\QueueContentItemMapper;
 use OCA\ContextChat\Db\QueueFile;
 use OCA\ContextChat\Db\QueueMapper;
 use OCA\ContextChat\Service\ProviderConfigService;
-use OCA\ContextChat\Service\StorageService;
 use OCA\ContextChat\Type\Source;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\ApiRoute;
