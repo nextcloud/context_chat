@@ -24,11 +24,11 @@ use OCA\ContextChat\Service\ProviderConfigService;
 use OCP\AppFramework\Services\IAppConfig;
 use OCP\BackgroundJob\IJobList;
 use OCP\EventDispatcher\IEventDispatcher;
-use OCP\IServerContainer;
 use OCP\Server;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\EventDispatcher as SymfonyDispatcher;
 
@@ -51,7 +51,7 @@ class ContentManagerTest extends TestCase {
 	private IJobList $jobList;
 	private IEventDispatcher $eventDispatcher;
 	private SymfonyDispatcher $dispatcher;
-	private IServerContainer $serverContainer;
+	private ContainerInterface $serverContainer;
 
 	// private bool $initCalled = false;
 	private static string $providerClass = 'OCA\ContextChat\Tests\ContentProvider';
@@ -67,7 +67,7 @@ class ContentManagerTest extends TestCase {
 
 		// new dispatcher for each test
 		$this->dispatcher = new SymfonyDispatcher();
-		$this->serverContainer = Server::get(IServerContainer::class);
+		$this->serverContainer = Server::get(ContainerInterface::class);
 		$this->eventDispatcher = new \OC\EventDispatcher\EventDispatcher(
 			$this->dispatcher,
 			$this->serverContainer,
@@ -90,14 +90,24 @@ class ContentManagerTest extends TestCase {
 		// $this->overwriteService(ProviderConfigService::class, $this->providerConfig);
 
 		// using this app's app id to pass the check that the app is enabled for the user
-		$providerObj = new ContentProvider(Application::APP_ID, 'test-provider', function () {
-			// $this->initCalled = true;
-		});
+		$providerObj = new ContentProvider(Application::APP_ID, 'test-provider');
 		$providerClass = get_class($providerObj);
 
-		\OC::$server->registerService($providerClass, function () use ($providerObj) {
-			return $providerObj;
-		});
+		// Register in the app container instead of the server container because since NC 36
+		// registering `OCA\...` services directly in the core container is no longer supported,
+		// see https://github.com/nextcloud/server/pull/64172
+		// A `\OC::$server->registerService()` here would never be seen by the `Server::get($providerClass)`
+		// lookup in registerContentProvider().
+		//
+		// That lookup then falls back to reflection, which cannot build this class because its constructor
+		// takes scalars the container has no way to resolve.
+		//
+		// On PHP >= 8.4 the failure stays hidden (lazy ghosts defer the constructor,
+		// and the resolved value is discarded anyway).
+		\OC::$server->getAppContainerForService($providerClass)
+			->registerService($providerClass, function () use ($providerObj) {
+				return $providerObj;
+			});
 
 		$this->contentManager = new ContentManager(
 			$this->jobList,
@@ -242,7 +252,6 @@ class ContentProvider implements IContentProvider {
 	public function __construct(
 		private string $appId,
 		private string $providerId,
-		private $callback,
 	) {
 	}
 
@@ -259,6 +268,5 @@ class ContentProvider implements IContentProvider {
 	}
 
 	public function triggerInitialImport(): void {
-		($this->callback)();
 	}
 }
