@@ -20,7 +20,6 @@ use OCP\Files\Config\ICachedMountInfo;
 use OCP\Files\Config\IUserMountCache;
 use OCP\Files\Folder;
 use OCP\Files\IMimeTypeLoader;
-use OCP\Files\IRootFolder;
 use OCP\Files\Node;
 use OCP\FilesMetadata\IFilesMetadataManager;
 use OCP\IDBConnection;
@@ -44,7 +43,6 @@ class StorageService {
 		private IMimeTypeLoader $mimeTypes,
 		private IUserMountCache $userMountCache,
 		private IFilesMetadataManager $metadataManager,
-		private IRootFolder $rootFolder,
 		private IFileAccess $fileAccess,
 	) {
 	}
@@ -87,21 +85,31 @@ class StorageService {
 
 		try {
 			$qb->select($qb->func()->count('*'))
-				->from('filecache', 'filecache')
-				// End to end encrypted files are descendants of a folder with encrypted=1.
-				// `fileid` is the primary key, so joining the parent row matches at most one row
-				// and is equivalent to the correlated subquery this replaces, except that the
-				// planner can satisfy it with a primary key lookup instead of re-running a
-				// subquery for every candidate row.
-				->innerJoin('filecache', 'filecache', 'p', $qb->expr()->eq('p.fileid', 'filecache.parent'))
-				->where($qb->expr()->eq('p.encrypted', $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT)))
-				->andWhere($qb->expr()->eq('filecache.storage', $qb->createNamedParameter($storageId, IQueryBuilder::PARAM_INT)))
+				->from('filecache', 'filecache');
+
+			// End to end encrypted files are descendants of a folder with encrypted=1.
+			// This has to stay a correlated subquery: `filecache` is a sharded table, and
+			// ShardedQueryBuilder rejects any self-join on it ("Sharded query on filecache
+			// isn't allowed to join on itself"), so joining the parent row throws on
+			// installations that shard the file cache.
+			// https://github.com/nextcloud/server/blob/ea075390fae67e130fd24edbc1d60afffd4d13d2/lib/private/DB/Connection.php#L90-L103
+			// https://github.com/nextcloud/server/blob/ea075390fae67e130fd24edbc1d60afffd4d13d2/lib/private/DB/QueryBuilder/Sharded/ShardedQueryBuilder.php#L251-L256
+			$subQuery = $this->getCacheQueryBuilder()->select('p.encrypted')
+				->from('filecache', 'p')
+				->andWhere($qb->expr()->eq('p.fileid', 'filecache.parent'))
+				->getSQL();
+
+			$qb->andWhere(
+				$qb->expr()->eq($qb->createFunction(sprintf('(%s)', $subQuery)), $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT))
+			);
+
+			$qb->andWhere($qb->expr()->eq('filecache.storage', $qb->createNamedParameter($storageId, IQueryBuilder::PARAM_INT)))
 				->andWhere($qb->expr()->like('filecache.path', $qb->createNamedParameter($pathPattern)))
 				->andWhere($qb->expr()->in('filecache.mimetype', $qb->createNamedParameter($mimeTypes, IQueryBuilder::PARAM_INT_ARRAY)))
 				->andWhere($qb->expr()->lte('filecache.size', $qb->createNamedParameter(Application::CC_MAX_SIZE, IQueryBuilder::PARAM_INT)))
 				->andWhere($qb->expr()->gt('filecache.size', $qb->createNamedParameter(0, IQueryBuilder::PARAM_INT)));
 			$result = $qb->executeQuery();
-		} catch (DBException $e) {
+		} catch (\Exception $e) {
 			$this->logger->error('Could not count files in mount: storage=' . $storageId . ' root=' . $rootId, ['exception' => $e]);
 			return 0;
 		}
