@@ -1,8 +1,32 @@
 OC.L10N.register(
     "context_chat",
     {
+    "Deleted file" : "Slettet fil",
+    "Nextcloud Assistant Context Chat" : "Nextcloud Assistant Context Chat",
+    "Chat with your documents" : "Chat med dine dokumenter",
+    "Ask questions to Nextcloud Assistant about the content of your documents.\n\n\nSee [the Admin docs](https://docs.nextcloud.com/server/latest/admin_manual/ai/app_context_chat.html) for installation steps and requirements.\n\nSetup background job workers as described here: https://docs.nextcloud.com/server/latest/admin_manual/ai/overview.html#improve-ai-task-pickup-speed\n\nNote:\nRefer to the [Context Chat Backend's readme](https://github.com/nextcloud/context_chat_backend/?tab=readme-ov-file) and the [AppAPI's documentation](https://cloud-py-api.github.io/app_api/) for help with setup of AppAPI's deploy daemon." : "Stil spørgsmål til Nextcloud Assistent om indholdet af dine dokumenter.\n\n\nSe [administratordokumentationen](https://docs.nextcloud.com/server/latest/admin_manual/ai/app_context_chat.html) for installationstrin og krav.\n\nOpsæt baggrundsprocesser som beskrevet her: https://docs.nextcloud.com/server/latest/admin_manual/ai/overview.html#improve-ai-task-pickup-speed\n\nBemærk:\nSe [readme for Context Chat Backend](https://github.com/nextcloud/context_chat_backend/?tab=readme-ov-file) og [AppAPI's dokumentation](https://cloud-py-api.github.io/app_api/) for hjælp til opsætning af AppAPI's udrulningsdaemon.",
     "never" : "aldrig",
     "{time} ago" : "{time} siden",
-    "Context Chat" : "Kontekstchat"
+    "Context Chat" : "Kontekstchat",
+    "Indexing Status" : "Indekseringsstatus",
+    "The initial indexing run finished {date}." : "Den første indeksering blev afsluttet {date}.",
+    "The initial indexing is still running." : "Den første indeksering kører stadig.",
+    "The Context Chat Backend app is installed and responsive." : "Appen Context Chat Backend er installeret og svarer.",
+    "The Context Chat Backend app is not installed or not responsing." : "Appen Context Chat Backend er ikke installeret eller svarer ikke.",
+    "Less files were indexed than expected. Only {percent}% files out of {eligibleCount} are in the VectorDB." : "Der er indekseret færre filer end forventet. Kun {percent} % af {eligibleCount} filer er i vektordatabasen.",
+    "Content provider" : "Indholdsudbyder",
+    "Queued documents including updates" : "Dokumenter i kø, inkl. opdateringer",
+    "Locked documents in queue" : "Låste dokumenter i kø",
+    "Documents in vector database" : "Dokumenter i vektordatabasen",
+    "CC Backend unavailable" : "CC-backend er ikke tilgængelig",
+    "Eligible files for indexing: {count}" : "Filer, der kan indekseres: {count}",
+    "Queued content update actions: {count}" : "Opdateringer af indhold i kø: {count}",
+    "Locked queue content update actions: {count}" : "Låste opdateringer af indhold i kø: {count}",
+    "Queued file system events: {count}" : "Filsystemhændelser i kø: {count}",
+    "Download Logs" : "Hent logfiler",
+    "Download the PHP App logs" : "Hent logfilerne for PHP-appen",
+    "Download the Ex-App Backend logs" : "Hent logfilerne for ExApp-backenden",
+    "Official documentation" : "Officiel dokumentation",
+    "_({count} new file)_::_({count} new files)_" : ["({count} ny fil)","({count} nye filer)"]
 },
 "nplurals=2; plural=(n != 1);");
