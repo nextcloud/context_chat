@@ -122,12 +122,12 @@ namespace Doctrine\DBAL\Schema {
 	class Table {
 
 		/**
-		 * @param string                       $name
-		 * @param Column[]                     $columns
-		 * @param Index[]                      $indexes
-		 * @param UniqueConstraint[]           $uniqueConstraints
-		 * @param ForeignKeyConstraint[]       $fkConstraints
-		 * @param mixed[]                      $options
+		 * @param string $name
+		 * @param Column[] $columns
+		 * @param Index[] $indexes
+		 * @param UniqueConstraint[] $uniqueConstraints
+		 * @param ForeignKeyConstraint[] $fkConstraints
+		 * @param mixed[] $options
 		 */
 		public function __construct(
 			string $name,
@@ -153,7 +153,7 @@ namespace Doctrine\DBAL\Schema {
 		/**
 		 * @param string[] $columnNames
 		 * @param string[] $flags
-		 * @param mixed[]  $options
+		 * @param mixed[] $options
 		 * @return self
 		 */
 		public function addIndex(array $columnNames, ?string $indexName = null, array $flags = [], array $options = []) {
@@ -175,7 +175,7 @@ namespace Doctrine\DBAL\Schema {
 		/**
 		 * @param string[] $columnNames
 		 * @param string[] $flags
-		 * @param mixed[]  $options
+		 * @param mixed[] $options
 		 * @return self
 		 */
 		public function addUniqueIndex(array $columnNames, ?string $indexName = null, array $options = []) {
@@ -184,14 +184,14 @@ namespace Doctrine\DBAL\Schema {
 		/**
 		 * @param string[] $columnNames
 		 * @param string[] $flags
-		 * @param mixed[]  $options
+		 * @param mixed[] $options
 		 * @return Table
 		 */
 		public function addUniqueConstraint(array $columnNames, ?string $indexName = null, array $flags = [], array $options = []) {
 		}
 
 		/**
-		 * @param string      $oldName
+		 * @param string $oldName
 		 * @param string|null $newName
 		 * @return self
 		 */
@@ -206,8 +206,8 @@ namespace Doctrine\DBAL\Schema {
 		}
 
 		/**
-		 * @param string  $name
-		 * @param string  $typeName
+		 * @param string $name
+		 * @param string $typeName
 		 * @param mixed[] $options
 		 * @return Column
 		 */
@@ -216,7 +216,7 @@ namespace Doctrine\DBAL\Schema {
 
 		/**
 		 * @deprecated Use modifyColumn() instead.
-		 * @param string  $name
+		 * @param string $name
 		 * @param mixed[] $options
 		 * @return self
 		 */
@@ -224,7 +224,7 @@ namespace Doctrine\DBAL\Schema {
 		}
 
 		/**
-		 * @param string  $name
+		 * @param string $name
 		 * @param mixed[] $options
 		 * @return self
 		 */
@@ -240,10 +240,10 @@ namespace Doctrine\DBAL\Schema {
 
 		/**
 		 * @param string|Table $foreignTable
-		 * @param string[]     $localColumnNames
-		 * @param string[]     $foreignColumnNames
-		 * @param mixed[]      $options
-		 * @param string|null  $name
+		 * @param string[] $localColumnNames
+		 * @param string[] $foreignColumnNames
+		 * @param mixed[] $options
+		 * @param string|null $name
 		 * @return self
 		 */
 		public function addForeignKeyConstraint($foreignTable, array $localColumnNames, array $foreignColumnNames, array $options = [], $name = null) {
@@ -251,7 +251,7 @@ namespace Doctrine\DBAL\Schema {
 
 		/**
 		 * @param string $name
-		 * @param mixed  $value
+		 * @param mixed $value
 		 * @return self
 		 */
 		public function addOption($name, $value) {
@@ -426,9 +426,9 @@ namespace Doctrine\DBAL\Schema {
 	class Column {
 
 		/**
-		 * @param string               $name
+		 * @param string $name
 		 * @param \Doctrine\DBAL\Types\Type $type
-		 * @param mixed[]              $options
+		 * @param mixed[] $options
 		 */
 		public function __construct(string $name, $type, array $options = []) {
 		}
@@ -555,7 +555,7 @@ namespace Doctrine\DBAL\Schema {
 
 		/**
 		 * @param string $name
-		 * @param mixed  $value
+		 * @param mixed $value
 		 * @return self
 		 */
 		public function setPlatformOption($name, $value) {
