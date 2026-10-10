@@ -6,7 +6,7 @@ OC.L10N.register(
     "Chat with your documents" : "Rozprávajte sa so svojimi dokumentmi",
     "Ask questions to Nextcloud Assistant about the content of your documents.\n\n\nSee [the Admin docs](https://docs.nextcloud.com/server/latest/admin_manual/ai/app_context_chat.html) for installation steps and requirements.\n\nSetup background job workers as described here: https://docs.nextcloud.com/server/latest/admin_manual/ai/overview.html#improve-ai-task-pickup-speed\n\nNote:\nRefer to the [Context Chat Backend's readme](https://github.com/nextcloud/context_chat_backend/?tab=readme-ov-file) and the [AppAPI's documentation](https://cloud-py-api.github.io/app_api/) for help with setup of AppAPI's deploy daemon." : "Pýtajte sa Asistenta Nextcloud na obsah svojich dokumentov.\n\n\nInformácie o inštalácii a požiadavkách nájdete v [dokumentácii pre správcov](https://docs.nextcloud.com/server/latest/admin_manual/ai/app_context_chat.html).\n\nNastavte pracovníkov úloh na pozadí podľa pokynov tu: https://docs.nextcloud.com/server/latest/admin_manual/ai/overview.html#improve-ai-task-pickup-speed\n\nPoznámka:\nPomoc s nastavením démona nasadenia AppAPI nájdete v [súbore README backendu Context Chat](https://github.com/nextcloud/context_chat_backend/?tab=readme-ov-file) a v [dokumentácii AppAPI](https://cloud-py-api.github.io/app_api/).",
     "never" : "nikdy",
-    "{time} ago" : "Pred {time} ",
+    "{time} ago" : "Pred {time}",
     "Context Chat" : "Kontextový čet",
     "Indexing Status" : "Stav indexovania",
     "The initial indexing run finished {date}." : "Počiatočná indexácia sa dokončila {date}.",
