@@ -12,12 +12,15 @@ use OCA\ContextChat\Type\ScopeType;
 use OCP\TaskProcessing\IManager;
 use OCP\TaskProcessing\Task;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Command\SignalableCommandInterface;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class Search extends Command {
+class Search extends Command implements SignalableCommandInterface {
+	use AwaitTaskTrait;
+
 	private const SEARCH_TASK_TYPE_ID = Application::APP_ID . ':context_chat_search';
 
 	public function __construct(
@@ -95,22 +98,6 @@ class Search extends Command {
 			], Application::APP_ID, $userId);
 		}
 
-		$this->taskProcessingManager->scheduleTask($task);
-		$taskId = $task->getId();
-		if ($taskId === null) {
-			$output->writeln('<error>Task schedule failed, taskId is null</error>');
-			return 1;
-		}
-
-		while (!in_array(($task = $this->taskProcessingManager->getTask($taskId))->getStatus(), [Task::STATUS_FAILED, Task::STATUS_SUCCESSFUL], true)) {
-			sleep(2);
-		}
-		if ($task->getStatus() === Task::STATUS_SUCCESSFUL) {
-			$output->writeln(var_export($task->getOutput(), true));
-			return 0;
-		} else {
-			$output->writeln('<error>' . ($task->getErrorMessage() ?? '(empty error message)') . '</error>');
-			return 1;
-		}
+		return $this->scheduleAndAwaitTask($this->taskProcessingManager, $task, $output);
 	}
 }
