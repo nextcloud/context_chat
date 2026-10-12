@@ -59,6 +59,14 @@ class Search extends Command {
 		$limit = $input->getOption('limit');
 		$contextProviders = $input->getOption('context-providers');
 
+		if ($limit !== null) {
+			$limit = filter_var($limit, FILTER_VALIDATE_INT);
+			if ($limit === false || $limit < 1) {
+				$output->writeln('<error>The limit option must be a positive integer</error>');
+				return 1;
+			}
+		}
+
 		if (!empty($contextProviders)) {
 			$contextProviders = preg_replace('/\s*,+\s*/', ',', $contextProviders);
 			if ($contextProviders === null) {
