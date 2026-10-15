@@ -1,7 +1,32 @@
 OC.L10N.register(
     "context_chat",
     {
+    "Deleted file" : "Удалённый файл",
+    "Nextcloud Assistant Context Chat" : "Помощник Nextcloud: чат по контексту",
+    "Chat with your documents" : "Чат с документами",
+    "Ask questions to Nextcloud Assistant about the content of your documents.\n\n\nSee [the Admin docs](https://docs.nextcloud.com/server/latest/admin_manual/ai/app_context_chat.html) for installation steps and requirements.\n\nSetup background job workers as described here: https://docs.nextcloud.com/server/latest/admin_manual/ai/overview.html#improve-ai-task-pickup-speed\n\nNote:\nRefer to the [Context Chat Backend's readme](https://github.com/nextcloud/context_chat_backend/?tab=readme-ov-file) and the [AppAPI's documentation](https://cloud-py-api.github.io/app_api/) for help with setup of AppAPI's deploy daemon." : "Задавайте Помощнику Nextcloud вопросы о содержимом своих документов.\n\n\nШаги установки и требования описаны в [документации администратора](https://docs.nextcloud.com/server/latest/admin_manual/ai/app_context_chat.html).\n\nНастройте обработчиков фоновых задач, как описано здесь: https://docs.nextcloud.com/server/latest/admin_manual/ai/overview.html#improve-ai-task-pickup-speed\n\nПримечание:\nСправка по настройке службы развёртывания AppAPI приведена в [файле readme модуля Context Chat Backend](https://github.com/nextcloud/context_chat_backend/?tab=readme-ov-file) и [документации AppAPI](https://cloud-py-api.github.io/app_api/).",
     "never" : "никогда",
-    "{time} ago" : "{time} назад"
+    "{time} ago" : "{time} назад",
+    "Context Chat" : "Чат по контексту",
+    "Indexing Status" : "Состояние индексации",
+    "The initial indexing run finished {date}." : "Первичная индексация завершена {date}.",
+    "The initial indexing is still running." : "Первичная индексация ещё выполняется.",
+    "The Context Chat Backend app is installed and responsive." : "Приложение Context Chat Backend установлено и отвечает.",
+    "The Context Chat Backend app is not installed or not responsing." : "Приложение Context Chat Backend не установлено или не отвечает.",
+    "Less files were indexed than expected. Only {percent}% files out of {eligibleCount} are in the VectorDB." : "Проиндексировано меньше файлов, чем ожидалось. В VectorDB находится только {percent}% файлов из {eligibleCount}.",
+    "Content provider" : "Поставщик содержимого",
+    "Queued documents including updates" : "Документы в очереди, включая обновления",
+    "Locked documents in queue" : "Заблокированные документы в очереди",
+    "Documents in vector database" : "Документы в векторной базе данных",
+    "CC Backend unavailable" : "CC Backend недоступен",
+    "Eligible files for indexing: {count}" : "Файлов, подходящих для индексации: {count}",
+    "Queued content update actions: {count}" : "Действий обновления содержимого в очереди: {count}",
+    "Locked queue content update actions: {count}" : "Заблокированных действий обновления содержимого в очереди: {count}",
+    "Queued file system events: {count}" : "Событий файловой системы в очереди: {count}",
+    "Download Logs" : "Скачать журналы",
+    "Download the PHP App logs" : "Скачать журналы приложения PHP",
+    "Download the Ex-App Backend logs" : "Скачать журналы Ex-App Backend",
+    "Official documentation" : "Официальная документация",
+    "_({count} new file)_::_({count} new files)_" : ["({count} новый файл)","({count} новых файла)","({count} новых файлов)","({count} новых файла)"]
 },
 "nplurals=4; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || (n%10>=5 && n%10<=9) || (n%100>=11 && n%100<=14)? 2 : 3);");
