@@ -32,21 +32,6 @@
 		<directory name="vendor" />
 	</extraFiles>
 	<issueHandlers>
-		<!--
-		Needed for the older supported server versions, whose ISchemaWrapper
-		docblocks still reference the Doctrine schema classes directly. Newer
-		versions return OCP\DB\Schema\ITable instead, so these suppressions go
-		unused there, hence findUnusedIssueHandlerSuppression is turned off.
-		-->
-		<UndefinedDocblockClass>
-			<errorLevel type="suppress">
-				<referencedClass name="OC\AppFramework\OCS\BaseResponse"/>
-				<referencedClass name="Doctrine\DBAL\Schema\Schema" />
-				<referencedClass name="Doctrine\DBAL\Schema\SchemaException" />
-				<referencedClass name="Doctrine\DBAL\Driver\Statement" />
-				<referencedClass name="Doctrine\DBAL\Schema\Table" />
-			</errorLevel>
-		</UndefinedDocblockClass>
 		<MissingOverrideAttribute>
 			<errorLevel type="suppress">
 				<directory name="lib" />
