@@ -10,6 +10,32 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+
+## [5.5.0] - 2026-10-15
+
+### Added
+* add context_chat:reindex to re-seed the crawl on demand (#246) @bygadd
+* add NC 35 support (#256) @kyteinsky
+* add NC 36 support, adjust tests and add phpunit workflow (#275) @kyteinsky
+
+### Changed
+* update context_chat:reindex command description (#272) @kyteinsky
+* update readme and info.xml about the install steps (#268) @kyteinsky
+* guard metadata collection service to not fail the context_chat outputs (#266) @kyteinsky
+
+### Fixed
+* refactor(commands): Add type hinting to execute method in search command (#259) @CarlSchwan
+* fix(AppDisableListener): pass full provider key to deleteProvider (#265) @weltmaister
+* fix(ContentManager): look up existing row before insertOrUpdate (#262) @oboeglen @kyteinsky
+* fix(migration): skip adding index if already present (#273) @kyteinsky
+* initial indexing completion fixes and perf improvements (#280) @marcelklehr
+* fix(QueueController#getFileSource): Use getMountsForFileId, not getMountsForStorageId (#283) @marcelklehr
+* CI and phpunit test fixes (#284) @kyteinsky
+* use subquery pattern for counting files in mounts (#285) @kyteinsky
+* make phpunit tests for file source robust (#286) @kyteinsky
+* improvements to the search and prompt commands (#287) @kyteinsky
+
+
 ## [5.5.0-beta0] - 2026-08-13
 
 ### Added
