@@ -1,6 +1,30 @@
 { "translations": {
+    "Deleted file" : "Fișier șters",
+    "Nextcloud Assistant Context Chat" : "Chat contextual Nextcloud Assistant",
+    "Chat with your documents" : "Discută cu documentele tale",
+    "Ask questions to Nextcloud Assistant about the content of your documents.\n\n\nSee [the Admin docs](https://docs.nextcloud.com/server/latest/admin_manual/ai/app_context_chat.html) for installation steps and requirements.\n\nSetup background job workers as described here: https://docs.nextcloud.com/server/latest/admin_manual/ai/overview.html#improve-ai-task-pickup-speed\n\nNote:\nRefer to the [Context Chat Backend's readme](https://github.com/nextcloud/context_chat_backend/?tab=readme-ov-file) and the [AppAPI's documentation](https://cloud-py-api.github.io/app_api/) for help with setup of AppAPI's deploy daemon." : "Pune-i întrebări lui Nextcloud Assistant despre conținutul documentelor tale.\n\n\nPașii de instalare și cerințele se găsesc în [documentația pentru administratori](https://docs.nextcloud.com/server/latest/admin_manual/ai/app_context_chat.html).\n\nConfigurează procesele pentru sarcini în fundal cum este descris aici: https://docs.nextcloud.com/server/latest/admin_manual/ai/overview.html#improve-ai-task-pickup-speed\n\nNotă:\nPentru ajutor la configurarea daemonului de implementare AppAPI, consultă [fișierul readme al Context Chat Backend](https://github.com/nextcloud/context_chat_backend/?tab=readme-ov-file) și [documentația AppAPI](https://cloud-py-api.github.io/app_api/).",
     "never" : "niciodată",
     "{time} ago" : "acum {time}",
-    "Context Chat" : "Chat contextual"
+    "Context Chat" : "Chat contextual",
+    "Indexing Status" : "Starea indexării",
+    "The initial indexing run finished {date}." : "Indexarea inițială s-a încheiat {date}.",
+    "The initial indexing is still running." : "Indexarea inițială încă rulează.",
+    "The Context Chat Backend app is installed and responsive." : "Aplicația Context Chat Backend este instalată și răspunde.",
+    "The Context Chat Backend app is not installed or not responsing." : "Aplicația Context Chat Backend nu este instalată sau nu răspunde.",
+    "Less files were indexed than expected. Only {percent}% files out of {eligibleCount} are in the VectorDB." : "Au fost indexate mai puține fișiere decât era de așteptat. Doar {percent}% din cele {eligibleCount} fișiere sunt în baza de date vectorială.",
+    "Content provider" : "Furnizor de conținut",
+    "Queued documents including updates" : "Documente în coadă, inclusiv actualizări",
+    "Locked documents in queue" : "Documente blocate în coadă",
+    "Documents in vector database" : "Documente în baza de date vectorială",
+    "CC Backend unavailable" : "Backendul CC nu este disponibil",
+    "Eligible files for indexing: {count}" : "Fișiere eligibile pentru indexare: {count}",
+    "Queued content update actions: {count}" : "Acțiuni de actualizare a conținutului în coadă: {count}",
+    "Locked queue content update actions: {count}" : "Acțiuni de actualizare a conținutului blocate în coadă: {count}",
+    "Queued file system events: {count}" : "Evenimente ale sistemului de fișiere în coadă: {count}",
+    "Download Logs" : "Descarcă jurnalele",
+    "Download the PHP App logs" : "Descarcă jurnalele aplicației PHP",
+    "Download the Ex-App Backend logs" : "Descarcă jurnalele backendului ExApp",
+    "Official documentation" : "Documentația oficială",
+    "_({count} new file)_::_({count} new files)_" : ["({count} fișier nou)","({count} fișiere noi)","({count} de fișiere noi)"]
 },"pluralForm" :"nplurals=3; plural=(n==1?0:(((n%100>19)||((n%100==0)&&(n!=0)))?2:1));"
 }
