@@ -225,6 +225,16 @@ class LangRopeService {
 	}
 
 	/**
+	 * Delete all the indexed documents from the backend's vector DB
+	 *
+	 * @return void
+	 * @throws \RuntimeException
+	 */
+	public function deleteAll(): void {
+		$this->requestToExApp('/deleteAll', 'POST');
+	}
+
+	/**
 	 * @param string $userId
 	 * @return void
 	 * @throws \RuntimeException

@@ -113,6 +113,20 @@ class ProviderConfigService {
 	}
 
 	/**
+	 * Mark all the content providers, except the files provider, as not initiated
+	 * so their initial import runs again
+	 */
+	public function resetProvidersInitiation(): void {
+		$providers = $this->getProviders();
+		foreach ($providers as $key => $provider) {
+			if ($key !== self::getDefaultProviderKey()) {
+				$providers[$key]['isInitiated'] = false;
+			}
+		}
+		$this->appConfig->setAppValueString('providers', json_encode($providers), lazy: true);
+	}
+
+	/**
 	 * @param string $appId
 	 * @param ?string $providerId
 	 */
