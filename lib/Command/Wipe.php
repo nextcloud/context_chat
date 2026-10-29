@@ -45,6 +45,12 @@ class Wipe extends Command {
 				'Schedule a re-crawl of the files and a re-import of the content providers that were wiped',
 			)
 			->addOption(
+				'ignore-handed-out',
+				null,
+				InputOption::VALUE_NONE,
+				'Do not wait for the documents context_chat_backend is still indexing. Only use this when the backend was stopped while indexing them, otherwise they can be written to the vector DB after the wipe.',
+			)
+			->addOption(
 				'force',
 				'f',
 				InputOption::VALUE_NONE,
@@ -74,9 +80,9 @@ class Wipe extends Command {
 
 		$scopeText = $scope === null ? '' : ' of ' . implode(', ', $scope);
 
-		/** @var QuestionHelper $helper */
-		$helper = $this->getHelper('question');
 		if (!$input->getOption('force')) {
+			/** @var QuestionHelper $helper */
+			$helper = $this->getHelper('question');
 			$question = new ConfirmationQuestion(
 				'All the indexed documents in Context Chat'
 				. $scopeText
@@ -90,7 +96,13 @@ class Wipe extends Command {
 		}
 
 		try {
-			$this->reindexService->wipe($scope);
+			$this->reindexService->wipe(
+				$scope,
+				(bool)$input->getOption('ignore-handed-out'),
+				static function (string $message) use ($output): void {
+					$output->writeln('<info>' . $message . '...</info>');
+				},
+			);
 		} catch (\Throwable $e) {
 			$output->writeln('<error>Wipe failed. The command can be safely run again once the problem is fixed.</error>');
 			$output->writeln('<error>Error: ' . $e->getMessage() . '</error>');

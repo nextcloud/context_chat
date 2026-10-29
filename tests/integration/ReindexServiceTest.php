@@ -21,6 +21,7 @@ use OCA\ContextChat\Db\QueueContentItemMapper;
 use OCA\ContextChat\Db\QueueFile;
 use OCA\ContextChat\Db\QueueMapper;
 use OCA\ContextChat\Logger;
+use OCA\ContextChat\Service\FetchGuard;
 use OCA\ContextChat\Service\LangRopeService;
 use OCA\ContextChat\Service\ProviderConfigService;
 use OCA\ContextChat\Service\ReindexService;
@@ -47,7 +48,9 @@ class ReindexServiceTest extends TestCase {
 	private ProviderConfigService $providerConfig;
 	private LangRopeService&MockObject $langRope;
 	private ReindexService $service;
-	private string $savedProviders;
+	private FetchGuard $fetchGuard;
+	/** @var list<array<string, mixed>> */
+	private array $savedConfig;
 
 	protected function setUp(): void {
 		parent::setUp();
@@ -58,6 +61,7 @@ class ReindexServiceTest extends TestCase {
 		$this->appConfig = $container->get(IAppConfig::class);
 		$this->providerConfig = $container->get(ProviderConfigService::class);
 		$this->langRope = $this->createMock(LangRopeService::class);
+		$this->fetchGuard = $this->newGuard(Server::get(ITimeFactory::class));
 		$time = $this->createMock(ITimeFactory::class);
 		$time->method('getTime')->willReturn(self::NOW);
 
@@ -68,19 +72,44 @@ class ReindexServiceTest extends TestCase {
 			$this->providerConfig,
 			$this->langRope,
 			Server::get(QueueContentItemMapper::class),
+			$this->fetchGuard,
 			$time,
 			Server::get(Logger::class),
 		);
 
-		$this->savedProviders = $this->appConfig->getAppValueString('providers', '', lazy: true);
+		$this->savedConfig = $this->readConfig();
 		$this->clearState();
 		$this->appConfig->setAppValueString('providers', '', lazy: true);
 	}
 
 	protected function tearDown(): void {
 		$this->clearState();
-		$this->appConfig->setAppValueString('providers', $this->savedProviders, lazy: true);
+		// the wipe resets the stats and the providers, put back what the instance had before
+		$qb = $this->db->getQueryBuilder();
+		$qb->delete('appconfig')
+			->where($qb->expr()->eq('appid', $qb->createNamedParameter(Application::APP_ID)))
+			->executeStatement();
+		foreach ($this->savedConfig as $row) {
+			$qb = $this->db->getQueryBuilder();
+			$qb->insert('appconfig');
+			foreach ($row as $column => $value) {
+				$qb->setValue($column, $qb->createNamedParameter($value));
+			}
+			$qb->executeStatement();
+		}
+		Server::get(\OCP\IAppConfig::class)->clearCache(true);
 		parent::tearDown();
+	}
+
+	/** @return list<array<string, mixed>> */
+	private function readConfig(): array {
+		$qb = $this->db->getQueryBuilder();
+		$result = $qb->select('*')->from('appconfig')
+			->where($qb->expr()->eq('appid', $qb->createNamedParameter(Application::APP_ID)))
+			->executeQuery();
+		$rows = $result->fetchAll();
+		$result->closeCursor();
+		return $rows;
 	}
 
 	private function clearState(): void {
@@ -289,5 +318,183 @@ class ReindexServiceTest extends TestCase {
 
 		$this->assertSame(['files__default', 'someapp__prov'], $this->service->getRegisteredProviderKeys());
 		$this->assertSame(['files__default', 'removedapp__prov', 'someapp__prov'], $this->service->getWipeableProviderKeys());
+	}
+
+	private function newGuard(ITimeFactory $time): FetchGuard {
+		return new FetchGuard($this->db, $this->appConfig, $time, Server::get(QueueMapper::class), Server::get(QueueContentItemMapper::class));
+	}
+
+	/** @return ITimeFactory&MockObject a clock that advances one second per sleep(1) of the guard */
+	private function clock(int &$now): ITimeFactory {
+		$time = $this->createMock(ITimeFactory::class);
+		$time->method('getTime')->willReturnCallback(function () use (&$now) {
+			return $now;
+		});
+		return $time;
+	}
+
+	public function testFetchingIsPausedOnlyWhileTheBackendIsWiped(): void {
+		$this->seedIndexedState();
+		$seen = null;
+		$this->langRope->method('deleteAll')->willReturnCallback(function () use (&$seen) {
+			$seen = $this->fetchGuard->isPaused();
+		});
+
+		$this->service->wipe();
+
+		$this->assertTrue($seen, 'nothing may be handed out while the vector DB is wiped');
+		$this->assertFalse($this->fetchGuard->isPaused());
+	}
+
+	public function testFetchingResumesWhenTheBackendFails(): void {
+		$this->seedIndexedState();
+		$this->langRope->method('deleteAll')->willThrowException(new \RuntimeException('backend down'));
+
+		try {
+			$this->service->wipe();
+		} catch (\RuntimeException) {
+		}
+
+		$this->assertFalse($this->fetchGuard->isPaused());
+	}
+
+	public function testWipeIsRefusedWhileDocumentsAreStillBeingIndexed(): void {
+		$this->seedIndexedState();
+		$queueMapper = Server::get(QueueMapper::class);
+		$queueMapper->lock($queueMapper->getMaxId());
+		$this->appConfig->setAppValueInt('wipe_drain_timeout', 0, lazy: true);
+		$this->langRope->expects($this->never())->method('deleteAll');
+
+		try {
+			$this->service->wipe();
+			$this->fail('the wipe must not run while a document is being indexed');
+		} catch (\RuntimeException $e) {
+			$this->assertStringContainsString('1 documents are still being indexed', $e->getMessage());
+		} finally {
+			$this->appConfig->deleteAppValue('wipe_drain_timeout');
+		}
+
+		$this->assertSame(1, $queueMapper->countLocked(), 'nothing may be cleared when the wipe is refused');
+		$this->assertFalse($this->fetchGuard->isPaused());
+	}
+
+	public function testResumeDoesNotLiftANewerPause(): void {
+		$now = self::NOW;
+		$guard = $this->newGuard($this->clock($now));
+
+		$first = $guard->pause();
+		$now += 10;
+		$second = $guard->pause();
+		$guard->resume($first);
+
+		$this->assertTrue($guard->isPaused(), 'the second wipe is still running');
+		$guard->resume($second);
+		$this->assertFalse($guard->isPaused());
+	}
+
+	public function testPauseExpiresOnItsOwn(): void {
+		$now = self::NOW;
+		$guard = $this->newGuard($this->clock($now));
+
+		$until = $guard->pause();
+		$this->assertTrue($guard->isPaused());
+		$now = $until;
+
+		$this->assertFalse($guard->isPaused(), 'a wipe that died must not stop the indexing forever');
+		$guard->resume($until);
+	}
+
+	public function testWaitEndsOnceTheHandedOutBatchIsReportedBack(): void {
+		$queueMapper = Server::get(QueueMapper::class);
+		$file = new QueueFile();
+		$file->setFileId(43);
+		$file->setStorageId(1);
+		$file->setRootId(1);
+		$file->setUpdate(false);
+		$id = $queueMapper->insertIntoQueue($file)->getId();
+		$queueMapper->lock($id);
+
+		$checks = 0;
+		$time = $this->createMock(ITimeFactory::class);
+		$time->method('getTime')->willReturnCallback(function () use (&$checks, $queueMapper, $id) {
+			// the backend reports the batch back while the wipe is waiting
+			if (++$checks === 3) {
+				$queueMapper->removeFromQueue([$id]);
+			}
+			return self::NOW;
+		});
+
+		$reported = [];
+		$this->newGuard($time)->waitForHandedOutDocuments(function (int $locked) use (&$reported) {
+			$reported[] = $locked;
+		});
+
+		$this->assertSame(0, $queueMapper->countLocked());
+		$this->assertSame([1], $reported, 'the count is reported once, not on every poll');
+	}
+
+	/**
+	 * The steps are reported in order, each one before its work: what the admin reads is what runs next.
+	 */
+	public function testWipeReportsEachStepBeforeDoingIt(): void {
+		$this->seedIndexedState();
+		$events = [];
+		$this->langRope->method('deleteAll')->willReturnCallback(function () use (&$events) {
+			$events[] = 'backend:deleteAll';
+		});
+
+		$this->service->wipe(null, false, function (string $message) use (&$events) {
+			// mark the moment the queues are emptied, to check the order against the work
+			$events[] = $message . ($this->rowCount('context_chat_queue') === 0 ? ' [queues empty]' : '');
+		});
+
+		$this->assertSame([
+			'Pausing the hand-out of queued documents and actions to context_chat_backend',
+			'Checking for documents context_chat_backend is still indexing',
+			'Removing the scheduled crawl and content import jobs',
+			'Clearing the indexing, actions and file system events queues',
+			'Resetting the indexing statistics and the content providers\' import state [queues empty]',
+			'Deleting all the documents from the vector DB [queues empty]',
+			'backend:deleteAll',
+			'Resuming the hand-out of queued documents and actions [queues empty]',
+		], $events);
+	}
+
+	public function testWipeOfOneProviderReportsItsSteps(): void {
+		$this->seedIndexedState();
+		$events = [];
+		$this->langRope->method('deleteProvider')->willReturnCallback(function (string $key) use (&$events) {
+			$events[] = 'backend:deleteProvider ' . $key;
+		});
+
+		$this->service->wipe(['someapp__prov'], true, function (string $message) use (&$events) {
+			$events[] = $message;
+		});
+
+		$this->assertSame([
+			'Pausing the hand-out of queued documents and actions to context_chat_backend',
+			'Not waiting for the documents context_chat_backend may still be indexing (--ignore-handed-out)',
+			'Removing the import job and clearing the indexing queue of someapp__prov',
+			'Deleting the documents of someapp__prov from the vector DB',
+			'backend:deleteProvider someapp__prov',
+			'Resuming the hand-out of queued documents and actions',
+		], $events);
+	}
+
+	public function testResumeIsReportedWhenTheBackendFails(): void {
+		$this->seedIndexedState();
+		$this->langRope->method('deleteAll')->willThrowException(new \RuntimeException('backend down'));
+		$events = [];
+
+		try {
+			$this->service->wipe(null, false, function (string $message) use (&$events) {
+				$events[] = $message;
+			});
+			$this->fail('the backend failure must be reported');
+		} catch (\RuntimeException) {
+		}
+
+		$this->assertSame('Deleting all the documents from the vector DB', $events[count($events) - 2]);
+		$this->assertSame('Resuming the hand-out of queued documents and actions', end($events));
 	}
 }

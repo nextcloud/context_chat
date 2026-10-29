@@ -46,6 +46,7 @@ class ReindexService {
 		private ProviderConfigService $providerConfig,
 		private LangRopeService $langRopeService,
 		private QueueContentItemMapper $contentQueue,
+		private FetchGuard $fetchGuard,
 		private ITimeFactory $timeFactory,
 		private Logger $logger,
 	) {
@@ -132,41 +133,75 @@ class ReindexService {
 
 	/**
 	 * Delete everything that was queued or indexed, here and in context_chat_backend's vector DB.
-	 * The local state is cleared first so nothing new is handed to the backend while it is wiped.
+	 * No queue items are handed to the backend until the wipe is over, and the documents it is still
+	 * indexing are waited for, so that its workers, possibly running elsewhere on Kubernetes, cannot
+	 * write to the vector DB while it is wiped.
 	 * It is safe to run this again when the backend request fails.
 	 *
 	 * @param list<string>|null $providerKeys null means everything including the actions queue, otherwise only the given providers
+	 * @param bool $ignoreHandedOut do not wait for the documents the backend is indexing, for when some documents are stuck
+	 *   in the queue for 24h due to error or if the backend stopped while indexing them/having a lock
+	 * @param ?callable(string): void $onStep called with a short description before each step, for progress output
 	 * @throws \OCP\DB\Exception
 	 * @throws \RuntimeException when the vector DB could not be wiped
 	 */
-	public function wipe(?array $providerKeys = null): void {
-		if ($providerKeys === null) {
-			$this->wipeAll();
-			return;
-		}
+	public function wipe(?array $providerKeys = null, bool $ignoreHandedOut = false, ?callable $onStep = null): void {
+		$onStep = $onStep ?? static function (string $_): void {
+		};
 
-		foreach (array_unique($providerKeys) as $providerKey) {
-			$this->logger->info('Wiping the Context Chat data of provider ' . $providerKey);
-			if ($providerKey === ProviderConfigService::getDefaultProviderKey()) {
-				$this->clearFilesState();
+		$onStep('Pausing the hand-out of queued documents and actions to context_chat_backend');
+		$pausedUntil = $this->fetchGuard->pause();
+		try {
+			if ($ignoreHandedOut) {
+				$onStep('Not waiting for the documents context_chat_backend may still be indexing (--ignore-handed-out)');
 			} else {
-				$this->clearContentProviderState($providerKey);
+				$onStep('Checking for documents context_chat_backend is still indexing');
+				$this->fetchGuard->waitForHandedOutDocuments(static function (int $locked) use ($onStep): void {
+					$onStep('Waiting for context_chat_backend to finish indexing ' . $locked . ' documents');
+				});
 			}
-			$this->langRopeService->deleteProvider($providerKey);
+
+			if ($providerKeys === null) {
+				$this->wipeAll($onStep);
+				return;
+			}
+
+			foreach (array_unique($providerKeys) as $providerKey) {
+				$this->logger->info('Wiping the Context Chat data of provider ' . $providerKey);
+				if ($providerKey === ProviderConfigService::getDefaultProviderKey()) {
+					$onStep('Removing the crawl jobs, clearing the files indexing queue and the file system events, resetting the indexing statistics');
+					$this->clearFilesState();
+				} else {
+					$onStep('Removing the import job and clearing the indexing queue of ' . $providerKey);
+					$this->clearContentProviderState($providerKey);
+				}
+				$onStep('Deleting the documents of ' . $providerKey . ' from the vector DB');
+				$this->langRopeService->deleteProvider($providerKey);
+			}
+		} finally {
+			$onStep('Resuming the hand-out of queued documents and actions');
+			$this->fetchGuard->resume($pausedUntil);
 		}
 	}
 
-	private function wipeAll(): void {
+	/**
+	 * @param callable(string): void $onStep
+	 */
+	private function wipeAll(callable $onStep): void {
 		$this->logger->info('Wiping all the Context Chat data');
 
+		$onStep('Removing the scheduled crawl and content import jobs');
 		// stop the crawl and the content provider imports from queueing more items
 		foreach ([SchedulerJob::class, StorageCrawlJob::class, InitialContentImportJob::class] as $jobClass) {
 			$this->jobList->remove($jobClass);
 		}
+		$onStep('Clearing the indexing, actions and file system events queues');
 		$this->clearTables(self::QUEUE_TABLES);
+		$onStep('Resetting the indexing statistics and the content providers\' import state');
 		$this->resetStats();
 		$this->providerConfig->resetProvidersInitiation();
 
+		$onStep('Deleting all the documents from the vector DB');
 		$this->langRopeService->deleteAll();
 		$this->logger->info('Wiped all the Context Chat data');
 	}
