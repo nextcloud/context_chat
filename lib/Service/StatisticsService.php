@@ -69,9 +69,7 @@ class StatisticsService {
 			$this->logger->error($e->getMessage(), ['exception' => $e]);
 			$stats['backend_available'] = false;
 		}
-		if (empty($stats['vectordb_document_counts'] ?? [])) {
-			$stats['vectordb_document_counts'] = [ ProviderConfigService::getDefaultProviderKey() => 0 ];
-		}
+		$stats['vectordb_document_counts'] = ($stats['vectordb_document_counts'] ?? []) + [ ProviderConfigService::getDefaultProviderKey() => 0 ];
 
 		try {
 			$queued_files_count = $this->queueService->count();

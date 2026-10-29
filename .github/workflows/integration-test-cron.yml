@@ -405,6 +405,34 @@ jobs:
           kill -9 $WORKER1_PID
           kill -9 $WORKER2_PID
 
+      - name: Wipe and reindex only the files provider
+        run: |
+          ./occ context_chat:wipe --force --provider files__default --reindex
+
+          stats=$(./occ context_chat:stats --json)
+          echo "$stats"
+          indexed=$(echo "$stats" | jq '.vectordb_document_counts.files__default // 0')
+          if [ "$indexed" != "0" ]; then
+            echo "Error: expected no indexed files right after the files wipe, got $indexed"
+            exit 1
+          fi
+
+          echo "::group::Waiting up to 10 minutes for the files to be indexed again"
+          for i in {1..60}; do
+            stats=$(timeout 30 ./occ context_chat:stats --json || true)
+            indexed=$(echo "$stats" | jq '.vectordb_document_counts.files__default // 0' 2>/dev/null || echo 0)
+            echo "Attempt $i: indexed=$indexed"
+            if [ "$indexed" -ge 10 ]; then
+              echo "::endgroup::"
+              echo "Files reindexed, $indexed documents"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::endgroup::"
+          echo "Error: files were not indexed again after the files wipe"
+          exit 1
+
       - name: Wipe all the indexed data and check that the queues and the vector DB are empty
         run: |
           ./occ context_chat:wipe --force

@@ -12,6 +12,7 @@ namespace OCA\ContextChat\Command;
 use OCA\ContextChat\Service\ReindexService;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -34,16 +35,40 @@ class Reindex extends Command {
 
 	protected function configure() {
 		$this->setName('context_chat:reindex')
-			->setDescription('Schedule a full re-crawl of all the files in all the mounts. Indexed files are not re-indexed when compared against context_chat_backend\'s vector DB. Content providers are only re-imported after context_chat:wipe.');
+			->setDescription(
+				'Schedule a full re-crawl of all the files in all the mounts and the import of the content providers'
+				. ' that were not imported yet. Indexed files are not re-indexed when compared against context_chat_backend\'s vector DB.'
+			)
+			->addOption(
+				'provider',
+				'p',
+				InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
+				'Only reindex this provider, e.g. "files__default" (appId__providerId) for the files.'
+				. ' A named content provider is imported again even if it was imported before. Multiple values can be specified by repeating the option.',
+			);
 	}
 
 	protected function execute(InputInterface $input, OutputInterface $output): int {
-		if (!$this->reindexService->scheduleReindex()) {
-			$output->writeln('<comment>A full re-crawl is already scheduled; nothing to do.</comment>');
+		/** @var list<string> $providerKeys */
+		$providerKeys = $input->getOption('provider');
+		$scope = $providerKeys === [] ? null : $providerKeys;
+
+		if ($scope !== null) {
+			$known = $this->reindexService->getRegisteredProviderKeys();
+			$unknown = array_diff($scope, $known);
+			if ($unknown !== []) {
+				$output->writeln('<error>Unknown provider(s): ' . implode(', ', $unknown) . '</error>');
+				$output->writeln('Registered providers: ' . implode(', ', $known));
+				return 1;
+			}
+		}
+
+		if (!$this->reindexService->scheduleReindex($scope)) {
+			$output->writeln('<comment>The re-index is already scheduled; nothing to do.</comment>');
 			return 0;
 		}
 
-		$output->writeln('<info>Scheduled a full re-crawl. SchedulerJob will enumerate all mounts on its next run.</info>');
+		$output->writeln('<info>Scheduled the re-index. The background jobs will queue the documents on their next run.</info>');
 		return 0;
 	}
 }

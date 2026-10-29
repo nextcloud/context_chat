@@ -127,6 +127,39 @@ class ProviderConfigService {
 	}
 
 	/**
+	 * Get the parts of a provider key
+	 *
+	 * @param string $providerKey The provider key in the format "appId__providerId"
+	 * @return array{0: string, 1: string} The appId and providerId
+	 * @throws \RuntimeException when the provider key format is invalid
+	 */
+	public function getProviderParts(string $providerKey): array {
+		$identifierValues = explode('__', $providerKey, 2);
+		if (count($identifierValues) !== 2) {
+			throw new \RuntimeException('Invalid provider key format: ' . $providerKey);
+		}
+		return $identifierValues;
+	}
+
+	/**
+	 * Mark a specific provider as initiated or not initiated
+	 *
+	 * @param string $providerKey The provider key in the format "appId__providerId"
+	 * @param bool $isInitiated
+	 * @return void
+	 * @throws \RuntimeException when the provider key format is invalid
+	 */
+	public function setProviderInitiated(string $providerKey, bool $isInitiated): void {
+		$provider = $this->getProvider($providerKey);
+		if ($provider === null) {
+			return;
+		}
+		[$appId, $providerId] = $this->getProviderParts($providerKey);
+		/** @psalm-suppress ArgumentTypeCoercion */
+		$this->updateProvider($appId, $providerId, $provider['classString'], $isInitiated);
+	}
+
+	/**
 	 * @param string $appId
 	 * @param ?string $providerId
 	 */
