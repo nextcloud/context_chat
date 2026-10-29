@@ -73,6 +73,17 @@ class QueueContentItemMapper extends QBMapper {
 
 	/**
 	 * @throws \OCP\DB\Exception
+	 */
+	public function removeProvider(string $appId, string $providerId): void {
+		$qb = $this->db->getQueryBuilder();
+		$qb->delete($this->getTableName())
+			->where($qb->expr()->eq('app_id', $qb->createNamedParameter($appId)))
+			->andWhere($qb->expr()->eq('provider_id', $qb->createNamedParameter($providerId)))
+			->executeStatement();
+	}
+
+	/**
+	 * @throws \OCP\DB\Exception
 	 * @return array<string, int>
 	 */
 	public function count() : array {

@@ -17,6 +17,7 @@ use OCA\ContextChat\Db\QueueContentItem;
 use OCA\ContextChat\Db\QueueContentItemMapper;
 use OCA\ContextChat\Db\QueueFile;
 use OCA\ContextChat\Db\QueueMapper;
+use OCA\ContextChat\Service\FetchGuard;
 use OCA\ContextChat\Service\ProviderConfigService;
 use OCA\ContextChat\Type\Source;
 use OCP\AppFramework\Http;
@@ -47,6 +48,7 @@ class QueueController extends OCSController {
 		private IJobList $jobList,
 		private ITimeFactory $timeFactory,
 		private QueueMapper $queueMapper,
+		private FetchGuard $fetchGuard,
 		string $corsMethods = 'PUT, POST, GET, DELETE, PATCH',
 		string $corsAllowedHeaders = 'Authorization, Content-Type, Accept, OCS-APIRequest',
 		int $corsMaxAge = 1728000,
@@ -105,6 +107,13 @@ class QueueController extends OCSController {
 		$maxN = 1024;
 		if ($n > $maxN) {
 			$n = $maxN;
+		}
+		// hand out nothing, the backend waits and asks again
+		if ($this->fetchGuard->isPaused()) {
+			return new DataResponse([
+				'files' => new \stdClass(),
+				'content_providers' => new \stdClass(),
+			]);
 		}
 		try {
 			$files = [];
@@ -216,6 +225,10 @@ class QueueController extends OCSController {
 	#[ExAppRequired]
 	#[ApiRoute(verb: 'GET', url: '/queues/actions/')]
 	public function getActionsQueueItems(QueueActionMapper $queueActionMapper, int $n = 512) : DataResponse {
+		if ($this->fetchGuard->isPaused()) {
+			// stdClass is used to represent an empty object in the response
+			return new DataResponse(['actions' => new \stdClass()]);
+		}
 		try {
 			$actions = [];
 			while (count($actions) < $n) {
