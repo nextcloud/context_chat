@@ -93,8 +93,8 @@ class ReindexService {
 	 * Jobs that are already scheduled are not scheduled again.
 	 *
 	 * @param list<string>|null $providerKeys null means everything. Without a scope only the content
-	 *   providers that have not been imported yet are imported (which is all of them after a full wipe),
-	 *   content providers explicitly specified are set as not initiated and scheduled for import.
+	 *                                        providers that have not been imported yet are imported (which is all of them after a full wipe),
+	 *                                        content providers explicitly specified are set as not initiated and scheduled for import.
 	 * @return bool whether anything new was scheduled
 	 */
 	public function scheduleReindex(?array $providerKeys = null): bool {
@@ -140,7 +140,7 @@ class ReindexService {
 	 *
 	 * @param list<string>|null $providerKeys null means everything including the actions queue, otherwise only the given providers
 	 * @param bool $ignoreHandedOut do not wait for the documents the backend is indexing, for when some documents are stuck
-	 *   in the queue for 24h due to error or if the backend stopped while indexing them/having a lock
+	 *                              in the queue for 24h due to error or if the backend stopped while indexing them/having a lock
 	 * @param ?callable(string): void $onStep called with a short description before each step, for progress output
 	 * @throws \OCP\DB\Exception
 	 * @throws \RuntimeException when the vector DB could not be wiped
