@@ -11,7 +11,7 @@
     "The initial indexing is still running." : "Počiatočné indexovanie stále prebieha.",
     "The Context Chat Backend app is installed and responsive." : "Aplikácia Context Chat Backend je nainštalovaná a reaguje.",
     "The Context Chat Backend app is not installed or not responsing." : "Aplikácia Context Chat Backend nie je nainštalovaná alebo neodpovedá.",
-    "Less files were indexed than expected. Only {percent}% files out of {eligibleCount} are in the VectorDB." : "Menej súborov bolo indexovaných, než sa očakávalo. Iba {percent} súborov z {eligibleCount} je vo VectorDB.",
+    "Less files were indexed than expected. Only {percent}% files out of {eligibleCount} are in the VectorDB." : "Bolo indexovaných menej súborov, než sa očakávalo. Vo VectorDB je iba {percent} % z {eligibleCount} súborov.",
     "Content provider" : "Content poskytovateľ",
     "Queued documents including updates" : "Zaradené dokumenty vrátane aktualizácií",
     "Locked documents in queue" : "Uzamknuté dokumenty vo fronte",
