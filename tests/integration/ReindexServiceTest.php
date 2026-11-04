@@ -404,6 +404,18 @@ class ReindexServiceTest extends TestCase {
 		$guard->resume($until);
 	}
 
+	public function testPauseOutlastsAScopedWipeOfManySlowProviders(): void {
+		$now = self::NOW;
+		$guard = $this->newGuard($this->clock($now));
+
+		$until = $guard->pause();
+		// the drain timeout, then 20 deleteProvider requests that each run into the request timeout
+		$now += FetchGuard::DEFAULT_DRAIN_TIMEOUT + 20 * Application::CC_DEFAULT_REQUEST_TIMEOUT;
+
+		$this->assertTrue($guard->isPaused(), 'indexing must not restart while providers are still being wiped');
+		$guard->resume($until);
+	}
+
 	public function testWaitEndsOnceTheHandedOutBatchIsReportedBack(): void {
 		$queueMapper = Server::get(QueueMapper::class);
 		$file = new QueueFile();

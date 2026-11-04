@@ -21,12 +21,13 @@ use OCP\IDBConnection;
  * On Kubernetes the backend's indexing and updates pods are not the one serving the wipe request, so
  * they can only be held back from here.
  *
- * A pause expires on its own, so a wipe that dies half way does not stop the indexing forever.
+ * A pause expires on its own after a day, so a wipe that dies half way does not stop the indexing forever.
+ * Running the wipe again lifts it right away: it starts a new pause and lifts that one when it ends.
  */
 class FetchGuard {
 	private const CONFIG_KEY = 'queue_fetch_paused_until';
-	// on top of the longest a wipe request to the backend can take
-	private const MARGIN = 5 * 60;
+	// pause indexing while wipe happens, max 1 day so a crashed process does not stop it indefinitely
+	private const PAUSE_DURATION = 24 * 60 * 60;
 	public const DEFAULT_DRAIN_TIMEOUT = 30 * 60;  // 30 mins for the currently indexing documents to be done
 
 	public function __construct(
@@ -42,7 +43,7 @@ class FetchGuard {
 	 * @return int the expiry of the pause, to be passed to resume()
 	 */
 	public function pause(): int {
-		$until = $this->timeFactory->getTime() + $this->getDrainTimeout() + $this->getRequestTimeout() + self::MARGIN;
+		$until = $this->timeFactory->getTime() + self::PAUSE_DURATION;
 		$this->appConfig->setAppValueInt(self::CONFIG_KEY, $until, lazy: true);
 		return $until;
 	}
@@ -97,14 +98,6 @@ class FetchGuard {
 
 	private function getDrainTimeout(): int {
 		return $this->appConfig->getAppValueInt('wipe_drain_timeout', self::DEFAULT_DRAIN_TIMEOUT, lazy: true);
-	}
-
-	private function getRequestTimeout(): int {
-		return (int)$this->appConfig->getAppValueString(
-			'request_timeout',
-			strval(Application::CC_DEFAULT_REQUEST_TIMEOUT),
-			lazy: true,
-		);
 	}
 
 	/**

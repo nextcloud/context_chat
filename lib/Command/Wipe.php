@@ -31,6 +31,8 @@ class Wipe extends Command {
 				'Delete the indexed documents from context_chat_backend\'s vector DB and clear the queues.'
 				. ' With --provider option, only the provider\'s data is deleted, the actions queue, and the indexing statistics are left intact.'
 				. ' Nothing gets indexed again until context_chat:reindex is run or the --reindex option is used.'
+				. ' While the wipe runs, no documents or actions are handed to context_chat_backend. If the command is killed'
+				. ' before it ends, this pause stays for up to a day, run the command again to lift it.'
 			)
 			->addOption(
 				'provider',
