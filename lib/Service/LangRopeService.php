@@ -180,6 +180,14 @@ class LangRopeService {
 			}
 		}
 
+		if (!is_array($finalBody)) {
+			$this->logger->error('Malformed response from Context Chat Backend (ExApp), expected a JSON object or array', [
+				'response' => $response->getBody(),
+				'route' => $route,
+				'method' => $method,
+			]);
+			throw new RuntimeException('Malformed response from Context Chat Backend (ExApp) for ' . $route . ': expected a JSON object or array');
+		}
 		return $finalBody;
 	}
 
