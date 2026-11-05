@@ -108,16 +108,20 @@ class QueueController extends OCSController {
 		if ($n > $maxN) {
 			$n = $maxN;
 		}
+
 		// hand out nothing, the backend waits and asks again
+		// wipe everything case, only files wipe or a content provider wipe does not pause here
 		if ($this->fetchGuard->isPaused()) {
 			return new DataResponse([
 				'files' => new \stdClass(),
 				'content_providers' => new \stdClass(),
 			]);
 		}
+
 		try {
 			$files = [];
-			while (count($files) < $n) {
+			// a wipe of the files holds back the files only
+			while (count($files) < $n && !$this->fetchGuard->areFilesPaused()) {
 				$limit = $n - count($files);
 				$documents = $queueMapper->getFromQueue($limit);
 				if (empty($documents)) {
@@ -134,6 +138,7 @@ class QueueController extends OCSController {
 					}
 				}
 			}
+
 			$contentItems = [];
 			while (count($contentItems) < $n) {
 				$limit = $n - count($contentItems);
@@ -147,6 +152,7 @@ class QueueController extends OCSController {
 					}
 				}
 			}
+
 			return new DataResponse([
 				'files' => (object)$files,
 				'content_providers' => (object)$contentItems,

@@ -130,16 +130,7 @@ class ReindexServiceTest extends TestCase {
 		Server::get(QueueMapper::class)->insertIntoQueue($file);
 
 		foreach (['someapp', 'otherapp'] as $appId) {
-			$item = new QueueContentItem();
-			$item->setItemId('item1');
-			$item->setAppId($appId);
-			$item->setProviderId('prov');
-			$item->setTitle('title');
-			$item->setContent('content');
-			$item->setDocumentType('text');
-			$item->setLastModified(new \DateTime());
-			$item->setUsers('admin');
-			Server::get(QueueContentItemMapper::class)->insert($item);
+			$this->queueContentItem($appId, 'item1');
 		}
 
 		$action = new QueueAction();
@@ -161,6 +152,32 @@ class ReindexServiceTest extends TestCase {
 		$this->providerConfig->updateProvider('files', 'default', '', true);
 		$this->providerConfig->updateProvider('someapp', 'prov', self::PROVIDER_CLASS, true);
 		$this->providerConfig->updateProvider('otherapp', 'prov', self::OTHER_PROVIDER_CLASS, true);
+	}
+
+	private function queueContentItem(string $appId, string $itemId): void {
+		$item = new QueueContentItem();
+		$item->setItemId($itemId);
+		$item->setAppId($appId);
+		$item->setProviderId('prov');
+		$item->setTitle('title');
+		$item->setContent('content');
+		$item->setDocumentType('text');
+		$item->setLastModified(new \DateTime());
+		$item->setUsers('admin');
+		Server::get(QueueContentItemMapper::class)->insert($item);
+	}
+
+	/** @return list<string> appId/itemId of the content items in the queue */
+	private function contentQueueItems(): array {
+		$qb = $this->db->getQueryBuilder();
+		$result = $qb->select('app_id', 'item_id')->from('context_chat_content_queue')->executeQuery();
+		$items = [];
+		while (($row = $result->fetch()) !== false) {
+			$items[] = $row['app_id'] . '/' . $row['item_id'];
+		}
+		$result->closeCursor();
+		sort($items);
+		return $items;
 	}
 
 	/** @return list<string> */
@@ -396,24 +413,104 @@ class ReindexServiceTest extends TestCase {
 		$now = self::NOW;
 		$guard = $this->newGuard($this->clock($now));
 
-		$until = $guard->pause();
+		$pause = $guard->pause();
 		$this->assertTrue($guard->isPaused());
-		$now = $until;
+		$now += FetchGuard::PAUSE_DURATION;
 
 		$this->assertFalse($guard->isPaused(), 'a wipe that died must not stop the indexing forever');
-		$guard->resume($until);
+		$guard->resume($pause);
 	}
 
 	public function testPauseOutlastsAScopedWipeOfManySlowProviders(): void {
 		$now = self::NOW;
 		$guard = $this->newGuard($this->clock($now));
 
-		$until = $guard->pause();
+		$pause = $guard->pause(onlyFiles: true);
 		// the drain timeout, then 20 deleteProvider requests that each run into the request timeout
 		$now += FetchGuard::DEFAULT_DRAIN_TIMEOUT + 20 * Application::CC_DEFAULT_REQUEST_TIMEOUT;
 
-		$this->assertTrue($guard->isPaused(), 'indexing must not restart while providers are still being wiped');
-		$guard->resume($until);
+		$this->assertTrue($guard->areFilesPaused(), 'indexing must not restart while providers are still being wiped');
+		$guard->resume($pause);
+	}
+
+	public function testFullAndFilesPausesAreLiftedSeparately(): void {
+		$files = $this->fetchGuard->pause(onlyFiles: true);
+		$all = $this->fetchGuard->pause();
+		$this->fetchGuard->resume($all);
+
+		$this->assertTrue($this->fetchGuard->areFilesPaused(), 'the files wipe is still running');
+		$this->fetchGuard->resume($files);
+		$this->assertFalse($this->fetchGuard->areFilesPaused());
+	}
+
+	public function testFilesWipePausesOnlyTheFiles(): void {
+		$this->seedIndexedState();
+		$seen = null;
+		$this->langRope->method('deleteProvider')->willReturnCallback(function () use (&$seen) {
+			$seen = [$this->fetchGuard->areFilesPaused(), $this->fetchGuard->isPaused()];
+		});
+
+		$this->service->wipe(['files__default']);
+
+		$this->assertSame([true, false], $seen);
+		$this->assertFalse($this->fetchGuard->areFilesPaused());
+	}
+
+	public function testContentProviderWipeOnlyWaitsForItsOwnDocuments(): void {
+		$this->seedIndexedState();
+		// a file is being indexed, unrelated to the provider being wiped
+		$queueMapper = Server::get(QueueMapper::class);
+		$queueMapper->lock($queueMapper->getMaxId());
+		$this->appConfig->setAppValueInt('wipe_drain_timeout', 0, lazy: true);
+		$this->langRope->expects($this->once())->method('deleteProvider')->with('someapp__prov');
+
+		try {
+			$this->service->wipe(['someapp__prov']);
+		} finally {
+			$this->appConfig->deleteAppValue('wipe_drain_timeout');
+		}
+
+		$this->assertSame(1, $queueMapper->countLocked(), 'the file being indexed is left alone');
+	}
+
+	/**
+	 * Nothing pauses a content provider, so its queue is cleared before the wait: what is not handed out yet
+	 * can no longer be, and what is handed out is waited for.
+	 */
+	public function testContentProviderWipeClearsTheQueueBeforeWaitingForTheHandedOutItems(): void {
+		$this->seedIndexedState();
+		$contentQueue = Server::get(QueueContentItemMapper::class);
+		$this->queueContentItem('someapp', 'item2');
+		foreach ($contentQueue->getFromQueue(10) as $item) {
+			if ($item->getAppId() === 'someapp' && $item->getItemId() === 'item1') {
+				$contentQueue->lock($item->getId());
+			}
+		}
+		$this->appConfig->setAppValueInt('wipe_drain_timeout', 0, lazy: true);
+		$this->langRope->expects($this->never())->method('deleteProvider');
+
+		try {
+			$this->service->wipe(['someapp__prov']);
+			$this->fail('the wipe must wait for the item being indexed');
+		} catch (\RuntimeException $e) {
+			$this->assertStringContainsString('1 documents are still being indexed', $e->getMessage());
+		} finally {
+			$this->appConfig->deleteAppValue('wipe_drain_timeout');
+		}
+
+		$this->assertSame(['otherapp/item1', 'someapp/item1'], $this->contentQueueItems(), 'item2 must be gone, it could have been handed out during the wait');
+	}
+
+	public function testContentProviderWipeWithIgnoreHandedOutClearsItsWholeQueue(): void {
+		$this->seedIndexedState();
+		$contentQueue = Server::get(QueueContentItemMapper::class);
+		foreach ($contentQueue->getFromQueue(10) as $item) {
+			$contentQueue->lock($item->getId());
+		}
+
+		$this->service->wipe(['someapp__prov'], ignoreHandedOut: true);
+
+		$this->assertSame(['otherapp'], $this->contentQueueAppIds());
 	}
 
 	public function testWaitEndsOnceTheHandedOutBatchIsReportedBack(): void {
@@ -437,7 +534,7 @@ class ReindexServiceTest extends TestCase {
 		});
 
 		$reported = [];
-		$this->newGuard($time)->waitForHandedOutDocuments(function (int $locked) use (&$reported) {
+		$this->newGuard($time)->waitForHandedOutDocuments(null, function (int $locked) use (&$reported) {
 			$reported[] = $locked;
 		});
 
@@ -484,12 +581,31 @@ class ReindexServiceTest extends TestCase {
 		});
 
 		$this->assertSame([
-			'Pausing the hand-out of queued documents and actions to context_chat_backend',
-			'Not waiting for the documents context_chat_backend may still be indexing (--ignore-handed-out)',
 			'Removing the import job and clearing the indexing queue of someapp__prov',
+			'Not waiting for the documents context_chat_backend may still be indexing (--ignore-handed-out)',
 			'Deleting the documents of someapp__prov from the vector DB',
 			'backend:deleteProvider someapp__prov',
-			'Resuming the hand-out of queued documents and actions',
+		], $events, 'a content provider wipe does not pause');
+	}
+
+	public function testWipeOfTheFilesReportsItsSteps(): void {
+		$this->seedIndexedState();
+		$events = [];
+		$this->langRope->method('deleteProvider')->willReturnCallback(function (string $key) use (&$events) {
+			$events[] = 'backend:deleteProvider ' . $key;
+		});
+
+		$this->service->wipe(['files__default'], true, function (string $message) use (&$events) {
+			$events[] = $message;
+		});
+
+		$this->assertSame([
+			'Pausing the hand-out of queued files to context_chat_backend',
+			'Not waiting for the documents context_chat_backend may still be indexing (--ignore-handed-out)',
+			'Removing the crawl jobs, clearing the files indexing queue and the file system events, resetting the indexing statistics',
+			'Deleting the documents of files__default from the vector DB',
+			'backend:deleteProvider files__default',
+			'Resuming the hand-out of queued files',
 		], $events);
 	}
 

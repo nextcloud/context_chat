@@ -133,9 +133,13 @@ class ReindexService {
 
 	/**
 	 * Delete everything that was queued or indexed, here and in context_chat_backend's vector DB.
-	 * No queue items are handed to the backend until the wipe is over, and the documents it is still
-	 * indexing are waited for, so that its workers, possibly running elsewhere on Kubernetes, cannot
-	 * write to the vector DB while it is wiped.
+	 * The documents the backend is still indexing are waited for here, so that its workers, possibly running
+	 * on Kubernetes, cannot write them to the vector DB after it was wiped.
+	 *
+	 * A full wipe holds back all the queues until it is over, a wipe of the files only holds the files queue.
+	 * A content provider is not held back since its unlocked/untouched queued items are deleted before the wait,
+	 * so once the wait is over, none of what was queued before the wipe can still be indexed. Items the provider
+	 * submits during the wipe may be indexed before or after the delete in the backend.
 	 * It is safe to run this again when the backend request fails.
 	 *
 	 * @param list<string>|null $providerKeys null means everything including the actions queue, otherwise only the given providers
@@ -149,14 +153,29 @@ class ReindexService {
 		$onStep = $onStep ?? static function (string $_): void {
 		};
 
-		$onStep('Pausing the hand-out of queued documents and actions to context_chat_backend');
-		$pausedUntil = $this->fetchGuard->pause();
+		$filesKey = ProviderConfigService::getDefaultProviderKey();
+		$providerKeys = $providerKeys === null ? null : array_values(array_unique($providerKeys));
+		$contentProviderKeys = $providerKeys === null ? [] : array_values(array_diff($providerKeys, [$filesKey]));
+
+		$pause = null;
+		if ($providerKeys === null) {
+			$onStep('Pausing the hand-out of queued documents and actions to context_chat_backend');
+			$pause = $this->fetchGuard->pause();
+		} elseif (in_array($filesKey, $providerKeys, true)) {
+			$onStep('Pausing the hand-out of queued files to context_chat_backend');
+			$pause = $this->fetchGuard->pause(onlyFiles: true);
+		}
 		try {
+			foreach ($contentProviderKeys as $providerKey) {
+				$onStep('Removing the import job and clearing the indexing queue of ' . $providerKey);
+				$this->clearContentProviderState($providerKey);
+			}
+
 			if ($ignoreHandedOut) {
 				$onStep('Not waiting for the documents context_chat_backend may still be indexing (--ignore-handed-out)');
 			} else {
 				$onStep('Checking for documents context_chat_backend is still indexing');
-				$this->fetchGuard->waitForHandedOutDocuments(static function (int $locked) use ($onStep): void {
+				$this->fetchGuard->waitForHandedOutDocuments($providerKeys, static function (int $locked) use ($onStep): void {
 					$onStep('Waiting for context_chat_backend to finish indexing ' . $locked . ' documents');
 				});
 			}
@@ -166,21 +185,27 @@ class ReindexService {
 				return;
 			}
 
-			foreach (array_unique($providerKeys) as $providerKey) {
+			foreach ($providerKeys as $providerKey) {
 				$this->logger->info('Wiping the Context Chat data of provider ' . $providerKey);
-				if ($providerKey === ProviderConfigService::getDefaultProviderKey()) {
+				if ($providerKey === $filesKey) {
 					$onStep('Removing the crawl jobs, clearing the files indexing queue and the file system events, resetting the indexing statistics');
 					$this->clearFilesState();
 				} else {
-					$onStep('Removing the import job and clearing the indexing queue of ' . $providerKey);
-					$this->clearContentProviderState($providerKey);
+					// `clearContentProviderState()` already ran so the content queue may be empty
+					// but clean it up again since with --ignore-handed-out locked rows are not waited for to be cleared
+					[$appId, $providerId] = $this->providerConfig->getProviderParts($providerKey);
+					$this->contentQueue->removeProvider($appId, $providerId);
 				}
 				$onStep('Deleting the documents of ' . $providerKey . ' from the vector DB');
 				$this->langRopeService->deleteProvider($providerKey);
 			}
 		} finally {
-			$onStep('Resuming the hand-out of queued documents and actions');
-			$this->fetchGuard->resume($pausedUntil);
+			if ($pause !== null) {
+				$onStep($providerKeys === null
+					? 'Resuming the hand-out of queued documents and actions'
+					: 'Resuming the hand-out of queued files');
+				$this->fetchGuard->resume($pause);
+			}
 		}
 	}
 
@@ -219,6 +244,10 @@ class ReindexService {
 		$this->resetStats();
 	}
 
+	/**
+	 * Leaves the items the backend is indexing in the queue, so the wipe can wait for them, and deletes the rest.
+	 * Deleted items can no longer be locked, so nothing more of the provider's queue can be handed out.
+	 */
 	private function clearContentProviderState(string $providerKey): void {
 		$provider = $this->providerConfig->getProvider($providerKey);
 		if ($provider !== null && $provider['classString'] !== '') {
@@ -226,7 +255,7 @@ class ReindexService {
 		}
 
 		[$appId, $providerId] = $this->providerConfig->getProviderParts($providerKey);
-		$this->contentQueue->removeProvider($appId, $providerId);
+		$this->contentQueue->removeProvider($appId, $providerId, onlyUnlocked: true);
 
 		if ($provider !== null) {
 			$this->providerConfig->setProviderInitiated($providerKey, false);
