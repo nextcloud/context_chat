@@ -153,6 +153,22 @@ class QueueController extends OCSController {
 				}
 			}
 
+			// A wipe may have started after the pause check. Do a check again here before returning the
+			// response to see if that happened. If the pause did happen in between the checks,
+			// wipe would be waiting for the locks to unlock, which we do, or proceed with the cleanup, which
+			// is fine too since we don't return the docs to the backend, it won't be indexing them.
+			//
+			// Only the files and a full wipe pause. A wipe of a content provider deletes the provider's
+			// items that are not locked, so a fetch can no longer lock them, and waits for the locked ones.
+			if ($files !== [] && $this->fetchGuard->areFilesPaused()) {
+				$queueMapper->unlock(array_keys($files));
+				$files = [];
+			}
+			if ($contentItems !== [] && $this->fetchGuard->isPaused()) {
+				$queueContentItemMapper->unlock(array_keys($contentItems));
+				$contentItems = [];
+			}
+
 			return new DataResponse([
 				'files' => (object)$files,
 				'content_providers' => (object)$contentItems,
@@ -248,6 +264,11 @@ class QueueController extends OCSController {
 						$actions[$document->getId()] = $document;
 					}
 				}
+			}
+			// see getDocumentsQueueItems(), a full wipe may have started since the previous pause check above
+			if ($actions !== [] && $this->fetchGuard->isPaused()) {
+				$queueActionMapper->unlock(array_keys($actions));
+				$actions = [];
 			}
 			return new DataResponse(['actions' => (object)$actions]);
 		} catch (Exception $e) {

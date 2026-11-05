@@ -19,7 +19,9 @@ use OCA\ContextChat\Db\QueueMapper;
 use OCA\ContextChat\Service\FetchGuard;
 use OCA\ContextChat\Type\ActionType;
 use OCP\AppFramework\Http;
+use OCP\Files\IRootFolder;
 use OCP\IDBConnection;
+use OCP\IUserManager;
 use OCP\Server;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
@@ -82,16 +84,17 @@ class QueueControllerPauseTest extends TestCase {
 	/**
 	 * Arguments are resolved by type from the DI container, like the AppFramework dispatcher does.
 	 *
+	 * @param array<class-string, object> $services passed instead of the container's
 	 * @return array<string, mixed>
 	 */
-	private function call(string $endpoint): array {
+	private function call(string $endpoint, array $services = []): array {
 		$controller = Server::get(QueueController::class);
 		$method = new \ReflectionMethod($controller, $endpoint);
 		$args = [];
 		foreach ($method->getParameters() as $parameter) {
 			$type = $parameter->getType();
 			$args[] = ($type instanceof \ReflectionNamedType && !$type->isBuiltin())
-				? Server::get($type->getName())
+				? ($services[$type->getName()] ?? Server::get($type->getName()))
 				: 64;
 		}
 		$response = $method->invokeArgs($controller, $args);
@@ -128,5 +131,78 @@ class QueueControllerPauseTest extends TestCase {
 
 		$this->assertCount(1, (array)$response['content_providers']);
 		$this->assertSame(0, $this->filesInQueue(), 'the file was handed out and dropped');
+	}
+
+	/**
+	 * A full wipe that starts while a fetch is locking its batch counts the handed out documents before the fetch
+	 * returns. The fetch must notice the pause after locking and put the items back, or they would be indexed
+	 * after the wipe without the wipe having waited for them.
+	 */
+	public function testItemsLockedAsAFullWipeStartsArePutBack(): void {
+		$real = Server::get(QueueContentItemMapper::class);
+		$contentQueue = $this->createMock(QueueContentItemMapper::class);
+		$contentQueue->method('getFromQueue')->willReturnCallback(fn (int $limit) => $real->getFromQueue($limit));
+		$contentQueue->method('lock')->willReturnCallback(function (int $id) use ($real): bool {
+			$locked = $real->lock($id);
+			$this->pauses[] = $this->fetchGuard->pause();
+			return $locked;
+		});
+		$contentQueue->method('unlock')->willReturnCallback(fn (array $ids) => $real->unlock($ids));
+
+		$response = $this->call('getDocumentsQueueItems', [QueueContentItemMapper::class => $contentQueue]);
+
+		$this->assertSame([], (array)$response['content_providers']);
+		$this->assertSame([], $real->countLocked(), 'the item must be back in the queue, the wipe would wait for it');
+	}
+
+	public function testActionsLockedAsAFullWipeStartsArePutBack(): void {
+		$real = Server::get(QueueActionMapper::class);
+		$actionQueue = $this->createMock(QueueActionMapper::class);
+		$actionQueue->method('getFromQueue')->willReturnCallback(fn (int $limit) => $real->getFromQueue($limit));
+		$actionQueue->method('lock')->willReturnCallback(function (int $id) use ($real): bool {
+			$locked = $real->lock($id);
+			$this->pauses[] = $this->fetchGuard->pause();
+			return $locked;
+		});
+		$actionQueue->method('unlock')->willReturnCallback(fn (array $ids) => $real->unlock($ids));
+
+		$response = $this->call('getActionsQueueItems', [QueueActionMapper::class => $actionQueue]);
+
+		$this->assertSame([], (array)$response['actions']);
+		$this->assertSame(0, $real->countLocked(), 'the action must be back in the queue');
+	}
+
+	public function testFilesLockedAsAFilesWipeStartsArePutBack(): void {
+		$owner = 'cc_pause_' . substr(md5(uniqid('', true)), 0, 8);
+		$user = Server::get(IUserManager::class)->createUser($owner, 'Pass-' . $owner . '-1234567890');
+		try {
+			$userFolder = Server::get(IRootFolder::class)->getUserFolder($owner);
+			$file = $userFolder->newFile('doc.txt', 'content');
+			$this->clearQueues();
+			$queued = new QueueFile();
+			$queued->setFileId($file->getId());
+			$queued->setStorageId($userFolder->getStorage()->getCache()->getNumericStorageId());
+			$queued->setRootId($userFolder->getId());
+			$queued->setUpdate(false);
+			$real = Server::get(QueueMapper::class);
+			$real->insertIntoQueue($queued);
+
+			$filesQueue = $this->createMock(QueueMapper::class);
+			$filesQueue->method('getFromQueue')->willReturnCallback(fn (int $limit) => $real->getFromQueue($limit));
+			$filesQueue->method('lock')->willReturnCallback(function (int $id) use ($real): bool {
+				$locked = $real->lock($id);
+				$this->pauses[] = $this->fetchGuard->pause(onlyFiles: true);
+				return $locked;
+			});
+			$filesQueue->method('unlock')->willReturnCallback(fn (array $ids) => $real->unlock($ids));
+
+			$response = $this->call('getDocumentsQueueItems', [QueueMapper::class => $filesQueue]);
+
+			$this->assertSame([], (array)$response['files']);
+			$this->assertSame(1, $real->count(), 'the file must be back in the queue');
+			$this->assertSame(0, $real->countLocked());
+		} finally {
+			$user?->delete();
+		}
 	}
 }
