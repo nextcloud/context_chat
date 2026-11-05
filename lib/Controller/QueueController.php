@@ -119,9 +119,10 @@ class QueueController extends OCSController {
 		}
 
 		try {
+			$filesKey = ProviderConfigService::getDefaultProviderKey();
 			$files = [];
 			// a wipe of the files holds back the files only
-			while (count($files) < $n && !$this->fetchGuard->areFilesPaused()) {
+			while (count($files) < $n && !$this->fetchGuard->isPaused($filesKey)) {
 				$limit = $n - count($files);
 				$documents = $queueMapper->getFromQueue($limit);
 				if (empty($documents)) {
@@ -160,7 +161,7 @@ class QueueController extends OCSController {
 			//
 			// Only the files and a full wipe pause. A wipe of a content provider deletes the provider's
 			// items that are not locked, so a fetch can no longer lock them, and waits for the locked ones.
-			if ($files !== [] && $this->fetchGuard->areFilesPaused()) {
+			if ($files !== [] && $this->fetchGuard->isPaused($filesKey)) {
 				$queueMapper->unlock(array_keys($files));
 				$files = [];
 			}

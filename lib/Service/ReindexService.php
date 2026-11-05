@@ -157,23 +157,30 @@ class ReindexService {
 		$providerKeys = $providerKeys === null ? null : array_values(array_unique($providerKeys));
 		$contentProviderKeys = $providerKeys === null ? [] : array_values(array_diff($providerKeys, [$filesKey]));
 
-		$pause = null;
 		if ($providerKeys === null) {
 			$onStep('Pausing the hand-out of queued documents and actions to context_chat_backend');
-			$pause = $this->fetchGuard->pause();
 		} elseif (in_array($filesKey, $providerKeys, true)) {
 			$onStep('Pausing the hand-out of queued files to context_chat_backend');
-			$pause = $this->fetchGuard->pause(onlyFiles: true);
 		}
+		// also stops the crawl and import jobs of the providers
+		$pause = $this->fetchGuard->pause($providerKeys);
 		try {
+			if ($ignoreHandedOut) {
+				$onStep('Not waiting for the background jobs and the documents context_chat_backend may still be indexing (--ignore-handed-out)');
+			} else {
+				// a running crawl or import would queue items after the queues are cleared
+				$onStep('Checking for background jobs still queueing documents');
+				$this->fetchGuard->waitForRunningJobs($providerKeys, static function (int $running) use ($onStep): void {
+					$onStep('Waiting for ' . $running . ' background jobs to finish queueing documents');
+				});
+			}
+
 			foreach ($contentProviderKeys as $providerKey) {
 				$onStep('Removing the import job and clearing the indexing queue of ' . $providerKey);
 				$this->clearContentProviderState($providerKey);
 			}
 
-			if ($ignoreHandedOut) {
-				$onStep('Not waiting for the documents context_chat_backend may still be indexing (--ignore-handed-out)');
-			} else {
+			if (!$ignoreHandedOut) {
 				$onStep('Checking for documents context_chat_backend is still indexing');
 				$this->fetchGuard->waitForHandedOutDocuments($providerKeys, static function (int $locked) use ($onStep): void {
 					$onStep('Waiting for context_chat_backend to finish indexing ' . $locked . ' documents');
@@ -200,12 +207,12 @@ class ReindexService {
 				$this->langRopeService->deleteProvider($providerKey);
 			}
 		} finally {
-			if ($pause !== null) {
-				$onStep($providerKeys === null
-					? 'Resuming the hand-out of queued documents and actions'
-					: 'Resuming the hand-out of queued files');
-				$this->fetchGuard->resume($pause);
+			if ($providerKeys === null) {
+				$onStep('Resuming the hand-out of queued documents and actions');
+			} elseif (in_array($filesKey, $providerKeys, true)) {
+				$onStep('Resuming the hand-out of queued files');
 			}
+			$this->fetchGuard->resume($pause);
 		}
 	}
 

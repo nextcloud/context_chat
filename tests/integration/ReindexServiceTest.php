@@ -409,6 +409,21 @@ class ReindexServiceTest extends TestCase {
 		$this->assertFalse($guard->isPaused());
 	}
 
+	public function testResumeDoesNotLiftANewerPauseOfTheSameProvider(): void {
+		$now = self::NOW;
+		$guard = $this->newGuard($this->clock($now));
+
+		$first = $guard->pause(['someapp__prov', 'files__default']);
+		$now += 10;
+		$second = $guard->pause(['someapp__prov']);
+		$guard->resume($first);
+
+		$this->assertTrue($guard->isPaused('someapp__prov'), 'the second wipe is still running');
+		$this->assertFalse($guard->isPaused('files__default'));
+		$guard->resume($second);
+		$this->assertFalse($guard->isPaused('someapp__prov'));
+	}
+
 	public function testPauseExpiresOnItsOwn(): void {
 		$now = self::NOW;
 		$guard = $this->newGuard($this->clock($now));
@@ -425,35 +440,35 @@ class ReindexServiceTest extends TestCase {
 		$now = self::NOW;
 		$guard = $this->newGuard($this->clock($now));
 
-		$pause = $guard->pause(onlyFiles: true);
+		$pause = $guard->pause(['files__default']);
 		// the drain timeout, then 20 deleteProvider requests that each run into the request timeout
 		$now += FetchGuard::DEFAULT_DRAIN_TIMEOUT + 20 * Application::CC_DEFAULT_REQUEST_TIMEOUT;
 
-		$this->assertTrue($guard->areFilesPaused(), 'indexing must not restart while providers are still being wiped');
+		$this->assertTrue($guard->isPaused('files__default'), 'indexing must not restart while providers are still being wiped');
 		$guard->resume($pause);
 	}
 
 	public function testFullAndFilesPausesAreLiftedSeparately(): void {
-		$files = $this->fetchGuard->pause(onlyFiles: true);
+		$files = $this->fetchGuard->pause(['files__default']);
 		$all = $this->fetchGuard->pause();
 		$this->fetchGuard->resume($all);
 
-		$this->assertTrue($this->fetchGuard->areFilesPaused(), 'the files wipe is still running');
+		$this->assertTrue($this->fetchGuard->isPaused('files__default'), 'the files wipe is still running');
 		$this->fetchGuard->resume($files);
-		$this->assertFalse($this->fetchGuard->areFilesPaused());
+		$this->assertFalse($this->fetchGuard->isPaused('files__default'));
 	}
 
 	public function testFilesWipePausesOnlyTheFiles(): void {
 		$this->seedIndexedState();
 		$seen = null;
 		$this->langRope->method('deleteProvider')->willReturnCallback(function () use (&$seen) {
-			$seen = [$this->fetchGuard->areFilesPaused(), $this->fetchGuard->isPaused()];
+			$seen = [$this->fetchGuard->isPaused('files__default'), $this->fetchGuard->isPaused()];
 		});
 
 		$this->service->wipe(['files__default']);
 
 		$this->assertSame([true, false], $seen);
-		$this->assertFalse($this->fetchGuard->areFilesPaused());
+		$this->assertFalse($this->fetchGuard->isPaused('files__default'));
 	}
 
 	public function testContentProviderWipeOnlyWaitsForItsOwnDocuments(): void {
@@ -559,6 +574,7 @@ class ReindexServiceTest extends TestCase {
 
 		$this->assertSame([
 			'Pausing the hand-out of queued documents and actions to context_chat_backend',
+			'Checking for background jobs still queueing documents',
 			'Checking for documents context_chat_backend is still indexing',
 			'Removing the scheduled crawl and content import jobs',
 			'Clearing the indexing, actions and file system events queues',
@@ -581,8 +597,8 @@ class ReindexServiceTest extends TestCase {
 		});
 
 		$this->assertSame([
+			'Not waiting for the background jobs and the documents context_chat_backend may still be indexing (--ignore-handed-out)',
 			'Removing the import job and clearing the indexing queue of someapp__prov',
-			'Not waiting for the documents context_chat_backend may still be indexing (--ignore-handed-out)',
 			'Deleting the documents of someapp__prov from the vector DB',
 			'backend:deleteProvider someapp__prov',
 		], $events, 'a content provider wipe does not pause');
@@ -601,7 +617,7 @@ class ReindexServiceTest extends TestCase {
 
 		$this->assertSame([
 			'Pausing the hand-out of queued files to context_chat_backend',
-			'Not waiting for the documents context_chat_backend may still be indexing (--ignore-handed-out)',
+			'Not waiting for the background jobs and the documents context_chat_backend may still be indexing (--ignore-handed-out)',
 			'Removing the crawl jobs, clearing the files indexing queue and the file system events, resetting the indexing statistics',
 			'Deleting the documents of files__default from the vector DB',
 			'backend:deleteProvider files__default',

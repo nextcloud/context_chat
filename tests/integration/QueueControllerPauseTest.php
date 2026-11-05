@@ -107,12 +107,23 @@ class QueueControllerPauseTest extends TestCase {
 	}
 
 	public function testFilesWipeHoldsBackOnlyTheFiles(): void {
-		$this->pauses[] = $this->fetchGuard->pause(onlyFiles: true);
+		$this->pauses[] = $this->fetchGuard->pause(['files__default']);
 
 		$response = $this->call('getDocumentsQueueItems');
 
 		$this->assertCount(1, (array)$response['content_providers']);
 		$this->assertSame(1, $this->filesInQueue(), 'the file must not be touched');
+		$this->assertCount(1, (array)$this->call('getActionsQueueItems')['actions']);
+	}
+
+	public function testContentProviderWipeHoldsBackNothing(): void {
+		// it only stops the provider's import, its wipe deletes the queued items it does not wait for
+		$this->pauses[] = $this->fetchGuard->pause(['someapp__prov']);
+
+		$response = $this->call('getDocumentsQueueItems');
+
+		$this->assertCount(1, (array)$response['content_providers']);
+		$this->assertSame(0, $this->filesInQueue());
 		$this->assertCount(1, (array)$this->call('getActionsQueueItems')['actions']);
 	}
 
@@ -191,7 +202,7 @@ class QueueControllerPauseTest extends TestCase {
 			$filesQueue->method('getFromQueue')->willReturnCallback(fn (int $limit) => $real->getFromQueue($limit));
 			$filesQueue->method('lock')->willReturnCallback(function (int $id) use ($real): bool {
 				$locked = $real->lock($id);
-				$this->pauses[] = $this->fetchGuard->pause(onlyFiles: true);
+				$this->pauses[] = $this->fetchGuard->pause(['files__default']);
 				return $locked;
 			});
 			$filesQueue->method('unlock')->willReturnCallback(fn (array $ids) => $real->unlock($ids));
