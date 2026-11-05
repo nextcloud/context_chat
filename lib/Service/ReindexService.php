@@ -290,6 +290,10 @@ class ReindexService {
 		foreach (self::STATS_CONFIG_KEYS as $key) {
 			$this->appConfig->deleteAppValue($key);
 		}
+		// Indicate wipe as a different value, `last_indexed_time` set to 0 and queues empty triggers the initial
+		// indexing in QueueController to be set as completed.
+		// A re-index sets this back to 0, in SchedulerJob specifically.
+		$this->appConfig->setAppValueInt('last_indexed_time', -1, lazy: true);
 		// the time taken for the next complete index is measured from here
 		$this->appConfig->setAppValueInt('installed_time', $this->timeFactory->getTime(), lazy: true);
 	}

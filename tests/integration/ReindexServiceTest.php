@@ -210,7 +210,7 @@ class ReindexServiceTest extends TestCase {
 		$this->assertFalse($this->jobList->has(StorageCrawlJob::class, ['storage_id' => 1, 'root_id' => 1, 'overridden_root' => 1, 'last_file_id' => 0]));
 		$this->assertFalse($this->jobList->has(InitialContentImportJob::class, self::PROVIDER_CLASS));
 		$this->assertFalse($this->jobList->has(InitialContentImportJob::class, self::OTHER_PROVIDER_CLASS));
-		$this->assertSame(0, $this->appConfig->getAppValueInt('last_indexed_time', 0, lazy: true));
+		$this->assertSame(-1, $this->appConfig->getAppValueInt('last_indexed_time', 0, lazy: true), 'not complete, and not 0 until the crawl is scheduled');
 		$this->assertSame(-1, $this->appConfig->getAppValueInt('last_enqueued_db_id', -1, lazy: true));
 		$this->assertSame(0, $this->appConfig->getAppValueInt('eligible_files_count_time', 0, lazy: true));
 		$this->assertSame(self::NOW, $this->appConfig->getAppValueInt('installed_time', 0, lazy: true));
@@ -272,7 +272,7 @@ class ReindexServiceTest extends TestCase {
 		$this->assertSame(1, $this->rowCount('context_chat_action_queue'), 'actions of other providers and users must be kept');
 		$this->assertFalse($this->jobList->has(StorageCrawlJob::class, ['storage_id' => 1, 'root_id' => 1, 'overridden_root' => 1, 'last_file_id' => 0]));
 		$this->assertTrue($this->jobList->has(InitialContentImportJob::class, self::PROVIDER_CLASS));
-		$this->assertSame(0, $this->appConfig->getAppValueInt('last_indexed_time', 0, lazy: true));
+		$this->assertSame(-1, $this->appConfig->getAppValueInt('last_indexed_time', 0, lazy: true));
 		$this->assertTrue($this->providerConfig->getProviders()['someapp__prov']['isInitiated']);
 	}
 

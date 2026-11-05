@@ -13,12 +13,14 @@ use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\BackgroundJobs\InitialContentImportJob;
 use OCA\ContextChat\BackgroundJobs\SchedulerJob;
 use OCA\ContextChat\BackgroundJobs\StorageCrawlJob;
+use OCA\ContextChat\Controller\QueueController;
 use OCA\ContextChat\Db\QueueContentItemMapper;
 use OCA\ContextChat\Db\QueueMapper;
 use OCA\ContextChat\Service\FetchGuard;
 use OCA\ContextChat\Service\LangRopeService;
 use OCA\ContextChat\Service\ProviderConfigService;
 use OCA\ContextChat\Service\ReindexService;
+use OCA\ContextChat\Service\StatisticsService;
 use OCA\ContextChat\Service\StorageService;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Services\IAppConfig;
@@ -39,6 +41,8 @@ use PHPUnit\Framework\TestCase;
 class WipeBackgroundJobsTest extends TestCase {
 	private const MOUNT = ['storage_id' => 1, 'root_id' => 1, 'overridden_root' => 1];
 	private const PROVIDER_CLASS = 'OCA\\SomeApp\\ContentProvider';
+	// the indexing stats a files wipe resets, put back after each test
+	private const STATS_KEYS = ['last_indexed_time', 'installed_time', 'eligible_files_count', 'eligible_files_count_time'];
 
 	private IJobList $jobList;
 	private IAppConfig $appConfig;
@@ -46,6 +50,8 @@ class WipeBackgroundJobsTest extends TestCase {
 	private QueueMapper $queueMapper;
 	private ProviderConfigService $providerConfig;
 	private string $savedProviders;
+	/** @var array<string, ?int> */
+	private array $savedStats = [];
 
 	protected function setUp(): void {
 		parent::setUp();
@@ -56,12 +62,18 @@ class WipeBackgroundJobsTest extends TestCase {
 		$this->fetchGuard = Server::get(FetchGuard::class);
 		$this->queueMapper = Server::get(QueueMapper::class);
 		$this->savedProviders = $this->appConfig->getAppValueString('providers', '', lazy: true);
+		foreach (self::STATS_KEYS as $key) {
+			$this->savedStats[$key] = $this->appConfig->hasAppKey($key, lazy: true) ? $this->appConfig->getAppValueInt($key, 0, lazy: true) : null;
+		}
 		$this->clearState();
 	}
 
 	protected function tearDown(): void {
 		$this->clearState();
 		$this->appConfig->setAppValueString('providers', $this->savedProviders, lazy: true);
+		foreach ($this->savedStats as $key => $value) {
+			$value === null ? $this->appConfig->deleteAppValue($key) : $this->appConfig->setAppValueInt($key, $value, lazy: true);
+		}
 		parent::tearDown();
 	}
 
@@ -98,9 +110,13 @@ class WipeBackgroundJobsTest extends TestCase {
 		$this->invokeRun($job, self::MOUNT + ['last_file_id' => 0]);
 	}
 
-	private function runScheduler(): void {
+	/** @param ?callable(): void $meanwhile called once the job runs, before it adds the crawl jobs */
+	private function runScheduler(?callable $meanwhile = null): void {
 		$storage = $this->createMock(StorageService::class);
-		$storage->method('getMounts')->willReturnCallback(static function (): \Generator {
+		$storage->method('getMounts')->willReturnCallback(static function () use ($meanwhile): \Generator {
+			if ($meanwhile !== null) {
+				$meanwhile();
+			}
 			yield self::MOUNT;
 		});
 		$job = Server::get(SchedulerJob::class);
@@ -364,5 +380,49 @@ class WipeBackgroundJobsTest extends TestCase {
 
 		$this->assertSame(1, $this->countRunningJobs(null, $guard), 'a crawl still working must not be taken as killed');
 		$guard->jobEnded($record);
+	}
+
+	/**
+	 * The backend reports a batch back, which is when the initial indexing is checked for completion.
+	 */
+	private function backendReportsABatch(): void {
+		$controller = Server::get(QueueController::class);
+		$method = new \ReflectionMethod($controller, 'deleteDocumentsQueueItems');
+		$args = [];
+		foreach ($method->getParameters() as $parameter) {
+			$type = $parameter->getType();
+			$args[] = ($type instanceof \ReflectionNamedType && !$type->isBuiltin()) ? Server::get($type->getName()) : [];
+		}
+		$method->invokeArgs($controller, $args);
+	}
+
+	private function isInitialIndexingComplete(): bool {
+		$stats = Server::get(StatisticsService::class);
+		$this->replaceDependency($stats, 'langRopeService', $this->createMock(LangRopeService::class));
+		$this->replaceDependency($stats, 'storageService', $this->createMock(StorageService::class));
+		return $stats->getStatistics()['initial_indexing_complete'];
+	}
+
+	public function testIndexingIsNotCompleteAfterAFilesWipeUntilTheFilesAreCrawledAgain(): void {
+		$langRope = $this->createMock(LangRopeService::class);
+		$service = Server::get(ReindexService::class);
+		$this->replaceDependency($service, 'langRopeService', $langRope);
+
+		$service->wipe([ProviderConfigService::getDefaultProviderKey()]);
+		$this->backendReportsABatch();
+		$this->assertFalse($this->isInitialIndexingComplete(), 'nothing was crawled yet');
+
+		// context_chat:reindex, then the scheduler adds the crawl jobs and the crawl queues the files
+		$service->scheduleReindex([ProviderConfigService::getDefaultProviderKey()]);
+		$this->runScheduler(function (): void {
+			$this->backendReportsABatch();
+			$this->assertFalse($this->isInitialIndexingComplete(), 'the crawl jobs are not added yet');
+		});
+		$this->backendReportsABatch();
+		$this->assertFalse($this->isInitialIndexingComplete(), 'the crawl jobs have not run yet');
+
+		$this->jobList->remove(StorageCrawlJob::class);
+		$this->backendReportsABatch();
+		$this->assertTrue($this->isInitialIndexingComplete(), 'the crawl is done and the queue is empty');
 	}
 }

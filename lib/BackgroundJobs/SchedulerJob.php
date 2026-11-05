@@ -44,7 +44,6 @@ class SchedulerJob extends QueuedJob {
 			if ($this->fetchGuard->isPaused($filesKey)) {
 				return;
 			}
-			$this->appConfig->setAppValueInt('last_indexed_time', 0, lazy: true);
 			foreach ($this->storageService->getMounts() as $mount) {
 				$this->logger->debug('Scheduling StorageCrawlJob storage_id=' . $mount['storage_id'] . ' root_id=' . $mount['root_id' ] . 'override_root=' . $mount['overridden_root']);
 				$this->jobList->add(StorageCrawlJob::class, [
@@ -56,6 +55,7 @@ class SchedulerJob extends QueuedJob {
 			}
 
 			$this->jobList->remove(self::class);
+			$this->appConfig->setAppValueInt('last_indexed_time', 0, lazy: true);
 		} finally {
 			$this->fetchGuard->jobEnded($running);
 		}
