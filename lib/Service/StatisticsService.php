@@ -36,11 +36,12 @@ class StatisticsService {
 		$stats = [];
 
 		$stats['installed_at'] = $this->appConfig->getAppValueInt('installed_time', 0, lazy: true);
-		if ($this->appConfig->getAppValueInt('last_indexed_time', 0, lazy: true) === 0) {
-			$stats['initial_indexing_complete'] = false;
-		} else {
+		// 0 while the initial indexing runs, -1 after a wipe of the files until re-index starts again
+		if (($lastIndexedTime = $this->appConfig->getAppValueInt('last_indexed_time', 0, lazy: true)) > 0) {
 			$stats['initial_indexing_complete'] = true;
-			$stats['intial_indexing_completed_at'] = $this->appConfig->getAppValueInt('last_indexed_time', 0, lazy: true);
+			$stats['intial_indexing_completed_at'] = $lastIndexedTime;
+		} else {
+			$stats['initial_indexing_complete'] = false;
 		}
 
 		$stats['eligible_files_count'] = $this->getEligibleFilesCount();
@@ -69,9 +70,7 @@ class StatisticsService {
 			$this->logger->error($e->getMessage(), ['exception' => $e]);
 			$stats['backend_available'] = false;
 		}
-		if (empty($stats['vectordb_document_counts'] ?? [])) {
-			$stats['vectordb_document_counts'] = [ ProviderConfigService::getDefaultProviderKey() => 0 ];
-		}
+		$stats['vectordb_document_counts'] = ($stats['vectordb_document_counts'] ?? []) + [ ProviderConfigService::getDefaultProviderKey() => 0 ];
 
 		try {
 			$queued_files_count = $this->queueService->count();

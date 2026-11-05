@@ -11,6 +11,7 @@ namespace OCA\ContextChat\BackgroundJobs;
 
 use OCA\ContextChat\Logger;
 use OCA\ContextChat\Public\IContentProvider as OCAIContentProvider;
+use OCA\ContextChat\Service\FetchGuard;
 use OCA\ContextChat\Service\ProviderConfigService;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
@@ -29,6 +30,7 @@ class InitialContentImportJob extends QueuedJob {
 		private IUserManager $userMan,
 		ITimeFactory $timeFactory,
 		private ?string $userId,
+		private FetchGuard $fetchGuard,
 	) {
 		parent::__construct($timeFactory);
 	}
@@ -56,16 +58,26 @@ class InitialContentImportJob extends QueuedJob {
 			return;
 		}
 
-		$registeredProviders = $this->providerConfig->getProviders();
 		$identifier = ProviderConfigService::getConfigKey($providerObj->getAppId(), $providerObj->getId());
-		if (!isset($registeredProviders[$identifier])
-			|| $registeredProviders[$identifier]['isInitiated']
-		) {
-			$this->logger->info('[InitialContentImportJob] Provider has already been initiated, skipping content import', ['provider' => $identifier]);
-			return;
-		}
+		$running = $this->fetchGuard->jobStarted($identifier, $this->getId(), FetchGuard::IMPORT_RUNNING_TTL);
+		try {
+			// a wipe of the provider removes this job, a re-index after it adds it again
+			if ($this->fetchGuard->isPaused($identifier)) {
+				return;
+			}
 
-		$providerObj->triggerInitialImport();
-		$this->providerConfig->updateProvider($providerObj->getAppId(), $providerObj->getId(), $argument, true);
+			$registeredProviders = $this->providerConfig->getProviders();
+			if (!isset($registeredProviders[$identifier])
+				|| $registeredProviders[$identifier]['isInitiated']
+			) {
+				$this->logger->info('[InitialContentImportJob] Provider has already been initiated, skipping content import', ['provider' => $identifier]);
+				return;
+			}
+
+			$providerObj->triggerInitialImport();
+			$this->providerConfig->updateProvider($providerObj->getAppId(), $providerObj->getId(), $argument, isInitiated: true);
+		} finally {
+			$this->fetchGuard->jobEnded($running);
+		}
 	}
 }

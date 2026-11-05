@@ -11,6 +11,8 @@ declare(strict_types=1);
 namespace OCA\ContextChat\BackgroundJobs;
 
 use OCA\ContextChat\Logger;
+use OCA\ContextChat\Service\FetchGuard;
+use OCA\ContextChat\Service\ProviderConfigService;
 use OCA\ContextChat\Service\StorageService;
 use OCP\AppFramework\Services\IAppConfig;
 use OCP\AppFramework\Utility\ITimeFactory;
@@ -26,6 +28,7 @@ class SchedulerJob extends QueuedJob {
 		private IJobList $jobList,
 		private StorageService $storageService,
 		private IAppConfig $appConfig,
+		private FetchGuard $fetchGuard,
 	) {
 		parent::__construct($timeFactory);
 	}
@@ -34,17 +37,27 @@ class SchedulerJob extends QueuedJob {
 	 * @throws Exception
 	 */
 	protected function run($argument): void {
-		$this->appConfig->setAppValueInt('last_indexed_time', 0, lazy: true);
-		foreach ($this->storageService->getMounts() as $mount) {
-			$this->logger->debug('Scheduling StorageCrawlJob storage_id=' . $mount['storage_id'] . ' root_id=' . $mount['root_id' ] . 'override_root=' . $mount['overridden_root']);
-			$this->jobList->add(StorageCrawlJob::class, [
-				'storage_id' => $mount['storage_id'],
-				'root_id' => $mount['root_id' ],
-				'overridden_root' => $mount['overridden_root'],
-				'last_file_id' => 0,
-			]);
-		}
+		$filesKey = ProviderConfigService::getDefaultProviderKey();
+		$running = $this->fetchGuard->jobStarted($filesKey, $this->getId());
+		try {
+			// a wipe of the files removes this job, a re-index after it adds it again
+			if ($this->fetchGuard->isPaused($filesKey)) {
+				return;
+			}
+			foreach ($this->storageService->getMounts() as $mount) {
+				$this->logger->debug('Scheduling StorageCrawlJob storage_id=' . $mount['storage_id'] . ' root_id=' . $mount['root_id' ] . 'override_root=' . $mount['overridden_root']);
+				$this->jobList->add(StorageCrawlJob::class, [
+					'storage_id' => $mount['storage_id'],
+					'root_id' => $mount['root_id' ],
+					'overridden_root' => $mount['overridden_root'],
+					'last_file_id' => 0,
+				]);
+			}
 
-		$this->jobList->remove(self::class);
+			$this->jobList->remove(self::class);
+			$this->appConfig->setAppValueInt('last_indexed_time', 0, lazy: true);
+		} finally {
+			$this->fetchGuard->jobEnded($running);
+		}
 	}
 }

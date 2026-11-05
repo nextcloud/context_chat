@@ -13,6 +13,8 @@ namespace OCA\ContextChat\BackgroundJobs;
 use OCA\ContextChat\Db\QueueFile;
 use OCA\ContextChat\Logger;
 use OCA\ContextChat\Service\DiagnosticService;
+use OCA\ContextChat\Service\FetchGuard;
+use OCA\ContextChat\Service\ProviderConfigService;
 use OCA\ContextChat\Service\QueueService;
 use OCA\ContextChat\Service\StorageService;
 use OCP\AppFramework\Services\IAppConfig;
@@ -33,6 +35,7 @@ class StorageCrawlJob extends QueuedJob {
 		private StorageService $storageService,
 		private DiagnosticService $diagnosticService,
 		private IAppConfig $appConfig,
+		private FetchGuard $fetchGuard,
 	) {
 		parent::__construct($timeFactory);
 	}
@@ -50,7 +53,13 @@ class StorageCrawlJob extends QueuedJob {
 		// Remove current iteration
 		$this->jobList->remove(self::class, $argument);
 
+		$filesKey = ProviderConfigService::getDefaultProviderKey();
+		$running = $this->fetchGuard->jobStarted($filesKey, $this->getId());
 		try {
+			// wipe of everything/for files is running, skip the crawl
+			if ($this->fetchGuard->isPaused($filesKey)) {
+				return;
+			}
 			$this->diagnosticService->sendJobStart(static::class, $this->getId());
 			$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
 
@@ -64,6 +73,7 @@ class StorageCrawlJob extends QueuedJob {
 				$queueFile->setFileId($fileId);
 				$queueFile->setUpdate(false);
 				$this->diagnosticService->sendHeartbeat(static::class, $this->getId());
+				$this->fetchGuard->jobAlive($running);
 				try {
 					$dbFile = $this->queue->insertIntoQueue($queueFile);
 					$lastSuccessfulDbId = $dbFile->getId();
@@ -96,6 +106,7 @@ class StorageCrawlJob extends QueuedJob {
 			}
 		} finally {
 			$this->diagnosticService->sendJobEnd(static::class, $this->getId());
+			$this->fetchGuard->jobEnded($running);
 		}
 	}
 

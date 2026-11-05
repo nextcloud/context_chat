@@ -115,6 +115,8 @@ jobs:
         with:
           repository: nextcloud/context_chat_backend
           path: context_chat_backend/
+          # todo: remove this
+          ref: feat/vector-db-wipe
           persist-credentials: false
 
       - name: Checkout viewer
