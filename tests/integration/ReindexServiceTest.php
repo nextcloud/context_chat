@@ -430,7 +430,7 @@ class ReindexServiceTest extends TestCase {
 
 		$pause = $guard->pause();
 		$this->assertTrue($guard->isPaused());
-		$now += FetchGuard::PAUSE_DURATION;
+		$now += 24 * 60 * 60;
 
 		$this->assertFalse($guard->isPaused(), 'a wipe that died must not stop the indexing forever');
 		$guard->resume($pause);

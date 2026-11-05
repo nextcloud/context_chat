@@ -34,7 +34,8 @@ class QueueControllerFetchGuardTest extends TestCase {
 	private QueueMapper $queueMapper;
 	private QueueActionMapper $actionMapper;
 	private FetchGuard $guard;
-	private ?int $pausedUntil = null;
+	/** @var array<string, int>|null */
+	private ?array $pausedUntil = null;
 
 	protected function setUp(): void {
 		parent::setUp();
