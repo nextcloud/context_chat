@@ -174,7 +174,6 @@ class StorageService {
 			->andWhere($qb->expr()->notLike('mount_point', $qb->createPositionalParameter('/%/files_trashbin/%')));
 		$result = $qb->executeQuery();
 
-
 		while (
 			/** @var array{storage_id:int, root_id:int,mount_provider_class:string} $row */
 			$row = $result->fetch()
