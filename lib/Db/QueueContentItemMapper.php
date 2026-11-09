@@ -72,6 +72,28 @@ class QueueContentItemMapper extends QBMapper {
 	}
 
 	/**
+	 * @param bool $onlyUnlocked keep the items being indexed, i.e. locked within the lock timeout
+	 * @throws \OCP\DB\Exception
+	 */
+	public function removeProvider(string $appId, string $providerId, bool $onlyUnlocked = false): void {
+		$qb = $this->db->getQueryBuilder();
+		$qb->delete($this->getTableName())
+			->where($qb->expr()->eq('app_id', $qb->createNamedParameter($appId)))
+			->andWhere($qb->expr()->eq('provider_id', $qb->createNamedParameter($providerId)));
+		if ($onlyUnlocked) {
+			// the same items getFromQueue() can hand out
+			$qb->andWhere($qb->expr()->orX(
+				$qb->expr()->isNull('locked_at'),
+				$qb->expr()->lte('locked_at', $qb->createNamedParameter(
+					(new \DateTime())->sub(new \DateInterval('PT' . self::LOCK_TIMEOUT . 'S')),
+					IQueryBuilder::PARAM_DATETIME_MUTABLE
+				)),
+			));
+		}
+		$qb->executeStatement();
+	}
+
+	/**
 	 * @throws \OCP\DB\Exception
 	 * @return array<string, int>
 	 */
@@ -173,5 +195,18 @@ class QueueContentItemMapper extends QBMapper {
 			return true;
 		}
 		return false;
+	}
+
+	/**
+	 * @throws Exception
+	 */
+	public function unlock(array $ids): void {
+		foreach (array_chunk($ids, 1000) as $chunk) {
+			$qb = $this->db->getQueryBuilder();
+			$qb->update($this->getTableName())
+				->set('locked_at', $qb->createNamedParameter(null, IQueryBuilder::PARAM_NULL))
+				->where($qb->expr()->in('id', $qb->createNamedParameter($chunk, IQueryBuilder::PARAM_INT_ARRAY)))
+				->executeStatement();
+		}
 	}
 }

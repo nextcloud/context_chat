@@ -154,4 +154,17 @@ class QueueActionMapper extends QBMapper {
 		}
 		return false;
 	}
+
+	/**
+	 * @throws Exception
+	 */
+	public function unlock(array $ids): void {
+		foreach (array_chunk($ids, 1000) as $chunk) {
+			$qb = $this->db->getQueryBuilder();
+			$qb->update($this->getTableName())
+				->set('locked_at', $qb->createNamedParameter(null, IQueryBuilder::PARAM_NULL))
+				->where($qb->expr()->in('id', $qb->createNamedParameter($chunk, IQueryBuilder::PARAM_INT_ARRAY)))
+				->executeStatement();
+		}
+	}
 }

@@ -17,6 +17,7 @@ use OCA\ContextChat\Db\QueueContentItem;
 use OCA\ContextChat\Db\QueueContentItemMapper;
 use OCA\ContextChat\Db\QueueFile;
 use OCA\ContextChat\Db\QueueMapper;
+use OCA\ContextChat\Service\FetchGuard;
 use OCA\ContextChat\Service\ProviderConfigService;
 use OCA\ContextChat\Type\Source;
 use OCP\AppFramework\Http;
@@ -47,6 +48,7 @@ class QueueController extends OCSController {
 		private IJobList $jobList,
 		private ITimeFactory $timeFactory,
 		private QueueMapper $queueMapper,
+		private FetchGuard $fetchGuard,
 		string $corsMethods = 'PUT, POST, GET, DELETE, PATCH',
 		string $corsAllowedHeaders = 'Authorization, Content-Type, Accept, OCS-APIRequest',
 		int $corsMaxAge = 1728000,
@@ -106,9 +108,21 @@ class QueueController extends OCSController {
 		if ($n > $maxN) {
 			$n = $maxN;
 		}
+
+		// hand out nothing, the backend waits and asks again
+		// wipe everything case, only files wipe or a content provider wipe does not pause here
+		if ($this->fetchGuard->isPaused()) {
+			return new DataResponse([
+				'files' => new \stdClass(),
+				'content_providers' => new \stdClass(),
+			]);
+		}
+
 		try {
+			$filesKey = ProviderConfigService::getDefaultProviderKey();
 			$files = [];
-			while (count($files) < $n) {
+			// a wipe of the files holds back the files only
+			while (count($files) < $n && !$this->fetchGuard->isPaused($filesKey)) {
 				$limit = $n - count($files);
 				$documents = $queueMapper->getFromQueue($limit);
 				if (empty($documents)) {
@@ -125,6 +139,7 @@ class QueueController extends OCSController {
 					}
 				}
 			}
+
 			$contentItems = [];
 			while (count($contentItems) < $n) {
 				$limit = $n - count($contentItems);
@@ -138,6 +153,23 @@ class QueueController extends OCSController {
 					}
 				}
 			}
+
+			// A wipe may have started after the pause check. Do a check again here before returning the
+			// response to see if that happened. If the pause did happen in between the checks,
+			// wipe would be waiting for the locks to unlock, which we do, or proceed with the cleanup, which
+			// is fine too since we don't return the docs to the backend, it won't be indexing them.
+			//
+			// Only the files and a full wipe pause. A wipe of a content provider deletes the provider's
+			// items that are not locked, so a fetch can no longer lock them, and waits for the locked ones.
+			if ($files !== [] && $this->fetchGuard->isPaused($filesKey)) {
+				$queueMapper->unlock(array_keys($files));
+				$files = [];
+			}
+			if ($contentItems !== [] && $this->fetchGuard->isPaused()) {
+				$queueContentItemMapper->unlock(array_keys($contentItems));
+				$contentItems = [];
+			}
+
 			return new DataResponse([
 				'files' => (object)$files,
 				'content_providers' => (object)$contentItems,
@@ -216,6 +248,10 @@ class QueueController extends OCSController {
 	#[ExAppRequired]
 	#[ApiRoute(verb: 'GET', url: '/queues/actions/')]
 	public function getActionsQueueItems(QueueActionMapper $queueActionMapper, int $n = 512) : DataResponse {
+		if ($this->fetchGuard->isPaused()) {
+			// stdClass is used to represent an empty object in the response
+			return new DataResponse(['actions' => new \stdClass()]);
+		}
 		try {
 			$actions = [];
 			while (count($actions) < $n) {
@@ -229,6 +265,11 @@ class QueueController extends OCSController {
 						$actions[$document->getId()] = $document;
 					}
 				}
+			}
+			// see getDocumentsQueueItems(), a full wipe may have started since the previous pause check above
+			if ($actions !== [] && $this->fetchGuard->isPaused()) {
+				$queueActionMapper->unlock(array_keys($actions));
+				$actions = [];
 			}
 			return new DataResponse(['actions' => (object)$actions]);
 		} catch (Exception $e) {
