@@ -11,7 +11,9 @@ use OCA\ContextChat\Listener\AddMissingIndicesListenerFsEvents;
 use OCA\ContextChat\Listener\AppDisableListener;
 use OCA\ContextChat\Listener\FileListener;
 use OCA\ContextChat\Listener\ShareListener;
+use OCA\ContextChat\Listener\TagListener;
 use OCA\ContextChat\Listener\UserDeletedListener;
+use OCA\ContextChat\Notification\Notifier;
 use OCP\App\Events\AppDisableEvent;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
@@ -26,6 +28,8 @@ use OCP\Files\Events\Node\NodeWrittenEvent;
 use OCP\Files\Events\NodeRemovedFromCache;
 use OCP\Share\Events\ShareCreatedEvent;
 use OCP\Share\Events\ShareDeletedEvent;
+use OCP\SystemTag\TagAssignedEvent;
+use OCP\SystemTag\TagUnassignedEvent;
 use OCP\User\Events\UserDeletedEvent;
 
 class Application extends App implements IBootstrap {
@@ -70,8 +74,11 @@ class Application extends App implements IBootstrap {
 		$context->registerEventListener(NodeRenamedEvent::class, FileListener::class);
 		$context->registerEventListener(NodeRemovedFromCache::class, FileListener::class);
 		$context->registerEventListener(NodeWrittenEvent::class, FileListener::class);
+		$context->registerEventListener(TagAssignedEvent::class, TagListener::class);
+		$context->registerEventListener(TagUnassignedEvent::class, TagListener::class);
 		$context->registerEventListener(AppDisableEvent::class, AppDisableListener::class);
 		$context->registerEventListener(UserDeletedEvent::class, UserDeletedListener::class);
+		$context->registerNotifierService(Notifier::class);
 		// These events were added mid-way through NC 30, 31
 		if (class_exists('OCP\Files\Config\Event\UserMountAddedEvent')) {
 			$context->registerEventListener('OCP\Files\Config\Event\UserMountAddedEvent', FileListener::class);
