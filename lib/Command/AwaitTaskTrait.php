@@ -27,7 +27,7 @@ trait AwaitTaskTrait {
 	private ?int $awaitTaskId = null;
 
 	/**
-	 * @return list<int>
+	 * @return list<\SIG*>
 	 */
 	public function getSubscribedSignals(): array {
 		// mirror Symfony's own precondition: subscribing without a signal registry throws
