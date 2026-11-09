@@ -58,7 +58,7 @@ jobs:
       matrix:
         php-versions: [ '8.2' ]
         databases: [ 'pgsql' ]
-        server-versions: [ 'stable32', 'stable33', 'stable34' ]
+        server-versions: [ 'stable33', 'stable34' ]
         encryption: ['off']
         include:
           - server-versions: master
@@ -68,10 +68,6 @@ jobs:
           - server-versions: stable35
             databases: pgsql
             php-versions: 8.3
-            encryption: 'on'
-          - server-versions: stable32
-            databases: pgsql
-            php-versions: 8.1
             encryption: 'on'
 
     name: Integration test - Cron ☁️${{ matrix.server-versions }} 🐘${{ matrix.php-versions }} 🔐:${{ matrix.encryption }}
