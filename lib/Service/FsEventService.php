@@ -13,7 +13,6 @@ use OCA\ContextChat\Logger;
 use OCP\DB\Exception;
 use OCP\Files\Folder;
 use OCP\Files\InvalidPathException;
-use OCP\Files\IRootFolder;
 use OCP\Files\Node;
 use OCP\Files\NotFoundException;
 
@@ -24,7 +23,6 @@ class FsEventService {
 		private QueueService $queue,
 		private ActionScheduler $actionService,
 		private StorageService $storageService,
-		private IRootFolder $rootFolder,
 	) {
 
 	}
@@ -37,7 +35,7 @@ class FsEventService {
 
 			$fileIds = $this->storageService->getAllFilesInFolder($node);
 		} else {
-			if (!$this->allowedMimeType($node)) {
+			if (!$this->allowedMimeType($node->getMimetype())) {
 				return;
 			}
 			try {
@@ -71,7 +69,7 @@ class FsEventService {
 			}
 			$fileIds = $this->storageService->getAllFilesInFolder($node);
 		} else {
-			if (!$this->allowedMimeType($node)) {
+			if (!$this->allowedMimeType($node->getMimetype())) {
 				return;
 			}
 			try {
@@ -95,8 +93,30 @@ class FsEventService {
 		}
 	}
 
+	public function onInsertCacheEntry(Node $node, bool $update = false): void {
+		try {
+			$fileId = $node->getId();
+		} catch (InvalidPathException|NotFoundException $e) {
+			return;
+		}
+
+		$queueFile = new QueueFile();
+		if ($node->getMountPoint()->getNumericStorageId() === null) {
+			return;
+		}
+		$queueFile->setStorageId($node->getMountPoint()->getNumericStorageId());
+		$queueFile->setRootId($node->getMountPoint()->getStorageRootId());
+		$queueFile->setFileId($fileId);
+		$queueFile->setUpdate($update);
+		try {
+			$this->queue->insertIntoQueue($queueFile);
+		} catch (Exception $e) {
+			$this->logger->error('Failed to add file to queue', ['exception' => $e]);
+		}
+	}
+
 	public function onInsert(Node $node, bool $recurse = true, bool $update = false): void {
-		if (!$this->allowedPath($node)) {
+		if (!$this->allowedPath($node->getPath())) {
 			return;
 		}
 		if ($node instanceof Folder) {
@@ -105,7 +125,7 @@ class FsEventService {
 			}
 			$fileIds = $this->storageService->getAllFilesInFolder($node);
 		} else {
-			if (!$this->allowedMimeType($node)) {
+			if (!$this->allowedMimeType($node->getMimetype())) {
 				return;
 			}
 			try {
@@ -132,13 +152,11 @@ class FsEventService {
 		}
 	}
 
-	private function allowedMimeType(Node $file): bool {
-		$mimeType = $file->getMimeType();
+	public function allowedMimeType(string $mimeType): bool {
 		return in_array($mimeType, Application::MIMETYPES, true);
 	}
 
-	private function allowedPath(Node $file): bool {
-		$path = $file->getPath();
+	public function allowedPath(string $path): bool {
 		return !preg_match('/^\/.+\/(files_versions|files_trashbin)\/.+/', $path, $matches);
 	}
 }
