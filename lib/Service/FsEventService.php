@@ -81,11 +81,7 @@ class FsEventService {
 
 		$fileRefs = [];
 		foreach ($fileIds as $fileId) {
-			try {
-				$fileRefs[] = ProviderConfigService::getSourceId($fileId);
-			} catch (InvalidPathException|NotFoundException|Exception $e) {
-				$this->logger->warning($e->getMessage(), ['exception' => $e]);
-			}
+			$fileRefs[] = ProviderConfigService::getSourceId($fileId);
 		}
 		$batches = array_chunk($fileRefs, ActionScheduler::BATCH_SIZE);
 		foreach ($batches as $batch) {
@@ -100,6 +96,22 @@ class FsEventService {
 	public function onDeleteCacheEntries(array $fileIds): void {
 		try {
 			$this->queue->removeFileIdsFromQueue($fileIds);
+		} catch (Exception $e) {
+			$this->logger->error(
+				'Failed to remove files from the indexing queue',
+				['exception' => $e, 'fileIds' => $fileIds],
+			);
+		}
+
+		$fileRefs = [];
+		foreach ($fileIds as $fileId) {
+			$fileRefs[] = ProviderConfigService::getSourceId($fileId);
+		}
+		try {
+			$batches = array_chunk($fileRefs, ActionScheduler::BATCH_SIZE);
+			foreach ($batches as $batch) {
+				$this->actionService->deleteSources($batch);
+			}
 		} catch (Exception $e) {
 			$this->logger->error(
 				'Failed to remove files from the indexing queue',
