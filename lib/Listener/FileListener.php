@@ -119,18 +119,22 @@ class FileListener implements IEventListener {
 					return;
 				}
 
-				// dispatched for children of a folder so the path starting are the same for all
-				$firstEvent = $cacheEvents[0];
-
-				if (str_starts_with($firstEvent->getPath(), 'appdata_')) {
-					return;
-				}
-				if (!$this->fsEventService->allowedPath($firstEvent->getPath(), relativePath: true)) {
-					return;
-				}
+				$filterMappedIds = array_map(fn (ICacheEvent $c) => $c->getFileId(),
+					array_values(
+						array_filter($cacheEvents, function (ICacheEvent $cacheEvent) {
+							if (str_starts_with($cacheEvent->getPath(), 'appdata_')) {
+								return false;
+							}
+							if (!$this->fsEventService->allowedPath($cacheEvent->getPath(), relativePath: true)) {
+								return false;
+							}
+							return true;
+						}),
+					),
+				);
 
 				// the entry was removed so we can't get the mimetype from the table now, just delete it
-				$this->fsEventService->onDeleteCacheEntries(array_map(fn (ICacheEvent $c) => $c->getFileId(), $cacheEvents));
+				$this->fsEventService->onDeleteCacheEntries($filterMappedIds);
 				return;
 			}
 
@@ -148,7 +152,7 @@ class FileListener implements IEventListener {
 				if (str_starts_with($event->getPath(), 'appdata_')) {
 					return;
 				}
-				if (!$this->fsEventService->allowedPath($event->getPath())) {
+				if (!$this->fsEventService->allowedPath($event->getPath(), relativePath: true)) {
 					return;
 				}
 
