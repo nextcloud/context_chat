@@ -10,13 +10,14 @@ declare(strict_types=1);
 namespace OCA\ContextChat\Controller;
 
 use OC\User\NoUserException;
-use OCA\ContextChat\BackgroundJobs\StorageCrawlJob;
 use OCA\ContextChat\Db\QueueActionMapper;
 use OCA\ContextChat\Db\QueueContentItem;
 use OCA\ContextChat\Db\QueueContentItemMapper;
 use OCA\ContextChat\Db\QueueFile;
 use OCA\ContextChat\Db\QueueMapper;
 use OCA\ContextChat\Service\FetchGuard;
+use OCA\ContextChat\Service\FsEventService;
+use OCA\ContextChat\Service\IndexCompletionService;
 use OCA\ContextChat\Service\ProviderConfigService;
 use OCA\ContextChat\Type\Source;
 use OCP\AppFramework\Http;
@@ -47,6 +48,8 @@ class QueueController extends OCSController {
 		private IJobList $jobList,
 		private ITimeFactory $timeFactory,
 		private QueueMapper $queueMapper,
+		private FsEventService $fsEventService,
+		private IndexCompletionService $indexCompletionService,
 		private FetchGuard $fetchGuard,
 		string $corsMethods = 'PUT, POST, GET, DELETE, PATCH',
 		string $corsAllowedHeaders = 'Authorization, Content-Type, Accept, OCS-APIRequest',
@@ -118,6 +121,7 @@ class QueueController extends OCSController {
 		}
 
 		try {
+			$this->indexCompletionService->checkAndMarkComplete();
 			$filesKey = ProviderConfigService::getDefaultProviderKey();
 			$files = [];
 			// a wipe of the files holds back the files only
@@ -207,7 +211,7 @@ class QueueController extends OCSController {
 		}
 
 		try {
-			$this->setInitialIndexCompletion();
+			$this->indexCompletionService->checkAndMarkComplete();
 		} catch (\Throwable $e) {
 			$this->logger->warning('Could not check for initial index completion', ['exception' => $e]);
 		}
@@ -345,6 +349,9 @@ class QueueController extends OCSController {
 		if ($file === null) {
 			throw new \Exception('File ' . $document->getFileId() . ' not found or not a file (tried users: ' . implode(', ', $userIds) . ')');
 		}
+		if (!$this->fsEventService->hasAiKnowledgeTag($file)) {
+			throw new \Exception('File does not have the required tag for indexing');
+		}
 
 		return new Source(
 			$userIds,
@@ -370,73 +377,5 @@ class QueueController extends OCSController {
 			$providerKey,
 			strlen($document->getContent()),
 		);
-	}
-
-	/**
-	 * @template T of \OCP\BackgroundJob\Job
-	 * @psalm-param T::class $jobClass
-	 */
-	public function getJobCount(string $jobClass): int {
-		$countByClass = array_values(array_filter($this->jobList->countByClass(), fn ($row) => $row['class'] == $jobClass));
-		$jobCount = count($countByClass) > 0 ? $countByClass[0]['count'] : 0;
-		return $jobCount;
-	}
-
-	private function setInitialIndexCompletion(): void {
-		if ($this->appConfig->getAppValueInt('last_indexed_time', 0, lazy: true) !== 0) {
-			return;
-		}
-
-		try {
-			$crawlJobCount = $this->getJobCount(StorageCrawlJob::class);
-			if ($crawlJobCount > 0) {
-				$this->logger->debug('StorageCrawlJob\'s still scheduled for execution, intial indexing has not completed.');
-				return;
-			}
-		} catch (\Exception $e) {
-			$this->logger->warning('Could not get count of scheduled StorageCrawlJob jobs', ['exception' => $e]);
-			return;
-		}
-
-		try {
-			$lastEnqueuedDbId = $this->appConfig->getAppValueInt('last_enqueued_db_id', -1, lazy: true);
-			if ($lastEnqueuedDbId === -1) {
-				// Instances that completed their crawl before this value was introduced never got
-				// it set, and the migration only backfills it while the referenced file is still
-				// queued. Seed it from the queue instead of falling through to counting every file
-				// in the file cache on every single request.
-				$maxQueuedDbId = $this->queueMapper->getMaxId();
-				if ($maxQueuedDbId === null) {
-					// no crawl jobs left and nothing queued, so everything has been indexed once
-					$this->logger->info('Initial index completion detected, setting last indexed time');
-					$this->appConfig->setAppValueInt('last_indexed_time', $this->timeFactory->getTime(), lazy: true);
-					return;
-				}
-				$this->appConfig->setAppValueInt('last_enqueued_db_id', $maxQueuedDbId, lazy: true);
-				$lastEnqueuedDbId = $maxQueuedDbId;
-			}
-
-			$initiallyQueuedFilesExist = $this->queueMapper->existsQueueItemsUpToDbId($lastEnqueuedDbId);
-			if ($initiallyQueuedFilesExist) {
-				$this->logger->debug('Initially queued files still in the queue, intial indexing has not completed.');
-				return;
-			}
-			$this->logger->info('Initial index completion detected, setting last indexed time');
-			$this->appConfig->setAppValueInt('last_indexed_time', $this->timeFactory->getTime(), lazy: true);
-			return;
-		} catch (\Exception $e) {
-			$this->logger->warning('Could not get last enqueued file\'s DB id', ['exception' => $e]);
-		}
-
-		// last enqueued file's ID could not be retrieved, fall back to checking whether the queue is
-		// empty. With no crawl jobs left, nothing more will be queued for the initial index.
-		try {
-			if ($this->queueMapper->getMaxId() === null) {
-				$this->logger->info('Initial index completion detected, setting last indexed time');
-				$this->appConfig->setAppValueInt('last_indexed_time', $this->timeFactory->getTime(), lazy: true);
-			}
-		} catch (\Exception $e) {
-			$this->logger->warning('Could not check whether the queue is empty', ['exception' => $e]);
-		}
 	}
 }
