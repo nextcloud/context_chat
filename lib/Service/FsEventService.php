@@ -93,25 +93,18 @@ class FsEventService {
 		}
 	}
 
-	public function onInsertCacheEntry(Node $node, bool $update = false): void {
+	/**
+	 * @param list<int> $fileIds
+	 * @return void
+	 */
+	public function onDeleteCacheEntries(array $fileIds): void {
 		try {
-			$fileId = $node->getId();
-		} catch (InvalidPathException|NotFoundException $e) {
-			return;
-		}
-
-		$queueFile = new QueueFile();
-		if ($node->getMountPoint()->getNumericStorageId() === null) {
-			return;
-		}
-		$queueFile->setStorageId($node->getMountPoint()->getNumericStorageId());
-		$queueFile->setRootId($node->getMountPoint()->getStorageRootId());
-		$queueFile->setFileId($fileId);
-		$queueFile->setUpdate($update);
-		try {
-			$this->queue->insertIntoQueue($queueFile);
+			$this->queue->removeFileIdsFromQueue($fileIds);
 		} catch (Exception $e) {
-			$this->logger->error('Failed to add file to queue', ['exception' => $e]);
+			$this->logger->error(
+				'Failed to remove files from the indexing queue',
+				['exception' => $e, 'fileIds' => $fileIds],
+			);
 		}
 	}
 
@@ -156,7 +149,12 @@ class FsEventService {
 		return in_array($mimeType, Application::MIMETYPES, true);
 	}
 
-	public function allowedPath(string $path): bool {
+	public function allowedPath(string $path, bool $relativePath = false): bool {
+		if ($relativePath) {
+			// "files_versions/..."
+			return !preg_match('/^(files_versions|files_trashbin)\/.+/', $path, $matches);
+		}
+		// "/userId/files_versions/..."
 		return !preg_match('/^\/.+\/(files_versions|files_trashbin)\/.+/', $path, $matches);
 	}
 }

@@ -17,7 +17,9 @@ use OCP\DB\Exception;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use OCP\Files\Cache\CacheEntryInsertedEvent;
+use OCP\Files\Cache\CacheEntryRemovedEvent;
 use OCP\Files\Cache\ICacheEntry;
+use OCP\Files\Cache\ICacheEvent;
 use OCP\Files\Events\Node\BeforeNodeDeletedEvent;
 use OCP\Files\Events\Node\NodeCreatedEvent;
 use OCP\Files\Events\Node\NodeRenamedEvent;
@@ -78,7 +80,7 @@ class FileListener implements IEventListener {
 				if (str_starts_with($event->getPath(), 'appdata_')) {
 					return;
 				}
-				if (!$this->fsEventService->allowedPath($event->getPath())) {
+				if (!$this->fsEventService->allowedPath($event->getPath(), relativePath: true)) {
 					return;
 				}
 
@@ -94,7 +96,41 @@ class FileListener implements IEventListener {
 					return;
 				}
 
-				$this->fsEventService->onInsertCacheEntry($node);
+				$this->fsEventService->onInsert($node, false);
+				return;
+			}
+
+			if ($event instanceof CacheEntryRemovedEvent) {
+				if (str_starts_with($event->getPath(), 'appdata_')) {
+					return;
+				}
+				if (!$this->fsEventService->allowedPath($event->getPath(), relativePath: true)) {
+					return;
+				}
+
+				// the entry was removed so we can't get the mimetype from the table now, just delete it
+				$this->fsEventService->onDeleteCacheEntries([$event->getFileId()]);
+				return;
+			}
+
+			if ($event instanceof \OCP\Files\Cache\CacheEntriesRemovedEvent) {
+				$cacheEvents = $event->getCacheEntryRemovedEvents();
+				if (count($cacheEvents) === 0) {
+					return;
+				}
+
+				// dispatched for children of a folder so the path starting are the same for all
+				$firstEvent = $cacheEvents[0];
+
+				if (str_starts_with($firstEvent->getPath(), 'appdata_')) {
+					return;
+				}
+				if (!$this->fsEventService->allowedPath($firstEvent->getPath(), relativePath: true)) {
+					return;
+				}
+
+				// the entry was removed so we can't get the mimetype from the table now, just delete it
+				$this->fsEventService->onDeleteCacheEntries(array_map(fn (ICacheEvent $c) => $c->getFileId(), $cacheEvents));
 				return;
 			}
 

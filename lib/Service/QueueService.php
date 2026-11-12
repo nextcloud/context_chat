@@ -34,6 +34,14 @@ class QueueService {
 	}
 
 	/**
+	 * @param list<int> $fileIds
+	 * @throws \OCP\DB\Exception
+	 */
+	public function removeFileIdsFromQueue(array $fileIds): void {
+		$this->queueMapper->removeFromQueueByFileIds($fileIds);
+	}
+
+	/**
 	 * @throws \OCP\DB\Exception
 	 */
 	public function count(): int {
