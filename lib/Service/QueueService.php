@@ -25,9 +25,10 @@ class QueueService {
 	 * @return QueueFile
 	 */
 	public function insertIntoQueue(QueueFile $file): QueueFile {
-		// Only add to queue if it's not in there already
+		// Update the storage and root ids if the file already exists by file id
 		if ($dbFile = $this->queueMapper->findQueueItem($file)) {
-			return $dbFile;
+			$file->setId($dbFile->getId());
+			return $this->queueMapper->updateFileInQueue($file);
 		}
 
 		return $this->queueMapper->insertIntoQueue($file);

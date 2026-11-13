@@ -174,6 +174,22 @@ class QueueMapper extends QBMapper {
 	}
 
 	/**
+	 * @param QueueFile $file
+	 * @return QueueFile
+	 * @throws \OCP\DB\Exception
+	 */
+	public function updateFileInQueue(QueueFile $file) : QueueFile {
+		$qb = $this->db->getQueryBuilder();
+		$qb->update($this->getTableName())
+			->set('storage_id', $qb->createNamedParameter($file->getStorageId(), IQueryBuilder::PARAM_INT))
+			->set('root_id', $qb->createNamedParameter($file->getRootId(), IQueryBuilder::PARAM_INT))
+			->set('update', $qb->createNamedParameter($file->getUpdate(), IQueryBuilder::PARAM_BOOL))
+			->where($qb->expr()->eq('id', $qb->createNamedParameter($file->getId(), IQueryBuilder::PARAM_INT)))
+			->executeStatement();
+		return $file;
+	}
+
+	/**
 	 * @throws Exception
 	 */
 	public function clearQueue(): void {
