@@ -12,8 +12,8 @@ use OCA\ContextChat\Db\QueueFile;
 use OCA\ContextChat\Logger;
 use OCP\DB\Exception;
 use OCP\Files\Folder;
+use OCP\Files\IMimeTypeDetector;
 use OCP\Files\InvalidPathException;
-use OCP\Files\IRootFolder;
 use OCP\Files\Node;
 use OCP\Files\NotFoundException;
 
@@ -24,7 +24,7 @@ class FsEventService {
 		private QueueService $queue,
 		private ActionScheduler $actionService,
 		private StorageService $storageService,
-		private IRootFolder $rootFolder,
+		private IMimeTypeDetector $mimeTypeDetector,
 	) {
 
 	}
@@ -37,7 +37,7 @@ class FsEventService {
 
 			$fileIds = $this->storageService->getAllFilesInFolder($node);
 		} else {
-			if (!$this->allowedMimeType($node)) {
+			if (!$this->allowedMimeType($node->getMimetype())) {
 				return;
 			}
 			try {
@@ -71,7 +71,7 @@ class FsEventService {
 			}
 			$fileIds = $this->storageService->getAllFilesInFolder($node);
 		} else {
-			if (!$this->allowedMimeType($node)) {
+			if (!$this->allowedMimeType($node->getMimetype())) {
 				return;
 			}
 			try {
@@ -83,11 +83,7 @@ class FsEventService {
 
 		$fileRefs = [];
 		foreach ($fileIds as $fileId) {
-			try {
-				$fileRefs[] = ProviderConfigService::getSourceId($fileId);
-			} catch (InvalidPathException|NotFoundException|Exception $e) {
-				$this->logger->warning($e->getMessage(), ['exception' => $e]);
-			}
+			$fileRefs[] = ProviderConfigService::getSourceId($fileId);
 		}
 		$batches = array_chunk($fileRefs, ActionScheduler::BATCH_SIZE);
 		foreach ($batches as $batch) {
@@ -95,8 +91,43 @@ class FsEventService {
 		}
 	}
 
+	/**
+	 * @param list<int> $fileIds
+	 * @return void
+	 */
+	public function onDeleteCacheEntries(array $fileIds): void {
+		if (count($fileIds) === 0) {
+			return;
+		}
+
+		try {
+			$this->queue->removeFileIdsFromQueue($fileIds);
+		} catch (Exception $e) {
+			$this->logger->error(
+				'Failed to remove files from the indexing queue',
+				['exception' => $e, 'fileIds' => $fileIds],
+			);
+		}
+
+		$fileRefs = [];
+		foreach ($fileIds as $fileId) {
+			$fileRefs[] = ProviderConfigService::getSourceId($fileId);
+		}
+		try {
+			$batches = array_chunk($fileRefs, ActionScheduler::BATCH_SIZE);
+			foreach ($batches as $batch) {
+				$this->actionService->deleteSources($batch);
+			}
+		} catch (Exception $e) {
+			$this->logger->error(
+				'Failed to remove files from the indexing queue',
+				['exception' => $e, 'fileIds' => $fileIds],
+			);
+		}
+	}
+
 	public function onInsert(Node $node, bool $recurse = true, bool $update = false): void {
-		if (!$this->allowedPath($node)) {
+		if (!$this->allowedPath($node->getPath())) {
 			return;
 		}
 		if ($node instanceof Folder) {
@@ -105,7 +136,7 @@ class FsEventService {
 			}
 			$fileIds = $this->storageService->getAllFilesInFolder($node);
 		} else {
-			if (!$this->allowedMimeType($node)) {
+			if (!$this->allowedMimeType($node->getMimetype())) {
 				return;
 			}
 			try {
@@ -132,13 +163,26 @@ class FsEventService {
 		}
 	}
 
-	private function allowedMimeType(Node $file): bool {
-		$mimeType = $file->getMimeType();
+	public function isIndexableCacheEntry(string $path): bool {
+		if (str_starts_with($path, 'appdata_')) {
+			return false;
+		}
+		if (!$this->allowedPath($path, relativePath: true)) {
+			return false;
+		}
+		return $this->allowedMimeType($this->mimeTypeDetector->detectPath($path));
+	}
+
+	public function allowedMimeType(string $mimeType): bool {
 		return in_array($mimeType, Application::MIMETYPES, true);
 	}
 
-	private function allowedPath(Node $file): bool {
-		$path = $file->getPath();
-		return !preg_match('/^\/.+\/(files_versions|files_trashbin)\/.+/', $path, $matches);
+	public function allowedPath(string $path, bool $relativePath = false): bool {
+		if ($relativePath) {
+			// "files_versions/..."
+			return !preg_match('#^(files_versions|files_trashbin|versions|trash)/.+#', $path, $matches);
+		}
+		// "/userId/files_versions/..."
+		return !preg_match('#^/[^/]+/(files_versions|files_trashbin|versions|trash)/.+#', $path, $matches);
 	}
 }

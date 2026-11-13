@@ -22,6 +22,7 @@ use OCP\IDBConnection;
  */
 class QueueMapper extends QBMapper {
 	public const LOCK_TIMEOUT = 60 * 60 * 24;
+	private const REMOVE_CHUNK_SIZE = 1000;  // Maximum number of items in an "IN" expression
 	/**
 	 * @var IDBConnection $db
 	 */
@@ -63,11 +64,24 @@ class QueueMapper extends QBMapper {
 	 * @throws \OCP\DB\Exception
 	 */
 	public function removeFromQueue(array $ids): void {
-		$chunkSize = 1000; // Maximum number of items in an "IN" expression
-		foreach (array_chunk($ids, $chunkSize) as $chunk) {
+		foreach (array_chunk($ids, self::REMOVE_CHUNK_SIZE) as $chunk) {
 			$qb = $this->db->getQueryBuilder();
 			$qb->delete($this->getTableName())
 				->where($qb->expr()->in('id', $qb->createPositionalParameter($chunk, IQueryBuilder::PARAM_INT_ARRAY)))
+				->executeStatement();
+		}
+	}
+
+	/**
+	 * @param list<int> $fileIds
+	 * @return void
+	 * @throws \OCP\DB\Exception
+	 */
+	public function removeFromQueueByFileIds(array $fileIds): void {
+		foreach (array_chunk($fileIds, self::REMOVE_CHUNK_SIZE) as $chunk) {
+			$qb = $this->db->getQueryBuilder();
+			$qb->delete($this->getTableName())
+				->where($qb->expr()->in('file_id', $qb->createPositionalParameter($chunk, IQueryBuilder::PARAM_INT_ARRAY)))
 				->executeStatement();
 		}
 	}
@@ -156,6 +170,22 @@ class QueueMapper extends QBMapper {
 			])
 			->executeStatement();
 		$file->setId($qb->getLastInsertId());
+		return $file;
+	}
+
+	/**
+	 * @param QueueFile $file
+	 * @return QueueFile
+	 * @throws \OCP\DB\Exception
+	 */
+	public function updateFileInQueue(QueueFile $file) : QueueFile {
+		$qb = $this->db->getQueryBuilder();
+		$qb->update($this->getTableName())
+			->set('storage_id', $qb->createNamedParameter($file->getStorageId(), IQueryBuilder::PARAM_INT))
+			->set('root_id', $qb->createNamedParameter($file->getRootId(), IQueryBuilder::PARAM_INT))
+			->set('update', $qb->createNamedParameter($file->getUpdate(), IQueryBuilder::PARAM_BOOL))
+			->where($qb->expr()->eq('id', $qb->createNamedParameter($file->getId(), IQueryBuilder::PARAM_INT)))
+			->executeStatement();
 		return $file;
 	}
 
