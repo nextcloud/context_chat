@@ -164,9 +164,9 @@ class FsEventService {
 	public function allowedPath(string $path, bool $relativePath = false): bool {
 		if ($relativePath) {
 			// "files_versions/..."
-			return !preg_match('/^(files_versions|files_trashbin)\/.+/', $path, $matches);
+			return !preg_match('#^(files_versions|files_trashbin|versions|trash)/.+#', $path, $matches);
 		}
 		// "/userId/files_versions/..."
-		return !preg_match('/^\/.+\/(files_versions|files_trashbin)\/.+/', $path, $matches);
+		return !preg_match('#^/[^/]+/(files_versions|files_trashbin|versions|trash)/.+#', $path, $matches);
 	}
 }
