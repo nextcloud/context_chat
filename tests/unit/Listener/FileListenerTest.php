@@ -24,6 +24,7 @@ use OCP\Files\Cache\ICacheEntry;
 use OCP\Files\Events\NodeRemovedFromCache;
 use OCP\Files\File;
 use OCP\Files\Folder;
+use OCP\Files\IMimeTypeDetector;
 use OCP\Files\IRootFolder;
 use OCP\Files\Mount\IMountPoint;
 use OCP\Files\Storage\IStorage;
@@ -45,6 +46,7 @@ class FileListenerTest extends TestCase {
 	private QueueService&MockObject $queueService;
 	private ActionScheduler&MockObject $actionScheduler;
 	private StorageService&MockObject $storageService;
+	private FsEventService $fsEventService;
 	private FileListener $listener;
 
 	protected function setUp(): void {
@@ -54,10 +56,25 @@ class FileListenerTest extends TestCase {
 		$this->queueService = $this->createMock(QueueService::class);
 		$this->actionScheduler = $this->createMock(ActionScheduler::class);
 		$this->storageService = $this->createMock(StorageService::class);
+		$mimeTypeDetector = $this->createMock(IMimeTypeDetector::class);  // extension based, like the server's detector
+		$mimeTypeDetector->method('detectPath')->willReturnCallback(fn (string $path) => match (pathinfo($path, PATHINFO_EXTENSION)) {
+			'md' => 'text/markdown',
+			'pdf' => 'application/pdf',
+			'jpg' => 'image/jpeg',
+			default => 'application/octet-stream',
+		});
+
+		$this->fsEventService = new FsEventService(
+			$logger,
+			$this->queueService,
+			$this->actionScheduler,
+			$this->storageService,
+			$mimeTypeDetector,
+		);
 		$this->listener = new FileListener(
 			$logger,
 			$this->rootFolder,
-			new FsEventService($logger, $this->queueService, $this->actionScheduler, $this->storageService),
+			$this->fsEventService,
 			$this->createMock(FsEventScheduler::class),
 		);
 	}
@@ -142,6 +159,46 @@ class FileListenerTest extends TestCase {
 		$event = new CacheEntryRemovedEvent($this->createMock(IStorage::class), 'files/readme.md', 4243, self::STORAGE_ID);
 
 		$this->queueService->expects($this->once())->method('removeFileIdsFromQueue')->with([4243]);
+		$this->actionScheduler->expects($this->once())->method('deleteSources')->with(['files__default: 4243']);
+
+		$this->listener->handle($event);
+	}
+
+	/**
+	 * @return array<string, array{string}>
+	 */
+	public static function skippedRemovalProvider(): array {
+		return [
+			'folder' => ['files/documentation'],
+			'unsupported mimetype' => ['files/photo.jpg'],
+			'appdata' => ['appdata_oc123/preview/1/2.md'],
+			'trashbin' => ['files_trashbin/files/readme.md.d1700000000'],
+		];
+	}
+
+	#[DataProvider('skippedRemovalProvider')]
+	public function testRemovedCacheEntryIsSkipped(string $path): void {
+		$event = new CacheEntryRemovedEvent($this->createMock(IStorage::class), $path, 4243, self::STORAGE_ID);
+
+		$this->queueService->expects($this->never())->method('removeFileIdsFromQueue');
+		$this->actionScheduler->expects($this->never())->method('deleteSources');
+
+		$this->listener->handle($event);
+	}
+
+	public function testBatchedRemovalEventIsFiltered(): void {
+		if (!class_exists(\OCP\Files\Cache\CacheEntriesRemovedEvent::class)) {
+			require_once __DIR__ . '/../../../stubs/cache-entries-removed-event.php';
+		}
+		$storage = $this->createMock(IStorage::class);
+		$event = new \OCP\Files\Cache\CacheEntriesRemovedEvent([
+			new CacheEntryRemovedEvent($storage, 'files/docs', 1, self::STORAGE_ID),
+			new CacheEntryRemovedEvent($storage, 'files/docs/readme.md', 2, self::STORAGE_ID),
+			new CacheEntryRemovedEvent($storage, 'files/docs/photo.jpg', 3, self::STORAGE_ID),
+			new CacheEntryRemovedEvent($storage, 'files/docs/spec.pdf', 4, self::STORAGE_ID),
+		]);
+
+		$this->queueService->expects($this->once())->method('removeFileIdsFromQueue')->with([2, 4]);
 
 		$this->listener->handle($event);
 	}

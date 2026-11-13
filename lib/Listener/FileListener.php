@@ -101,40 +101,29 @@ class FileListener implements IEventListener {
 			}
 
 			if ($event instanceof CacheEntryRemovedEvent) {
-				if (str_starts_with($event->getPath(), 'appdata_')) {
-					return;
-				}
-				if (!$this->fsEventService->allowedPath($event->getPath(), relativePath: true)) {
+				if (!$this->fsEventService->isIndexableCacheEntry($event->getPath())) {
 					return;
 				}
 
-				// the entry was removed so we can't get the mimetype from the table now, just delete it
 				$this->fsEventService->onDeleteCacheEntries([$event->getFileId()]);
 				return;
 			}
 
+			// only in NC >= 34, only one of CacheEntryRemovedEvent or CacheEntriesRemovedEvent is emitted
 			if ($event instanceof \OCP\Files\Cache\CacheEntriesRemovedEvent) {
 				$cacheEvents = $event->getCacheEntryRemovedEvents();
 				if (count($cacheEvents) === 0) {
 					return;
 				}
 
-				$filterMappedIds = array_map(fn (ICacheEvent $c) => $c->getFileId(),
-					array_values(
-						array_filter($cacheEvents, function (ICacheEvent $cacheEvent) {
-							if (str_starts_with($cacheEvent->getPath(), 'appdata_')) {
-								return false;
-							}
-							if (!$this->fsEventService->allowedPath($cacheEvent->getPath(), relativePath: true)) {
-								return false;
-							}
-							return true;
-						}),
-					),
-				);
+				$fileIds = [];
+				foreach ($event->getCacheEntryRemovedEvents() as $cacheEvent) {
+					if ($this->fsEventService->isIndexableCacheEntry($cacheEvent->getPath())) {
+						$fileIds[] = $cacheEvent->getFileId();
+					}
+				}
 
-				// the entry was removed so we can't get the mimetype from the table now, just delete it
-				$this->fsEventService->onDeleteCacheEntries($filterMappedIds);
+				$this->fsEventService->onDeleteCacheEntries($fileIds);
 				return;
 			}
 

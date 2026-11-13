@@ -12,6 +12,7 @@ use OCA\ContextChat\Db\QueueFile;
 use OCA\ContextChat\Logger;
 use OCP\DB\Exception;
 use OCP\Files\Folder;
+use OCP\Files\IMimeTypeDetector;
 use OCP\Files\InvalidPathException;
 use OCP\Files\Node;
 use OCP\Files\NotFoundException;
@@ -23,6 +24,7 @@ class FsEventService {
 		private QueueService $queue,
 		private ActionScheduler $actionService,
 		private StorageService $storageService,
+		private IMimeTypeDetector $mimeTypeDetector,
 	) {
 
 	}
@@ -94,6 +96,10 @@ class FsEventService {
 	 * @return void
 	 */
 	public function onDeleteCacheEntries(array $fileIds): void {
+		if (count($fileIds) === 0) {
+			return;
+		}
+
 		try {
 			$this->queue->removeFileIdsFromQueue($fileIds);
 		} catch (Exception $e) {
@@ -155,6 +161,16 @@ class FsEventService {
 				$this->logger->error('Failed to add file to queue', ['exception' => $e]);
 			}
 		}
+	}
+
+	public function isIndexableCacheEntry(string $path): bool {
+		if (str_starts_with($path, 'appdata_')) {
+			return false;
+		}
+		if (!$this->allowedPath($path, relativePath: true)) {
+			return false;
+		}
+		return $this->allowedMimeType($this->mimeTypeDetector->detectPath($path));
 	}
 
 	public function allowedMimeType(string $mimeType): bool {
