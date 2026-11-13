@@ -11,6 +11,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 
+## [5.6.0] - 2026-11-13
+
+### Added
+* add `occ context_chat:wipe` to delete the indexed documents from the backend's vector DB and clear the queues, with `--provider` to wipe only some content providers and `--reindex` to reindex right after (#290) @kyteinsky
+
+### Changed
+* `context_chat:reindex` now also schedules the initial import of content providers that have not been initialised (#290) @kyteinsky
+
+
 ## [5.5.0] - 2026-10-15
 
 ### Added
