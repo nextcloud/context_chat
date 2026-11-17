@@ -25,6 +25,7 @@ class FsEventService {
 		private ActionScheduler $actionService,
 		private StorageService $storageService,
 		private IRootFolder $rootFolder,
+		private TagEligibilityService $tagEligibility,
 	) {
 
 	}
@@ -64,14 +65,24 @@ class FsEventService {
 		}
 	}
 
-	public function onDelete(Node $node, bool $recurse = true): void {
+	/**
+	 * @param bool $onlyEligible only remove files that may be in the index under the current
+	 *   tag rules. Only safe where the tags of the node are still in place (before the node
+	 *   is deleted). Callers that clean up files that are no longer eligible must leave it off.
+	 */
+	public function onDelete(Node $node, bool $recurse = true, bool $onlyEligible = false): void {
 		if ($node instanceof Folder) {
 			if (!$recurse) {
 				return;
 			}
-			$fileIds = $this->storageService->getAllFilesInFolder($node);
+			$fileIds = $onlyEligible
+				? $this->tagEligibility->eligibleFileIds($node)
+				: $this->storageService->getAllFilesInFolder($node);
 		} else {
 			if (!$this->allowedMimeType($node)) {
+				return;
+			}
+			if ($onlyEligible && !$this->tagEligibility->isEligible($node)) {
 				return;
 			}
 			try {
@@ -103,9 +114,13 @@ class FsEventService {
 			if (!$recurse) {
 				return;
 			}
-			$fileIds = $this->storageService->getAllFilesInFolder($node);
+			// only the files inside that pass the allow/deny tag rules
+			$fileIds = $this->tagEligibility->eligibleFileIds($node);
 		} else {
 			if (!$this->allowedMimeType($node)) {
+				return;
+			}
+			if (!$this->tagEligibility->isEligible($node)) {
 				return;
 			}
 			try {
@@ -129,6 +144,53 @@ class FsEventService {
 			} catch (Exception $e) {
 				$this->logger->error('Failed to add file to queue', ['exception' => $e]);
 			}
+		}
+	}
+
+	/**
+	 * Kept under its old name so other callers keep working: is this node
+	 * eligible for indexing under the current mode and allow/deny tag rules?
+	 */
+	public function hasAiKnowledgeTag(Node $node): bool {
+		return $this->tagEligibility->isEligible($node);
+	}
+
+	/**
+	 * Called after a listed (allow) tag was removed from a node, or a deny tag was
+	 * added: removes from the index what is no longer eligible.
+	 */
+	public function onTagRemoved(Node $node): void {
+		if (!($node instanceof Folder)) {
+			if (!$this->tagEligibility->isEligible($node)) {
+				$this->deleteFileIds([$node->getId()]);
+			}
+			return;
+		}
+
+		$keep = array_flip($this->tagEligibility->eligibleFileIds($node));
+		$remove = [];
+		foreach ($this->storageService->getAllFilesInFolder($node) as $fileId) {
+			if (!isset($keep[$fileId])) {
+				$remove[] = $fileId;
+			}
+		}
+		$this->deleteFileIds($remove);
+	}
+
+	/**
+	 * @param int[] $fileIds
+	 */
+	private function deleteFileIds(array $fileIds): void {
+		$fileRefs = [];
+		foreach ($fileIds as $fileId) {
+			try {
+				$fileRefs[] = ProviderConfigService::getSourceId($fileId);
+			} catch (InvalidPathException|NotFoundException|Exception $e) {
+				$this->logger->warning($e->getMessage(), ['exception' => $e]);
+			}
+		}
+		foreach (array_chunk($fileRefs, ActionScheduler::BATCH_SIZE) as $batch) {
+			$this->actionService->deleteSources($batch);
 		}
 	}
 
