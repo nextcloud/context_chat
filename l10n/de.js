@@ -22,7 +22,7 @@ OC.L10N.register(
     "Eligible files for indexing: {count}" : "Zur Indizierung geeignete Dateien: {count}",
     "Queued content update actions: {count}" : "Aktionen zur Aktualisierung von Inhalten in der Warteschlange: {count}",
     "Locked queue content update actions: {count}" : "Aktionen zur Aktualisierung von Inhalten in der gesperrten Warteschlange: {count}",
-    "Queued file system events: {count}" : "Dateisystemereignisee in der Warteschlange: {count}",
+    "Queued file system events: {count}" : "Dateisystemereignisse in der Warteschlange: {count}",
     "Download Logs" : "Protokolldateien herunterladen",
     "Download the PHP App logs" : "Die PHP-App Protokolle herunterladen",
     "Download the Ex-App Backend logs" : "Die Ex-App Backend-Protokolle herunterladen",
