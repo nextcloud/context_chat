@@ -21,6 +21,7 @@
 		<file name="stubs/doctrine-dbal.php" preloadClasses="true"/>
 		<file name="stubs/cache-query-builder.php" preloadClasses="true"/>
 		<file name="stubs/appapi-public-functions.php" preloadClasses="true"/>
+		<file name="stubs/cache-entries-removed-event.php" preloadClasses="true"/>
 	</stubs>
 	<projectFiles>
 		<directory name="lib" />

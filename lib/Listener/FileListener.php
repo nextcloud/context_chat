@@ -17,13 +17,15 @@ use OCP\DB\Exception;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use OCP\Files\Cache\CacheEntryInsertedEvent;
+use OCP\Files\Cache\CacheEntryRemovedEvent;
+use OCP\Files\Cache\ICacheEntry;
+use OCP\Files\Cache\ICacheEvent;
 use OCP\Files\Events\Node\BeforeNodeDeletedEvent;
 use OCP\Files\Events\Node\NodeCreatedEvent;
 use OCP\Files\Events\Node\NodeRenamedEvent;
 use OCP\Files\Events\Node\NodeWrittenEvent;
 use OCP\Files\Events\NodeRemovedFromCache;
 use OCP\Files\File;
-use OCP\Files\Folder;
 use OCP\Files\InvalidPathException;
 use OCP\Files\IRootFolder;
 use OCP\Files\NotFoundException;
@@ -50,9 +52,6 @@ class FileListener implements IEventListener {
 
 	public function handle(Event $event): void {
 		try {
-			if ($event instanceof CacheEntryInsertedEvent && str_starts_with($event->getPath(), 'appdata_')) {
-				return;
-			}
 			if ($event instanceof NodeWrittenEvent) {
 				$node = $event->getNode();
 				if (!$node instanceof File) {
@@ -78,15 +77,53 @@ class FileListener implements IEventListener {
 			}
 
 			if ($event instanceof CacheEntryInsertedEvent) {
-				$node = $this->rootFolder->getFirstNodeById($event->getFileId());
+				if (str_starts_with($event->getPath(), 'appdata_')) {
+					return;
+				}
+				if (!$this->fsEventService->allowedPath($event->getPath(), relativePath: true)) {
+					return;
+				}
+
+				// Lookup the storage cache entry of the event (filecache table)
+				$cache = $event->getStorage()->getCache();
+				$storageCacheEntry = $cache->get($event->getPath());
+				if ($storageCacheEntry === false || !$this->fsEventService->allowedMimeType($storageCacheEntry->getMimeType())) {
+					return;
+				}
+
+				$node = $this->rootFolder->getFirstNodeById($storageCacheEntry->getId());
 				if ($node === null) {
 					return;
 				}
-				if ($node instanceof Folder) {
+
+				$this->fsEventService->onInsert($node, false);
+				return;
+			}
+
+			if ($event instanceof CacheEntryRemovedEvent) {
+				if (!$this->fsEventService->isIndexableCacheEntry($event->getPath())) {
 					return;
 				}
-				// Synchronous, because we don't recurse
-				$this->fsEventService->onInsert($node);
+
+				$this->fsEventService->onDeleteCacheEntries([$event->getFileId()]);
+				return;
+			}
+
+			// only in NC >= 34, only one of CacheEntryRemovedEvent or CacheEntriesRemovedEvent is emitted
+			if ($event instanceof \OCP\Files\Cache\CacheEntriesRemovedEvent) {
+				$cacheEvents = $event->getCacheEntryRemovedEvents();
+				if (count($cacheEvents) === 0) {
+					return;
+				}
+
+				$fileIds = [];
+				foreach ($event->getCacheEntryRemovedEvents() as $cacheEvent) {
+					if ($this->fsEventService->isIndexableCacheEntry($cacheEvent->getPath())) {
+						$fileIds[] = $cacheEvent->getFileId();
+					}
+				}
+
+				$this->fsEventService->onDeleteCacheEntries($fileIds);
 				return;
 			}
 
@@ -101,11 +138,26 @@ class FileListener implements IEventListener {
 			}
 
 			if ($event instanceof NodeRemovedFromCache) {
-				$cacheEntry = $event->getStorage()->getCache()->get($event->getPath());
-				if ($cacheEntry === false) {
+				if (str_starts_with($event->getPath(), 'appdata_')) {
 					return;
 				}
-				$node = $this->rootFolder->getFirstNodeById($cacheEntry->getId());
+				if (!$this->fsEventService->allowedPath($event->getPath(), relativePath: true)) {
+					return;
+				}
+
+				// Lookup the storage cache entry of the event (filecache table)
+				$cache = $event->getStorage()->getCache();
+				$storageCacheEntry = $cache->get($event->getPath());
+				if ($storageCacheEntry === false) {
+					return;
+				}
+
+				$mimeType = $storageCacheEntry->getMimeType();
+				if ($mimeType !== ICacheEntry::DIRECTORY_MIMETYPE && !$this->fsEventService->allowedMimeType($mimeType)) {
+					return;
+				}
+
+				$node = $this->rootFolder->getFirstNodeById($storageCacheEntry->getId());
 				if ($node === null) {
 					return;
 				}
