@@ -30,21 +30,31 @@ The PR description disclosure explains how AI was used; the commit trailer ensur
 Examples:
 
 ```
-Assisted-by: Devstral:devstral-small-2507
-Assisted-by: ClaudeCode:claude-sonnet-4-6
-Assisted-by: Qwen:qwen3-coder-32b
-Assisted-by: Copilot:gpt-4o
+Assisted-by: Devstral:devstral-small-2-24b-instruct-2512
+Assisted-by: ClaudeCode:claude-sonnet-5-5
+Assisted-by: Qwen:qwen3-coder-next
+Assisted-by: Codex:gpt-6.1-sol
 ```
 
 ### Author Accountability
 
-The contributor is the legal and moral author of every line they submit. If a reviewer asks "why does this work this way?" and the answer is "the AI wrote it," the PR will be closed. This applies to code, comments, documentation, and tests alike. You must be able to explain, defend, and modify any content you submit.
+The contributor is the legal and moral author of every line they submit, and is responsible for it however it was produced. This applies to code, comments, documentation, and tests alike. "The AI wrote it" is not an answer to a reviewer's question: answers may be drafted with AI, but they must actually address the question.
 
-### Human-Written Communication
+### Communication Written for Humans
 
-Issues, PR descriptions, and review comments must be in the contributor's own words. Translation assistance and grammar/spelling help are acceptable exceptions and do not need to be disclosed - the intent of this rule is to ensure that the ideas, reasoning, and decisions in community communication come from the contributor.
+Issues, PR descriptions, review comments, and replies may be drafted with AI assistance. Every such text is read by people - maintainers, reviewers, and future contributors - so it must be written for them:
 
-This requirement extends through the entire review process. Contributors must respond to reviewer questions and implement requested changes themselves. Passing maintainer feedback into an AI and posting whatever comes out is not an acceptable substitute for genuine engagement. If a contributor cannot explain or implement a requested change because they do not understand their own submission, the PR will be closed.
+- **Owned by the contributor.** Text posted on the contributor's behalf is theirs, no matter who drafted it.
+- **Answers the reviewer's first questions.** A PR description states which problem it solves, what changed at a high level, and how to verify the change. A reviewer who has not read the code yet can tell all three from the description alone.
+- **Plain, concise, and skimmable.** Do not restate the diff file by file, pad the text with filler or summaries of summaries, or paste raw tool output.
+- **Disclosed.** Tick the AI checkbox of the repository's PR template, and end AI-drafted comments and issues with a footer such as `Assisted by AGENT_NAME:MODEL_VERSION`.
+- **Template filled in.** When opening a PR or issue, keep the repository's template intact and complete every section.
+- **Bug reports reproducible.** An AI-drafted bug report follows the repository's issue template and states whether the bug was validated and reproduced on a live Nextcloud instance.
+- **Agent-only details collapsed.** Information meant only for other agents (prompts, plans, tool logs) goes into a collapsed `<details>` block, so human readers can skip it.
+
+Translation assistance and grammar/spelling help do not need to be disclosed.
+
+This applies throughout the review process: answers to reviewer questions and implementations of requested changes may be drafted with AI as well. What counts is the result. A pull request that is correct and well made is welcome, regardless of how much of it was produced with AI, as long as it meets the requirements of this policy. If a maintainer gets the impression that the contributor does not understand their own submission and is only relaying an AI whose output is of poor quality, they may first ask for a rewrite - by requesting changes or converting the pull request to a draft - and name what is missing, or close the pull request right away: such a contribution has no value to the project. If a rewrite was requested, the pull request may be closed when the contributor does not respond within a month, or when the rewrite still shows neither understanding nor quality. Extractive contributions can still be closed right away, see Maintainer Discretion.
 
 ### Security and Dependency Scrutiny
 
@@ -54,7 +64,7 @@ For general security requirements applicable to all contributions, see the [Cont
 
 ### No Autonomous Agent Submissions
 
-AI agents must not open issues, submit pull requests, post review comments, or send security reports autonomously. Every contribution must be composed, reviewed, and submitted by a human. This includes agentic workflows where an AI browses the codebase, plans changes across multiple files, and generates commits - the human contributor remains responsible for reviewing all output before anything is submitted.
+AI agents must not act on their own: every issue, pull request, and comment is posted on behalf of a contributor who directed the agent and is accountable for it, and security reports are always submitted by a human. This includes agentic workflows where an AI browses the codebase, plans changes across multiple files, and generates commits - the human contributor remains responsible for everything that is submitted.
 
 AI agents must not add `Signed-off-by` tags: only humans can legally certify the [Developer Certificate of Origin](https://github.com/nextcloud/server/blob/master/contribute/developer-certificate-of-origin).
 
@@ -66,11 +76,17 @@ The applicable test has three parts: the AI tool's terms must permit open-source
 
 ### Code Quality and Cleanup
 
-AI output must be cleaned before submission. Dead code, redundant logic, excessive comments, inconsistent style, unused variables, structural drift, and unrelated file changes must all be removed. Submitting large AI code blobs without meaningful oversight - sometimes called "vibe coding" or "prompt dumping" - is prohibited.
+AI output must be cleaned before submission. Dead code, redundant logic, excessive comments, inconsistent style, unused variables, malformed or garbled characters, structural drift, and unrelated file changes must all be removed. Submitting large AI code blobs without meaningful oversight - sometimes called "vibe coding" or "prompt dumping" - is prohibited.
+
+Code comments must document the code itself - behavior, signatures, and constraints the code cannot express - never the process that produced it. Progress notes, decision records, and change descriptions ("changed X to Y", "as requested", "this fixes ...") belong in the commit message or PR discussion; in code they go stale and become misleading. Comments must stay brief and match the comment density of the surrounding code, and self-explanatory code needs no comment at all.
+
+Commit messages follow the repository's conventions, such as conventional commits and the trailers this policy requires. Beyond that, the message body explains why the change was made - the problem it solves and the decisions the diff does not show - not how it was done; the diff already shows that.
+
+Duplicated logic is a further common sign of unreviewed AI output: existing helpers and utilities must be reused instead of re-implemented, and when a flawed pattern is corrected, every occurrence of it must be fixed - not only the one a reviewer happened to point out.
 
 Signs of a disallowed submission include: large unreviewed AI blobs; obvious mechanical mistakes a human would fix in minutes; code that has clearly never been executed; and pull requests that shift debugging and cleanup work onto maintainers rather than the contributor. As required by the [Contribution Guidelines](CONTRIBUTING.md), all changed and added code must be unit tested - AI-generated code is not exempt from this requirement.
 
-New features must be tested on a live Nextcloud instance by the contributor before submission. Providing test instructions for an AI agent to execute is not a substitute for human testing.
+Every pull request that changes runtime behavior must be validated by testing it on a live Nextcloud instance before submission, in every context in which the change is reachable - not only the default authenticated view, but also public share links, embedded contexts such as the Smart Picker and reference widgets, and other entry points the app supports. AI-generated changes frequently work in the primary view while silently failing in secondary ones. This testing may be AI-assisted, but must not be limited to it: the contributor tests the change on the live instance themselves as well.
 
 ---
 
@@ -92,4 +108,4 @@ AI tools must not be used to fully automate the resolution of issues labeled [`g
 
 ## Scope and Updates
 
-This policy applies to all contributions to repositories and apps under the Nextcloud GitHub organization, by all contributors. It will be reviewed and updated as AI tooling, open-source best practices, and applicable law evolve. Suggested changes are welcome via pull requests.
+This policy applies to all contributions to repositories and apps under the Nextcloud GitHub organization, by all contributors. It will be reviewed and updated as AI tooling, open-source best practices, and applicable law evolve. Pull requests opened before a change to this policy are asked to adapt to it rather than closed. Suggested changes are welcome via pull requests.
