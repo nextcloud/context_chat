@@ -85,9 +85,13 @@ class FsEventService {
 		foreach ($fileIds as $fileId) {
 			$fileRefs[] = ProviderConfigService::getSourceId($fileId);
 		}
-		$batches = array_chunk($fileRefs, ActionScheduler::BATCH_SIZE);
-		foreach ($batches as $batch) {
-			$this->actionService->deleteSources($batch);
+		try {
+			$this->actionService->deleteSources($fileRefs);
+		} catch (Exception $e) {
+			$this->logger->error(
+				'Failed to remove files from the backend',
+				['exception' => $e, 'fileRefs' => $fileRefs],
+			);
 		}
 	}
 
@@ -114,10 +118,7 @@ class FsEventService {
 			$fileRefs[] = ProviderConfigService::getSourceId($fileId);
 		}
 		try {
-			$batches = array_chunk($fileRefs, ActionScheduler::BATCH_SIZE);
-			foreach ($batches as $batch) {
-				$this->actionService->deleteSources($batch);
-			}
+			$this->actionService->deleteSources($fileRefs);
 		} catch (Exception $e) {
 			$this->logger->error(
 				'Failed to remove files from the backend',
@@ -170,6 +171,9 @@ class FsEventService {
 		if (!$this->allowedPath($path, relativePath: true)) {
 			return false;
 		}
+		// folders are detected as "application/octet-stream" which is fine for this use-case
+		// since they are not indexable either, the files inside the folder are received in
+		// separate cache entry events
 		return $this->allowedMimeType($this->mimeTypeDetector->detectPath($path));
 	}
 
@@ -178,6 +182,9 @@ class FsEventService {
 	}
 
 	public function allowedPath(string $path, bool $relativePath = false): bool {
+		if ($path === '') {
+			return false;
+		}
 		if ($relativePath) {
 			// "files_versions/..."
 			return !preg_match('#^(files_versions|files_trashbin|versions|trash)/.+#', $path, $matches);
