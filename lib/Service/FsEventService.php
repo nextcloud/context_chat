@@ -220,8 +220,10 @@ class FsEventService {
 			return false;
 		}
 
-		// NodeRemovedFromCache reports the storage of the mount, which is a jail for groupfolders, so
-		// the path is relative to the jail root and tells nothing about the layout of the storage
+		// The storage is a jail for NodeRemovedFromCache of a groupfolder mount and for the cache events
+		// of groupfolders with encryption enabled. Its paths may be relative to the jail root, which tells
+		// nothing about the layout of the storage. Trash and versions entries are still filtered by
+		// mimetype: "<name>.d<timestamp>" and "<timestamp>" are not detected as indexable types.
 		if ($storage->instanceOfStorage('OC\Files\Storage\Wrapper\Jail')) {
 			return true;
 		}

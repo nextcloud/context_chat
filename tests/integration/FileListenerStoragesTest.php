@@ -52,6 +52,8 @@ class FileListenerStoragesTest extends TestCase {
 	private ?string $externalDir = null;
 	/** @var list<int> */
 	private array $fileIds = [];
+	/** id of the last action queued before the test, the actions after it are the test's */
+	private int $lastActionId = 0;
 
 	protected function setUp(): void {
 		parent::setUp();
@@ -67,6 +69,10 @@ class FileListenerStoragesTest extends TestCase {
 		}
 		$this->db = Server::get(IDBConnection::class);
 		$this->rootFolder = Server::get(IRootFolder::class);
+		$qb = $this->db->getQueryBuilder();
+		$result = $qb->select($qb->func()->max('id'))->from('context_chat_action_queue')->executeQuery();
+		$this->lastActionId = (int)$result->fetchOne();
+		$result->closeCursor();
 
 		$userManager = Server::get(IUserManager::class);
 		$this->user = $userManager->get(self::USER) ?? $userManager->createUser(self::USER, 'cc-file-listener-test-pass-1234');
@@ -76,6 +82,11 @@ class FileListenerStoragesTest extends TestCase {
 	}
 
 	protected function tearDown(): void {
+		if (!isset($this->user)) {
+			// skipped in setUp, nothing was created
+			parent::tearDown();
+			return;
+		}
 		if ($this->groupFolderId !== null) {
 			$folderManager = Server::get(FolderManager::class);
 			$folder = $folderManager->getFolder($this->groupFolderId);
@@ -96,7 +107,10 @@ class FileListenerStoragesTest extends TestCase {
 				->where($qb->expr()->in('file_id', $qb->createNamedParameter($this->fileIds, IQueryBuilder::PARAM_INT_ARRAY)))
 				->executeStatement();
 		}
-		$this->db->getQueryBuilder()->delete('context_chat_action_queue')->executeStatement();
+		$qb = $this->db->getQueryBuilder();
+		$qb->delete('context_chat_action_queue')
+			->where($qb->expr()->gt('id', $qb->createNamedParameter($this->lastActionId, IQueryBuilder::PARAM_INT)))
+			->executeStatement();
 		Server::get(IGroupManager::class)->get(self::GROUP)?->delete();
 		$this->user->delete();
 		parent::tearDown();
