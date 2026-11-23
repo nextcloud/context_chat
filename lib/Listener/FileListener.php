@@ -67,7 +67,7 @@ class FileListener implements IEventListener {
 				// Folders need to be handled here too since cache entry is not removed when file is
 				//   initially deleted (moved to trashbin) so NodeRemovedFromCache is not fired and not
 				//   handled but we need to remove the file from the CCB index.
-				$this->fsEventService->onDelete($event->getNode());
+				$this->fsEventService->onDelete($event->getNode(), true, true);
 				return;
 			}
 
