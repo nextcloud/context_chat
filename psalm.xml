@@ -41,6 +41,7 @@
 		<UndefinedClass>
 			<errorLevel type="suppress">
 				<referencedClass name="OC\User\NoUserException" />
+				<referencedClass name="OC\Files\Storage\Wrapper\Jail" />
 			</errorLevel>
 		</UndefinedClass>
 	</issueHandlers>

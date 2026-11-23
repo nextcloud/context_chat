@@ -19,7 +19,6 @@ use OCP\EventDispatcher\IEventListener;
 use OCP\Files\Cache\CacheEntryInsertedEvent;
 use OCP\Files\Cache\CacheEntryRemovedEvent;
 use OCP\Files\Cache\ICacheEntry;
-use OCP\Files\Cache\ICacheEvent;
 use OCP\Files\Events\Node\BeforeNodeDeletedEvent;
 use OCP\Files\Events\Node\NodeCreatedEvent;
 use OCP\Files\Events\Node\NodeRenamedEvent;
@@ -77,10 +76,7 @@ class FileListener implements IEventListener {
 			}
 
 			if ($event instanceof CacheEntryInsertedEvent) {
-				if (str_starts_with($event->getPath(), 'appdata_')) {
-					return;
-				}
-				if (!$this->fsEventService->allowedPath($event->getPath(), relativePath: true)) {
+				if (!$this->fsEventService->allowedCacheEventPath($event)) {
 					return;
 				}
 
@@ -101,7 +97,7 @@ class FileListener implements IEventListener {
 			}
 
 			if ($event instanceof CacheEntryRemovedEvent) {
-				if (!$this->fsEventService->isIndexableCacheEntry($event->getPath())) {
+				if (!$this->fsEventService->isIndexableCacheEntry($event)) {
 					return;
 				}
 
@@ -118,7 +114,7 @@ class FileListener implements IEventListener {
 
 				$fileIds = [];
 				foreach ($event->getCacheEntryRemovedEvents() as $cacheEvent) {
-					if ($this->fsEventService->isIndexableCacheEntry($cacheEvent->getPath())) {
+					if ($this->fsEventService->isIndexableCacheEntry($cacheEvent)) {
 						$fileIds[] = $cacheEvent->getFileId();
 					}
 				}
@@ -138,10 +134,7 @@ class FileListener implements IEventListener {
 			}
 
 			if ($event instanceof NodeRemovedFromCache) {
-				if (str_starts_with($event->getPath(), 'appdata_')) {
-					return;
-				}
-				if (!$this->fsEventService->allowedPath($event->getPath(), relativePath: true)) {
+				if (!$this->fsEventService->allowedStoragePath($event->getStorage(), $event->getPath())) {
 					return;
 				}
 

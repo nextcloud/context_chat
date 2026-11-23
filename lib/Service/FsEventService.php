@@ -11,13 +11,21 @@ use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\Db\QueueFile;
 use OCA\ContextChat\Logger;
 use OCP\DB\Exception;
+use OCP\Files\Cache\ICacheEvent;
 use OCP\Files\Folder;
+use OCP\Files\IHomeStorage;
 use OCP\Files\IMimeTypeDetector;
 use OCP\Files\InvalidPathException;
+use OCP\Files\IRootFolder;
 use OCP\Files\Node;
 use OCP\Files\NotFoundException;
+use OCP\Files\Storage\IStorage;
 
 class FsEventService {
+	// ids of the storages groupfolders creates for a folder with a separate storage
+	private const GROUPFOLDER_STORAGE_ID_REGEX = '#^(local::.+/__groupfolders/\d+/|object::store:object::groupfolder:\d+\.)#';
+
+	private ?int $rootStorageId = null;
 
 	public function __construct(
 		private Logger $logger,
@@ -25,6 +33,7 @@ class FsEventService {
 		private ActionScheduler $actionService,
 		private StorageService $storageService,
 		private IMimeTypeDetector $mimeTypeDetector,
+		private IRootFolder $rootFolder,
 	) {
 
 	}
@@ -164,32 +173,79 @@ class FsEventService {
 		}
 	}
 
-	public function isIndexableCacheEntry(string $path): bool {
-		if (str_starts_with($path, 'appdata_')) {
-			return false;
-		}
-		if (!$this->allowedPath($path, relativePath: true)) {
-			return false;
-		}
+	public function isIndexableCacheEntry(ICacheEvent $event): bool {
 		// folders are detected as "application/octet-stream" which is fine for this use-case
 		// since they are not indexable either, the files inside the folder are received in
 		// separate cache entry events
-		return $this->allowedMimeType($this->mimeTypeDetector->detectPath($path));
+		if (!$this->allowedMimeType($this->mimeTypeDetector->detectPath($event->getPath()))) {
+			return false;
+		}
+		return $this->allowedCacheEventPath($event);
 	}
 
 	public function allowedMimeType(string $mimeType): bool {
 		return in_array($mimeType, Application::MIMETYPES, true);
 	}
 
-	public function allowedPath(string $path, bool $relativePath = false): bool {
+	/**
+	 * Whether the file system node at an absolute path ("/userId/files_versions/...") may be indexed.
+	 */
+	public function allowedPath(string $path): bool {
+		return !preg_match('#^/[^/]+/(files_versions|files_trashbin)/.+#', $path);
+	}
+
+	/**
+	 * Whether the path of a cache event may hold indexable files, judging by the layout
+	 * of the storage the event was fired for.
+	 */
+	public function allowedCacheEventPath(ICacheEvent $event): bool {
+		$storage = $event->getStorage();
+		if ($storage->getCache()->getNumericStorageId() !== $event->getStorageId()) {
+			// a move across storages reports the target storage with the path and id of the
+			// source, so the layout of the source storage is unknown
+			return $event->getPath() !== '';
+		}
+		return $this->allowedStoragePath($storage, $event->getPath());
+	}
+
+	/**
+	 * Whether a path inside a storage may hold indexable files, judging by the layout of that
+	 * storage. Only the storages whose layout is known are restricted, everything else (external
+	 * storages) is user content, in which any folder name is valid.
+	 *
+	 * @param string $path path inside the storage, "" is the storage root
+	 */
+	public function allowedStoragePath(IStorage $storage, string $path): bool {
 		if ($path === '') {
 			return false;
 		}
-		if ($relativePath) {
-			// "files_versions/..."
-			return !preg_match('#^(files_versions|files_trashbin|versions|trash)/.+#', $path, $matches);
+
+		// NodeRemovedFromCache reports the storage of the mount, which is a jail for groupfolders, so
+		// the path is relative to the jail root and tells nothing about the layout of the storage
+		if ($storage->instanceOfStorage('OC\Files\Storage\Wrapper\Jail')) {
+			return true;
 		}
-		// "/userId/files_versions/..."
-		return !preg_match('#^/[^/]+/(files_versions|files_trashbin|versions|trash)/.+#', $path, $matches);
+
+		if ($storage->instanceOfStorage(IHomeStorage::class)) {
+			// "files/" is the only user content, next to "files_versions/", "files_trashbin/", "cache/", ...
+			return str_starts_with($path, 'files/');
+		}
+
+		if (preg_match(self::GROUPFOLDER_STORAGE_ID_REGEX, (string)$storage->getId()) === 1) {
+			// "files/", "trash/" and "versions/"
+			return preg_match('#^(trash|versions)(/|$)#', $path) !== 1;
+		}
+
+		if ($storage->getCache()->getNumericStorageId() === $this->getRootStorageId()) {
+			// next to "appdata_<instanceid>/", groupfolders without a separate storage live in
+			// "__groupfolders/<id>/", "__groupfolders/trash/<id>/" and "__groupfolders/versions/<id>/"
+			return preg_match('#^__groupfolders/\d+/#', $path) === 1;
+		}
+
+		return true;
+	}
+
+	private function getRootStorageId(): ?int {
+		return $this->rootStorageId ??= $this->rootFolder->getMount('/')->getNumericStorageId();
 	}
 }
