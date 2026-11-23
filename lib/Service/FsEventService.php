@@ -120,7 +120,7 @@ class FsEventService {
 			}
 		} catch (Exception $e) {
 			$this->logger->error(
-				'Failed to remove files from the indexing queue',
+				'Failed to remove files from the backend',
 				['exception' => $e, 'fileIds' => $fileIds],
 			);
 		}
