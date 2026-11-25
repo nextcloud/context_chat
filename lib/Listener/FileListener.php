@@ -187,6 +187,9 @@ class FileListener implements IEventListener {
 		// Lookup the storage cache entry of the event (filecache table)
 		$cache = $event->getStorage()->getCache();
 		$storageCacheEntry = $cache->get($event->getPath());
+		// can be stale, e.g. the first update of a trash restore still has the octet-stream of the trashed name;
+		// fine to skip, the mimetype fix that follows in the same request fires another update:
+		// https://github.com/nextcloud/server/blob/0ff6535942ddf0a2ab38c215c3d0ff78aa6f43f7/lib/private/Files/Cache/Updater.php#L203-L207
 		if ($storageCacheEntry === false || !$this->fsEventService->allowedMimeType($storageCacheEntry->getMimeType())) {
 			return;
 		}
