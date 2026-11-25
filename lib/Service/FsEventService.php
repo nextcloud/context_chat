@@ -7,11 +7,15 @@
 
 namespace OCA\ContextChat\Service;
 
+use OC\Files\Storage\Wrapper\Jail;
+use OC\Files\Storage\Wrapper\Wrapper;
 use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\Db\QueueFile;
 use OCA\ContextChat\Logger;
 use OCP\DB\Exception;
+use OCP\Files\Cache\CacheEntryRemovedEvent;
 use OCP\Files\Cache\ICacheEvent;
+use OCP\Files\Cache\IFileAccess;
 use OCP\Files\Folder;
 use OCP\Files\IHomeStorage;
 use OCP\Files\IMimeTypeDetector;
@@ -22,7 +26,10 @@ use OCP\Files\NotFoundException;
 use OCP\Files\Storage\IStorage;
 
 class FsEventService {
-	// ids of the storages groupfolders creates for a folder with a separate storage
+	// Ids of groupfolders' separate storages. Their classes are plain Local/ObjectStoreStorage, shared with
+	// external and primary storages, so only the id tells them apart:
+	// https://github.com/nextcloud/groupfolders/blob/abf7d207c64425342bd80c7bddee0c75f27ca458/lib/Mount/FolderStorageManager.php#L148-L162
+	// https://github.com/nextcloud/groupfolders/blob/abf7d207c64425342bd80c7bddee0c75f27ca458/lib/Mount/FolderStorageManager.php#L190
 	private const GROUPFOLDER_STORAGE_ID_REGEX = '#^(local::.+/__groupfolders/\d+/|object::store:object::groupfolder:\d+\.)#';
 
 	private ?int $rootStorageId = null;
@@ -34,6 +41,7 @@ class FsEventService {
 		private StorageService $storageService,
 		private IMimeTypeDetector $mimeTypeDetector,
 		private IRootFolder $rootFolder,
+		private IFileAccess $fileAccess,
 	) {
 
 	}
@@ -201,46 +209,83 @@ class FsEventService {
 	public function allowedCacheEventPath(ICacheEvent $event): bool {
 		$storage = $event->getStorage();
 		if ($storage->getCache()->getNumericStorageId() !== $event->getStorageId()) {
-			// a move across storages reports the target storage with the path and id of the
-			// source, so the layout of the source storage is unknown
+			// Removal half of a move to another storage. The event holds the target storage but the source's
+			// path and storage id, so the path can't be checked against the layout of either storage.
+			// https://github.com/nextcloud/server/blob/0ff6535942ddf0a2ab38c215c3d0ff78aa6f43f7/lib/private/Files/Cache/Cache.php#L877
 			return $event->getPath() !== '';
 		}
-		return $this->allowedStoragePath($storage, $event->getPath());
+
+		$path = $event->getPath();
+		if ($storage->instanceOfStorage(Jail::class)) {
+			// The event path is relative to the storage below the jail, except for inserts into groupfolders,
+			// which rewrites them relative to its jail. The filecache row has the path below the jail.
+			// https://github.com/nextcloud/groupfolders/blob/abf7d207c64425342bd80c7bddee0c75f27ca458/lib/Listeners/CacheListener.php#L24-L44
+			[$storage] = $this->unjail($storage, '');
+			if (!$event instanceof CacheEntryRemovedEvent) {
+				$entry = $this->fileAccess->getByFileIdInStorage($event->getFileId(), $event->getStorageId());
+				if ($entry === null) {
+					return false;
+				}
+				$path = $entry->getPath();
+			}
+		}
+		return $this->allowedLayoutPath($storage, $path);
 	}
 
 	/**
-	 * Whether a path inside a storage may hold indexable files, judging by the layout of that
-	 * storage. Only the storages whose layout is known are restricted, everything else (external
-	 * storages) is user content, in which any folder name is valid.
+	 * Whether a path inside a storage may hold indexable files.
 	 *
-	 * @param string $path path inside the storage, "" is the storage root
+	 * @param string $path path inside the storage as the storage presents it (jailed for a jail), "" is its root
 	 */
 	public function allowedStoragePath(IStorage $storage, string $path): bool {
+		return $this->allowedLayoutPath(...$this->unjail($storage, $path));
+	}
+
+	/**
+	 * @return array{IStorage, string} the storage below all jails and the path in it
+	 */
+	private function unjail(IStorage $storage, string $path): array {
+		while ($storage->instanceOfStorage(Jail::class)) {
+			// instanceOfStorage() is true for a wrapper around a jail too, so find the jail itself
+			/** @var Wrapper $storage */
+			$jail = $storage->getInstanceOfStorage(Jail::class);
+			if ($jail === null) {
+				break;
+			}
+			$path = $jail->getUnjailedPath($path);
+			$storage = $jail->getUnjailedStorage();
+		}
+		return [$storage, $path];
+	}
+
+	/**
+	 * Only storages with a known layout are restricted; anything else (external storages) is user
+	 * content, where any folder name is valid.
+	 *
+	 * @param IStorage $storage not a jail
+	 * @param string $path path inside the storage, "" is its root
+	 */
+	private function allowedLayoutPath(IStorage $storage, string $path): bool {
 		if ($path === '') {
 			return false;
 		}
 
-		// The storage is a jail for NodeRemovedFromCache of a groupfolder mount and for the cache events
-		// of groupfolders with encryption enabled. Its paths may be relative to the jail root, which tells
-		// nothing about the layout of the storage. Trash and versions entries are still filtered by
-		// mimetype: "<name>.d<timestamp>" and "<timestamp>" are not detected as indexable types.
-		if ($storage->instanceOfStorage('OC\Files\Storage\Wrapper\Jail')) {
-			return true;
-		}
-
 		if ($storage->instanceOfStorage(IHomeStorage::class)) {
-			// "files/" is the only user content, next to "files_versions/", "files_trashbin/", "cache/", ...
+			// only "files/"; not "files_versions/", "files_trashbin/", "uploads/", "cache/", ...
 			return str_starts_with($path, 'files/');
 		}
 
 		if (preg_match(self::GROUPFOLDER_STORAGE_ID_REGEX, (string)$storage->getId()) === 1) {
-			// "files/", "trash/" and "versions/"
+			// layout: "files/", "trash/", "versions/"
 			return preg_match('#^(trash|versions)(/|$)#', $path) !== 1;
 		}
 
+		// Root storage: "appdata_<instanceid>/" and groupfolders without a separate storage
+		// ("__groupfolders/<id>/", "__groupfolders/{trash,versions}/<id>/"). The numeric id is looked up,
+		// it differs per install.
+		// https://github.com/nextcloud/server/blob/0ff6535942ddf0a2ab38c215c3d0ff78aa6f43f7/lib/private/Files/Cache/LocalRootScanner.php#L54
+		// https://github.com/nextcloud/groupfolders/blob/abf7d207c64425342bd80c7bddee0c75f27ca458/lib/Mount/FolderStorageManager.php#L210-L277
 		if ($storage->getCache()->getNumericStorageId() === $this->getRootStorageId()) {
-			// next to "appdata_<instanceid>/", groupfolders without a separate storage live in
-			// "__groupfolders/<id>/", "__groupfolders/trash/<id>/" and "__groupfolders/versions/<id>/"
 			return preg_match('#^__groupfolders/\d+/#', $path) === 1;
 		}
 

@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace OCA\ContextChat\Tests\Listener;
 
+use OC\Files\Storage\Wrapper\Jail;
 use OCA\ContextChat\Db\QueueFile;
 use OCA\ContextChat\Listener\FileListener;
 use OCA\ContextChat\Logger;
@@ -21,6 +22,7 @@ use OCP\Files\Cache\CacheEntryInsertedEvent;
 use OCP\Files\Cache\CacheEntryRemovedEvent;
 use OCP\Files\Cache\ICache;
 use OCP\Files\Cache\ICacheEntry;
+use OCP\Files\Cache\IFileAccess;
 use OCP\Files\Events\NodeRemovedFromCache;
 use OCP\Files\File;
 use OCP\Files\Folder;
@@ -52,6 +54,7 @@ class FileListenerTest extends TestCase {
 	private QueueService&MockObject $queueService;
 	private ActionScheduler&MockObject $actionScheduler;
 	private StorageService&MockObject $storageService;
+	private IFileAccess&MockObject $fileAccess;
 	private FsEventService $fsEventService;
 	private FileListener $listener;
 
@@ -80,6 +83,7 @@ class FileListenerTest extends TestCase {
 			$this->storageService,
 			$mimeTypeDetector,
 			$this->rootFolder,
+			$this->fileAccess = $this->createMock(IFileAccess::class),
 		);
 		$this->listener = new FileListener(
 			$logger,
@@ -90,7 +94,7 @@ class FileListenerTest extends TestCase {
 	}
 
 	/**
-	 * @param string $kind one of home, groupfolder, root, external or jail
+	 * @param string $kind one of home, groupfolder, root or external
 	 * @param array<string, array{int, string}> $entries cache entries by path: [file id, mimetype]
 	 */
 	private function storage(string $kind, array $entries = [], ?int $numericId = null): IStorage {
@@ -100,28 +104,45 @@ class FileListenerTest extends TestCase {
 			if (!isset($entries[$path])) {
 				return false;
 			}
-			$cacheEntry = $this->createMock(ICacheEntry::class);
-			$cacheEntry->method('getId')->willReturn($entries[$path][0]);
-			$cacheEntry->method('getMimeType')->willReturn($entries[$path][1]);
-			return $cacheEntry;
+			return $this->cacheEntry($entries[$path][0], $path, $entries[$path][1]);
 		});
 
 		$id = match ($kind) {
 			'home' => 'home::admin',
 			'groupfolder' => 'local::/var/www/html/data/__groupfolders/7/',
 			'root' => 'local::/var/www/html/data/',
-			'jail' => 'local::/var/www/html/data/__groupfolders/7/',
 			default => 'smb::server/share//',
 		};
 		$storage = $this->createMock(IStorage::class);
 		$storage->method('getCache')->willReturn($cache);
 		$storage->method('getId')->willReturn($id);
-		$storage->method('instanceOfStorage')->willReturnCallback(fn (string $class) => match ($class) {
-			IHomeStorage::class => $kind === 'home',
-			'OC\Files\Storage\Wrapper\Jail' => $kind === 'jail',
-			default => false,
-		});
+		$storage->method('instanceOfStorage')->willReturnCallback(fn (string $class) => $class === IHomeStorage::class && $kind === 'home');
 		return $storage;
+	}
+
+	/**
+	 * A groupfolder mount: a jail at $root of the groupfolder storage.
+	 *
+	 * @param array<string, array{int, string}> $entries cache entries by path in the jail: [file id, mimetype]
+	 */
+	private function jail(string $root, array $entries = []): IStorage {
+		$base = $this->storage('groupfolder');
+		$jail = $this->createMock(Jail::class);
+		$jail->method('getCache')->willReturn($this->storage('groupfolder', $entries)->getCache());
+		$jail->method('getId')->willReturn($base->getId());
+		$jail->method('instanceOfStorage')->willReturnCallback(fn (string $class) => $class === Jail::class);
+		$jail->method('getInstanceOfStorage')->with(Jail::class)->willReturn($jail);
+		$jail->method('getUnjailedPath')->willReturnCallback(fn (string $path) => trim($root . '/' . $path, '/'));
+		$jail->method('getUnjailedStorage')->willReturn($base);
+		return $jail;
+	}
+
+	private function cacheEntry(int $fileId, string $path, string $mimetype): ICacheEntry {
+		$cacheEntry = $this->createMock(ICacheEntry::class);
+		$cacheEntry->method('getId')->willReturn($fileId);
+		$cacheEntry->method('getPath')->willReturn($path);
+		$cacheEntry->method('getMimeType')->willReturn($mimetype);
+		return $cacheEntry;
 	}
 
 	private function mountPoint(): IMountPoint {
@@ -339,17 +360,54 @@ class FileListenerTest extends TestCase {
 	}
 
 	/**
-	 * The storage of a groupfolder mount is a jail, the path is relative to it.
+	 * The storage of a groupfolder mount is a jail, the path is relative to it. It is judged by the
+	 * layout of the storage below: a file in "<root>/trash" is a groupfolder trashbin item.
 	 */
-	public function testNodeRemovedFromCacheOnJailedStorageIsNotFilteredByLayout(): void {
-		$path = 'trash/readme.md';
-		$event = new NodeRemovedFromCache($this->storage('jail', [$path => [4242, 'text/markdown']]), $path);
-		$file = $this->file(4242, '/admin/files/gf/trash/readme.md', 'text/markdown');
+	#[DataProvider('jailProvider')]
+	public function testNodeRemovedFromCacheOnJailedStorageIsJudgedBelowTheJail(string $jailRoot, string $path, bool $indexable): void {
+		$event = new NodeRemovedFromCache($this->jail($jailRoot, [$path => [4242, 'text/markdown']]), $path);
 
-		$this->rootFolder->expects($this->once())->method('getFirstNodeById')->with(4242)->willReturn($file);
-		$this->actionScheduler->expects($this->once())->method('deleteSources')->with(['files__default: 4242']);
+		if ($indexable) {
+			$this->rootFolder->expects($this->once())->method('getFirstNodeById')->with(4242)
+				->willReturn($this->file(4242, '/admin/files/gf/' . $path, 'text/markdown'));
+			$this->actionScheduler->expects($this->once())->method('deleteSources')->with(['files__default: 4242']);
+		} else {
+			$this->rootFolder->expects($this->never())->method('getFirstNodeById');
+			$this->actionScheduler->expects($this->never())->method('deleteSources');
+		}
 
 		$this->listener->handle($event);
+	}
+
+	/**
+	 * [jail root in the groupfolder storage, path in the jail, indexable]
+	 *
+	 * @return array<string, array{string, string, bool}>
+	 */
+	public static function jailProvider(): array {
+		return [
+			'files mount' => ['files', 'docs/readme.md', true],
+			'files mount: folder named trash' => ['files', 'trash/readme.md', true],
+			'trash mount' => ['trash', 'readme.md', false],
+			'versions mount' => ['versions', '4242/readme.md', false],
+		];
+	}
+
+	/**
+	 * Inserted paths of groupfolders are rewritten relative to the jail, so the path of the filecache row
+	 * decides. Removed paths are the unjailed ones.
+	 */
+	#[DataProvider('jailProvider')]
+	public function testCacheEventsOnJailedStorageAreJudgedBelowTheJail(string $jailRoot, string $path, bool $indexable): void {
+		$unjailed = $jailRoot . '/' . $path;
+		$this->fileAccess->method('getByFileIdInStorage')->with(4243, self::STORAGE_ID)
+			->willReturn($this->cacheEntry(4243, $unjailed, 'text/markdown'));
+
+		$insert = new CacheEntryInsertedEvent($this->jail($jailRoot, [$path => [4243, 'text/markdown']]), $path, 4243, self::STORAGE_ID);
+		$remove = new CacheEntryRemovedEvent($this->jail($jailRoot), $unjailed, 4243, self::STORAGE_ID);
+
+		$this->assertSame($indexable, $this->fsEventService->allowedCacheEventPath($insert), 'insert');
+		$this->assertSame($indexable, $this->fsEventService->isIndexableCacheEntry($remove), 'remove');
 	}
 
 	public function testNodeRemovedFromCacheForFolderDeletesContainedFiles(): void {

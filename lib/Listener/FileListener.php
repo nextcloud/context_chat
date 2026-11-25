@@ -76,6 +76,7 @@ class FileListener implements IEventListener {
 			}
 
 			if ($event instanceof CacheEntryInsertedEvent) {
+				// before any lookup (#297); also drops appdata_*, see FsEventService::allowedStoragePath()
 				if (!$this->fsEventService->allowedCacheEventPath($event)) {
 					return;
 				}

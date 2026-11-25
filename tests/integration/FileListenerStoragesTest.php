@@ -21,11 +21,14 @@ use OCP\App\IAppManager;
 use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\Files\IRootFolder;
 use OCP\Files\Storage\IStorage;
+use OCP\IAppConfig;
+use OCP\IConfig;
 use OCP\IDBConnection;
 use OCP\IGroupManager;
 use OCP\IUser;
 use OCP\IUserManager;
 use OCP\Server;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
@@ -239,6 +242,71 @@ class FileListenerStoragesTest extends TestCase {
 		$this->assertTrue($this->isScheduledForDeletion($ids['files/docs/readme.md']), 'the removal of a file of the groupfolder is scheduled');
 		$this->assertFalse($this->isScheduledForDeletion($ids['trash/trashed.md.d1700000000']), 'the removal from the groupfolder trashbin is not scheduled');
 		$this->assertFalse($this->isScheduledForDeletion($ids['versions/4242/1700000000.md']), 'the removal of groupfolder versions is not scheduled');
+	}
+
+	/**
+	 * With groupfolders encryption, the cache events of groupfolders carry the jail of the mount. Files in
+	 * the trash and versions with an indexable name (not "<name>.d<ts>" or "<ts>") must not pass for user
+	 * files. groupfolders reads the setting once per process, so the scan runs in its own occ process.
+	 */
+	#[DataProvider('groupFolderEncryptionProvider')]
+	public function testGroupFolderScanOfJailedTrashAndVersionsIsNotIndexed(bool $encryption): void {
+		// untyped like "occ config:app:set": groupfolders reads it as both string and bool
+		Server::get(IConfig::class)->setAppValue('groupfolders', 'enable_encryption', $encryption ? 'true' : 'false');
+		try {
+			$folderId = $this->createGroupFolder();
+			$base = Server::get(FolderStorageManager::class)->getBaseStorageForFolder($folderId, true, type: '');
+			foreach (['files/docs', 'trash', 'versions/4242'] as $dir) {
+				$base->mkdir($dir);
+			}
+			$paths = ['files/docs/readme.md', 'trash/stray.md', 'versions/4242/stray.txt'];
+			foreach ($paths as $path) {
+				$base->file_put_contents($path, $path);
+			}
+			// the files were written past the cache, like files put on the disk
+			$base->getCache()->remove('files/docs');
+			$base->getCache()->remove('trash');
+			$base->getCache()->remove('versions');
+
+			$this->occ('groupfolders:scan', (string)$folderId);
+			$ids = [];
+			foreach ($paths as $path) {
+				$ids[$path] = $base->getCache()->getId($path);
+				$this->assertGreaterThan(-1, $ids[$path], "$path is not in the cache");
+			}
+			$this->fileIds = array_merge($this->fileIds, array_values($ids));
+
+			$this->assertTrue($this->isQueued($ids['files/docs/readme.md']), 'a file of the groupfolder is queued');
+			$this->assertFalse($this->isQueued($ids['trash/stray.md']), 'a file in the groupfolder trashbin is not queued');
+			$this->assertFalse($this->isQueued($ids['versions/4242/stray.txt']), 'a file in the groupfolder versions is not queued');
+
+			// removed on the disk, the next scan removes them from the cache
+			foreach ($paths as $path) {
+				$base->unlink($path);
+			}
+			$this->occ('groupfolders:scan', (string)$folderId);
+
+			$this->assertFalse($this->isScheduledForDeletion($ids['trash/stray.md']), 'the removal from the groupfolder trashbin is not scheduled');
+			$this->assertFalse($this->isScheduledForDeletion($ids['versions/4242/stray.txt']), 'the removal of groupfolder versions is not scheduled');
+		} finally {
+			Server::get(IAppConfig::class)->deleteKey('groupfolders', 'enable_encryption');
+		}
+	}
+
+	/**
+	 * @return array<string, array{bool}>
+	 */
+	public static function groupFolderEncryptionProvider(): array {
+		return [
+			'groupfolders encryption off' => [false],
+			'groupfolders encryption on' => [true],
+		];
+	}
+
+	private function occ(string ...$args): void {
+		$command = array_merge([PHP_BINARY, \OC::$SERVERROOT . '/occ'], $args);
+		exec(implode(' ', array_map('escapeshellarg', $command)) . ' 2>&1', $output, $exitCode);
+		$this->assertSame(0, $exitCode, 'occ ' . implode(' ', $args) . ":\n" . implode("\n", $output));
 	}
 
 	public function testExternalStorageFoldersNamedLikeInternalOnesAreIndexed(): void {
