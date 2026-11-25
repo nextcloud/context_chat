@@ -18,6 +18,7 @@ use OCA\ContextChat\Service\FsEventScheduler;
 use OCA\ContextChat\Service\FsEventService;
 use OCA\ContextChat\Service\QueueService;
 use OCA\ContextChat\Service\StorageService;
+use OCA\Files_Trashbin\Events\NodeRestoredEvent;
 use OCP\Files\Cache\CacheEntryInsertedEvent;
 use OCP\Files\Cache\CacheEntryRemovedEvent;
 use OCP\Files\Cache\CacheEntryUpdatedEvent;
@@ -494,27 +495,29 @@ class FileListenerTest extends TestCase {
 	}
 
 	/**
-	 * [target path, target mimetype or null for a folder, scheduled]
+	 * [event class, target path, target mimetype or null for a folder, scheduled]
 	 *
-	 * @return array<string, array{string, ?string, bool}>
+	 * @return array<string, array{class-string<NodeRenamedEvent|NodeRestoredEvent>, string, ?string, bool}>
 	 */
 	public static function renameProvider(): array {
-		return [
-			'supported file' => ['/admin/files/readme.md', 'text/markdown', true],
-			'unsupported file' => ['/admin/files/photo.jpg', 'image/jpeg', false],
-			'folder' => ['/admin/files/documentation', null, true],
-		];
+		$cases = [];
+		foreach (['rename' => NodeRenamedEvent::class, 'restore' => NodeRestoredEvent::class] as $name => $class) {
+			$cases["$name: supported file"] = [$class, '/admin/files/readme.md', 'text/markdown', true];
+			$cases["$name: unsupported file"] = [$class, '/admin/files/photo.jpg', 'image/jpeg', false];
+			$cases["$name: folder"] = [$class, '/admin/files/documentation', null, true];
+		}
+		return $cases;
 	}
 
 	#[DataProvider('renameProvider')]
-	public function testRenameIsScheduledOnlyForIndexableTargets(string $path, ?string $mimetype, bool $scheduled): void {
+	public function testRenameAndRestoreAreScheduledOnlyForIndexableTargets(string $class, string $path, ?string $mimetype, bool $scheduled): void {
 		if ($mimetype === null) {
 			$target = $this->createMock(Folder::class);
 			$target->method('getPath')->willReturn($path);
 		} else {
 			$target = $this->file(4242, $path, $mimetype);
 		}
-		$event = new NodeRenamedEvent($this->createMock(File::class), $target);
+		$event = new $class($this->createMock(File::class), $target);
 
 		$this->fsEventScheduler->expects($scheduled ? $this->once() : $this->never())->method('onInsert')->with($target);
 

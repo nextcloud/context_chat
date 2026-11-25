@@ -13,6 +13,7 @@ namespace OCA\ContextChat\Listener;
 use OCA\ContextChat\Logger;
 use OCA\ContextChat\Service\FsEventScheduler;
 use OCA\ContextChat\Service\FsEventService;
+use OCA\Files_Trashbin\Events\NodeRestoredEvent;
 use OCP\DB\Exception;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -115,8 +116,9 @@ class FileListener implements IEventListener {
 				return;
 			}
 
-			// This event is also used for moves
-			if ($event instanceof NodeRenamedEvent) {
+			// NodeRenamedEvent is also used for moves. A restore moves the children of a folder
+			// without cache events, so they are re-indexed from here.
+			if ($event instanceof NodeRenamedEvent || $event instanceof NodeRestoredEvent) {
 				$targetNode = $event->getTarget();
 				// no fs_events row for non-indexable files; folders go on, their children may be indexable
 				if (!$this->fsEventService->isIndexableNode($targetNode)) {

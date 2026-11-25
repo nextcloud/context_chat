@@ -23,6 +23,7 @@
 		<file name="stubs/appapi-public-functions.php" preloadClasses="true"/>
 		<file name="stubs/cache-entries-removed-event.php" preloadClasses="true"/>
 		<file name="stubs/storage-jail.php" preloadClasses="true"/>
+		<file name="stubs/files-trashbin-node-restored-event.php" preloadClasses="true"/>
 	</stubs>
 	<projectFiles>
 		<directory name="lib" />
