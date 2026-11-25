@@ -12,6 +12,7 @@ use OCA\ContextChat\Listener\AppDisableListener;
 use OCA\ContextChat\Listener\FileListener;
 use OCA\ContextChat\Listener\ShareListener;
 use OCA\ContextChat\Listener\UserDeletedListener;
+use OCA\Files_Trashbin\Events\NodeRestoredEvent;
 use OCP\App\Events\AppDisableEvent;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
@@ -19,6 +20,8 @@ use OCP\AppFramework\Bootstrap\IBootstrap;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use OCP\DB\Events\AddMissingIndicesEvent;
 use OCP\Files\Cache\CacheEntryInsertedEvent;
+use OCP\Files\Cache\CacheEntryRemovedEvent;
+use OCP\Files\Cache\CacheEntryUpdatedEvent;
 use OCP\Files\Events\Node\BeforeNodeDeletedEvent;
 use OCP\Files\Events\Node\NodeCreatedEvent;
 use OCP\Files\Events\Node\NodeRenamedEvent;
@@ -67,12 +70,14 @@ class Application extends App implements IBootstrap {
 		$context->registerEventListener(BeforeNodeDeletedEvent::class, FileListener::class);
 		$context->registerEventListener(NodeCreatedEvent::class, FileListener::class);
 		$context->registerEventListener(CacheEntryInsertedEvent::class, FileListener::class);
+		$context->registerEventListener(CacheEntryUpdatedEvent::class, FileListener::class);
 		$context->registerEventListener(NodeRenamedEvent::class, FileListener::class);
 		$context->registerEventListener(NodeRemovedFromCache::class, FileListener::class);
 		$context->registerEventListener(NodeWrittenEvent::class, FileListener::class);
 		$context->registerEventListener(AppDisableEvent::class, AppDisableListener::class);
 		$context->registerEventListener(UserDeletedEvent::class, UserDeletedListener::class);
-		// These events were added mid-way through NC 30, 31
+		$context->registerEventListener(NodeRestoredEvent::class, FileListener::class);
+		// todo: These events were added mid-way through NC 30, 31, remove this guard sometime
 		if (class_exists('OCP\Files\Config\Event\UserMountAddedEvent')) {
 			$context->registerEventListener('OCP\Files\Config\Event\UserMountAddedEvent', FileListener::class);
 			$context->registerEventListener('OCP\Files\Config\Event\UserMountRemovedEvent', FileListener::class);
@@ -81,6 +86,11 @@ class Application extends App implements IBootstrap {
 		} else {
 			$context->registerEventListener(ShareCreatedEvent::class, ShareListener::class);
 			$context->registerEventListener(ShareDeletedEvent::class, ShareListener::class);
+		}
+		if (class_exists('OCP\Files\Cache\CacheEntriesRemovedEvent')) {
+			$context->registerEventListener('OCP\Files\Cache\CacheEntriesRemovedEvent', FileListener::class);
+		} else {
+			$context->registerEventListener(CacheEntryRemovedEvent::class, FileListener::class);
 		}
 	}
 
