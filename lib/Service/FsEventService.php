@@ -218,7 +218,7 @@ class FsEventService {
 	public function allowedCacheEventPath(ICacheEvent $event): bool {
 		$storage = $event->getStorage();
 		if ($storage->getCache()->getNumericStorageId() !== $event->getStorageId()) {
-			// Removal half of a move to another storage. The event holds the target storage but the source's
+			// Cache entry removal half of a move to another storage. The event holds the target storage but the source's
 			// path and storage id, so the path can't be checked against the layout of either storage.
 			// https://github.com/nextcloud/server/blob/0ff6535942ddf0a2ab38c215c3d0ff78aa6f43f7/lib/private/Files/Cache/Cache.php#L877
 			return $event->getPath() !== '';
@@ -226,7 +226,7 @@ class FsEventService {
 
 		$path = $event->getPath();
 		if ($storage->instanceOfStorage(Jail::class)) {
-			// The event path is relative to the storage below the jail, except for inserts into groupfolders,
+			// The event path is relative to the storage below the jail, except for inserts and updates into groupfolders,
 			// which rewrites them relative to its jail. The filecache row has the path below the jail.
 			// https://github.com/nextcloud/groupfolders/blob/abf7d207c64425342bd80c7bddee0c75f27ca458/lib/Listeners/CacheListener.php#L24-L44
 			[$storage] = $this->unjail($storage, '');
@@ -280,18 +280,18 @@ class FsEventService {
 		}
 
 		if ($storage->instanceOfStorage(IHomeStorage::class)) {
-			// only "files/"; not "files_versions/", "files_trashbin/", "uploads/", "cache/", ...
+			// only "files/", no "files_versions/", "files_trashbin/", "uploads/", "cache/", ...
 			return str_starts_with($path, 'files/');
 		}
 
 		if (preg_match(self::GROUPFOLDER_STORAGE_ID_REGEX, (string)$storage->getId()) === 1) {
-			// layout: "files/", "trash/", "versions/"
+			// "files/", "trash/", "versions/"
 			return preg_match('#^(trash|versions)(/|$)#', $path) !== 1;
 		}
 
 		// Root storage: "appdata_<instanceid>/" and groupfolders without a separate storage
-		// ("__groupfolders/<id>/", "__groupfolders/{trash,versions}/<id>/"). The numeric id is looked up,
-		// it differs per install.
+		// ("__groupfolders/<id>/", "__groupfolders/{trash,versions}/<id>/").
+		// The numeric id is looked up, it differs per install.
 		// https://github.com/nextcloud/server/blob/0ff6535942ddf0a2ab38c215c3d0ff78aa6f43f7/lib/private/Files/Cache/LocalRootScanner.php#L54
 		// https://github.com/nextcloud/groupfolders/blob/abf7d207c64425342bd80c7bddee0c75f27ca458/lib/Mount/FolderStorageManager.php#L210-L277
 		if ($storage->getCache()->getNumericStorageId() === $this->getRootStorageId()) {
@@ -301,6 +301,9 @@ class FsEventService {
 		return true;
 	}
 
+	/**
+	 * Cache and return the storage id of "/", where appdata, user folders, etc. are present
+	 */
 	private function getRootStorageId(): ?int {
 		return $this->rootStorageId ??= $this->rootFolder->getMount('/')->getNumericStorageId();
 	}

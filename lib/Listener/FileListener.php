@@ -78,13 +78,13 @@ class FileListener implements IEventListener {
 			}
 
 			if ($event instanceof CacheEntryInsertedEvent) {
-				$this->queueCacheEntry($event, false);
+				$this->queueCacheEntry($event, update: false);
 				return;
 			}
 
 			// The only event for files changed outside Nextcloud and found by a scan
 			if ($event instanceof CacheEntryUpdatedEvent) {
-				$this->queueCacheEntry($event, true);
+				$this->queueCacheEntry($event, update: true);
 				return;
 			}
 
@@ -179,7 +179,7 @@ class FileListener implements IEventListener {
 	}
 
 	private function queueCacheEntry(ICacheEvent $event, bool $update): void {
-		// before any lookup (#297): drops folders, unsupported extensions and internal paths like appdata_*
+		// drops folders, unsupported extensions and internal paths like appdata_*
 		if (!$this->fsEventService->isIndexableCacheEntry($event)) {
 			return;
 		}
