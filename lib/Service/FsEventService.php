@@ -16,6 +16,7 @@ use OCP\DB\Exception;
 use OCP\Files\Cache\CacheEntryRemovedEvent;
 use OCP\Files\Cache\ICacheEvent;
 use OCP\Files\Cache\IFileAccess;
+use OCP\Files\File;
 use OCP\Files\Folder;
 use OCP\Files\IHomeStorage;
 use OCP\Files\IMimeTypeDetector;
@@ -193,6 +194,14 @@ class FsEventService {
 
 	public function allowedMimeType(string $mimeType): bool {
 		return in_array($mimeType, Application::MIMETYPES, true);
+	}
+
+	/**
+	 * Cheap check before scheduling a node: folders pass, their children may be indexable.
+	 */
+	public function isIndexableNode(Node $node): bool {
+		return $this->allowedPath($node->getPath())
+			&& (!$node instanceof File || $this->allowedMimeType($node->getMimetype()));
 	}
 
 	/**

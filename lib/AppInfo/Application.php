@@ -11,6 +11,7 @@ use OCA\ContextChat\Listener\AddMissingIndicesListenerFsEvents;
 use OCA\ContextChat\Listener\AppDisableListener;
 use OCA\ContextChat\Listener\FileListener;
 use OCA\ContextChat\Listener\ShareListener;
+use OCA\ContextChat\Listener\TrashRestoreListener;
 use OCA\ContextChat\Listener\UserDeletedListener;
 use OCP\App\Events\AppDisableEvent;
 use OCP\AppFramework\App;
@@ -29,6 +30,7 @@ use OCP\Files\Events\NodeRemovedFromCache;
 use OCP\Share\Events\ShareCreatedEvent;
 use OCP\Share\Events\ShareDeletedEvent;
 use OCP\User\Events\UserDeletedEvent;
+use OCP\Util;
 
 class Application extends App implements IBootstrap {
 
@@ -93,5 +95,8 @@ class Application extends App implements IBootstrap {
 	}
 
 	public function boot(IBootContext $context): void {
+		// todo: switch to NodeUpdatedEvent once groupfolders emits it for restores
+		// the legacy hook covers both trashes, groupfolders emits no NodeRestoredEvent
+		Util::connectHook('\OCA\Files_Trashbin\Trashbin', 'post_restore', TrashRestoreListener::class, 'postRestoreHook');
 	}
 }

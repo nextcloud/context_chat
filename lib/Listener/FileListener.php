@@ -119,8 +119,7 @@ class FileListener implements IEventListener {
 			if ($event instanceof NodeRenamedEvent) {
 				$targetNode = $event->getTarget();
 				// no fs_events row for non-indexable files; folders go on, their children may be indexable
-				if (!$this->fsEventService->allowedPath($targetNode->getPath())
-					|| ($targetNode instanceof File && !$this->fsEventService->allowedMimeType($targetNode->getMimetype()))) {
+				if (!$this->fsEventService->isIndexableNode($targetNode)) {
 					return;
 				}
 				// Asynchronous, because we potentially recurse.

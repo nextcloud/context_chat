@@ -10,14 +10,18 @@ declare(strict_types=1);
 namespace OCA\ContextChat\Tests;
 
 use OC\Files\Cache\Scanner;
+use OCA\ContextChat\AppInfo\Application;
 use OCA\ContextChat\Service\ProviderConfigService;
 use OCA\Files_External\Lib\Auth\NullMechanism;
 use OCA\Files_External\Lib\Backend\Local;
 use OCA\Files_External\Lib\StorageConfig;
 use OCA\Files_External\Service\GlobalStoragesService;
+use OCA\Files_Trashbin\Trash\ITrashItem;
+use OCA\Files_Trashbin\Trash\ITrashManager;
 use OCA\GroupFolders\Folder\FolderManager;
 use OCA\GroupFolders\Mount\FolderStorageManager;
 use OCP\App\IAppManager;
+use OCP\AppFramework\Bootstrap\IBootContext;
 use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\Files\IRootFolder;
 use OCP\Files\Storage\IStorage;
@@ -27,6 +31,7 @@ use OCP\IDBConnection;
 use OCP\IGroupManager;
 use OCP\IUser;
 use OCP\IUserManager;
+use OCP\IUserSession;
 use OCP\Server;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
@@ -55,6 +60,8 @@ class FileListenerStoragesTest extends TestCase {
 	private ?string $externalDir = null;
 	/** @var list<int> */
 	private array $fileIds = [];
+	/** @var list<int> node ids of the fs_events rows of the test */
+	private array $fsEventNodeIds = [];
 	/** id of the last action queued before the test, the actions after it are the test's */
 	private int $lastActionId = 0;
 
@@ -82,6 +89,9 @@ class FileListenerStoragesTest extends TestCase {
 		$groupManager = Server::get(IGroupManager::class);
 		$group = $groupManager->get(self::GROUP) ?? $groupManager->createGroup(self::GROUP);
 		$group->addUser($this->user);
+
+		// bootstrap.php clears the hooks the app connected while booting
+		(new Application())->boot($this->createMock(IBootContext::class));
 	}
 
 	protected function tearDown(): void {
@@ -90,6 +100,8 @@ class FileListenerStoragesTest extends TestCase {
 			parent::tearDown();
 			return;
 		}
+		\OC_Hook::clear('\OCA\Files_Trashbin\Trashbin', 'post_restore');
+		Server::get(IUserSession::class)->setUser(null);
 		if ($this->groupFolderId !== null) {
 			$folderManager = Server::get(FolderManager::class);
 			$folder = $folderManager->getFolder($this->groupFolderId);
@@ -108,6 +120,12 @@ class FileListenerStoragesTest extends TestCase {
 			$qb = $this->db->getQueryBuilder();
 			$qb->delete('context_chat_queue')
 				->where($qb->expr()->in('file_id', $qb->createNamedParameter($this->fileIds, IQueryBuilder::PARAM_INT_ARRAY)))
+				->executeStatement();
+		}
+		if ($this->fsEventNodeIds !== []) {
+			$qb = $this->db->getQueryBuilder();
+			$qb->delete('context_chat_fs_events')
+				->where($qb->expr()->in('node_id', $qb->createNamedParameter($this->fsEventNodeIds, IQueryBuilder::PARAM_INT_ARRAY)))
 				->executeStatement();
 		}
 		$qb = $this->db->getQueryBuilder();
@@ -154,6 +172,65 @@ class FileListenerStoragesTest extends TestCase {
 	private function setUpUserFilesystem(): void {
 		\OC_Util::tearDownFS();
 		\OC_Util::setupFS(self::USER);
+	}
+
+	/**
+	 * @return list<string> types of the fs_events rows of the node
+	 */
+	private function fsEventTypes(int $nodeId): array {
+		$qb = $this->db->getQueryBuilder();
+		$result = $qb->select('type')->from('context_chat_fs_events')
+			->where($qb->expr()->eq('node_id', $qb->createNamedParameter($nodeId, IQueryBuilder::PARAM_INT)))
+			->executeQuery();
+		$types = $result->fetchAll(\PDO::FETCH_COLUMN);
+		$result->closeCursor();
+		return $types;
+	}
+
+	private function clearFsEvents(int $nodeId): void {
+		$qb = $this->db->getQueryBuilder();
+		$qb->delete('context_chat_fs_events')
+			->where($qb->expr()->eq('node_id', $qb->createNamedParameter($nodeId, IQueryBuilder::PARAM_INT)))
+			->executeStatement();
+	}
+
+	/**
+	 * Deletes a folder holding an indexable file into the trash and restores it like the web UI does, as the user.
+	 * The restore moves the children without cache events, only the post_restore hook tells of it.
+	 *
+	 * @param string $parent path of the parent of the folder in the files folder of the user, "" for the root
+	 */
+	private function assertRestoredFolderIsScheduled(string $parent): void {
+		$this->setUpUserFilesystem();
+		Server::get(IUserSession::class)->setUser($this->user);
+		$userFolder = $this->rootFolder->getUserFolder(self::USER);
+		$folder = $userFolder->newFolder(ltrim($parent . '/cc-restore-test', '/'));
+		$folder->newFile('a.md', 'restored');
+		$folderId = $folder->getId();
+		$this->fsEventNodeIds[] = $folderId;
+
+		$folder->delete();
+		$this->clearFsEvents($folderId);
+
+		$trashManager = Server::get(ITrashManager::class);
+		$items = array_values(array_filter(
+			$trashManager->listTrashRoot($this->user),
+			fn (ITrashItem $item) => $item->getId() === $folderId,
+		));
+		$this->assertCount(1, $items, 'the folder is in the trash');
+		$trashManager->restoreItem($items[0]);
+
+		$this->assertTrue($userFolder->nodeExists(ltrim($parent . '/cc-restore-test/a.md', '/')), 'the folder is restored');
+		$this->assertContains('create', $this->fsEventTypes($folderId), 'the restored folder is scheduled for indexing');
+	}
+
+	public function testFolderRestoredFromUserTrashIsScheduled(): void {
+		$this->assertRestoredFolderIsScheduled('');
+	}
+
+	public function testFolderRestoredFromGroupFolderTrashIsScheduled(): void {
+		$this->createGroupFolder();
+		$this->assertRestoredFolderIsScheduled('cc-file-listener-test');
 	}
 
 	/**
