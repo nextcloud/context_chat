@@ -20,6 +20,7 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use OCP\DB\Events\AddMissingIndicesEvent;
 use OCP\Files\Cache\CacheEntryInsertedEvent;
 use OCP\Files\Cache\CacheEntryRemovedEvent;
+use OCP\Files\Cache\CacheEntryUpdatedEvent;
 use OCP\Files\Events\Node\BeforeNodeDeletedEvent;
 use OCP\Files\Events\Node\NodeCreatedEvent;
 use OCP\Files\Events\Node\NodeRenamedEvent;
@@ -68,6 +69,7 @@ class Application extends App implements IBootstrap {
 		$context->registerEventListener(BeforeNodeDeletedEvent::class, FileListener::class);
 		$context->registerEventListener(NodeCreatedEvent::class, FileListener::class);
 		$context->registerEventListener(CacheEntryInsertedEvent::class, FileListener::class);
+		$context->registerEventListener(CacheEntryUpdatedEvent::class, FileListener::class);
 		$context->registerEventListener(NodeRenamedEvent::class, FileListener::class);
 		$context->registerEventListener(NodeRemovedFromCache::class, FileListener::class);
 		$context->registerEventListener(NodeWrittenEvent::class, FileListener::class);

@@ -20,9 +20,11 @@ use OCA\ContextChat\Service\QueueService;
 use OCA\ContextChat\Service\StorageService;
 use OCP\Files\Cache\CacheEntryInsertedEvent;
 use OCP\Files\Cache\CacheEntryRemovedEvent;
+use OCP\Files\Cache\CacheEntryUpdatedEvent;
 use OCP\Files\Cache\ICache;
 use OCP\Files\Cache\ICacheEntry;
 use OCP\Files\Cache\IFileAccess;
+use OCP\Files\Events\Node\NodeRenamedEvent;
 use OCP\Files\Events\NodeRemovedFromCache;
 use OCP\Files\File;
 use OCP\Files\Folder;
@@ -55,6 +57,7 @@ class FileListenerTest extends TestCase {
 	private ActionScheduler&MockObject $actionScheduler;
 	private StorageService&MockObject $storageService;
 	private IFileAccess&MockObject $fileAccess;
+	private FsEventScheduler&MockObject $fsEventScheduler;
 	private FsEventService $fsEventService;
 	private FileListener $listener;
 
@@ -89,7 +92,7 @@ class FileListenerTest extends TestCase {
 			$logger,
 			$this->rootFolder,
 			$this->fsEventService,
-			$this->createMock(FsEventScheduler::class),
+			$this->fsEventScheduler = $this->createMock(FsEventScheduler::class),
 		);
 	}
 
@@ -172,6 +175,69 @@ class FileListenerTest extends TestCase {
 				&& $queueFile->getStorageId() === self::STORAGE_ID
 				&& $queueFile->getRootId() === self::ROOT_ID
 				&& $queueFile->getUpdate() === false));
+
+		$this->listener->handle($event);
+	}
+
+	/**
+	 * A file changed on the storage outside Nextcloud only fires CacheEntryUpdatedEvent on the next scan.
+	 */
+	public function testUpdatedSupportedFileIsQueuedAsUpdate(): void {
+		$path = 'files/documentation/readme.md';
+		$event = new CacheEntryUpdatedEvent($this->storage('home', [$path => [4243, 'text/markdown']]), $path, 4243, self::STORAGE_ID);
+		$file = $this->file(4243, '/admin/files/documentation/readme.md', 'text/markdown');
+
+		$this->rootFolder->expects($this->once())->method('getFirstNodeById')->with(4243)->willReturn($file);
+		$this->queueService->expects($this->once())->method('insertIntoQueue')
+			->with($this->callback(fn (QueueFile $queueFile) => $queueFile->getFileId() === 4243
+				&& $queueFile->getStorageId() === self::STORAGE_ID
+				&& $queueFile->getRootId() === self::ROOT_ID
+				&& $queueFile->getUpdate() === true));
+
+		$this->listener->handle($event);
+	}
+
+	#[DataProvider('storagePathProvider')]
+	public function testUpdatedEntryDependsOnTheStorageLayout(string $kind, string $path, bool $indexable): void {
+		$storage = $this->storage($kind, [$path => [4243, 'text/markdown']]);
+		$event = new CacheEntryUpdatedEvent($storage, $path, 4243, $storage->getCache()->getNumericStorageId());
+
+		if ($indexable) {
+			$this->rootFolder->expects($this->once())->method('getFirstNodeById')->with(4243)
+				->willReturn($this->file(4243, '/admin/files/' . $path, 'text/markdown'));
+			$this->queueService->expects($this->once())->method('insertIntoQueue');
+		} else {
+			$this->rootFolder->expects($this->never())->method('getFirstNodeById');
+			$this->queueService->expects($this->never())->method('insertIntoQueue');
+		}
+
+		$this->listener->handle($event);
+	}
+
+	/**
+	 * @return array<string, array{class-string<CacheEntryInsertedEvent|CacheEntryUpdatedEvent>}>
+	 */
+	public static function insertOrUpdateEventProvider(): array {
+		return [
+			'inserted' => [CacheEntryInsertedEvent::class],
+			'updated' => [CacheEntryUpdatedEvent::class],
+		];
+	}
+
+	/**
+	 * Most cache events of a scan are for folders (size, etag), they must not cost a query.
+	 *
+	 * @param class-string<CacheEntryInsertedEvent|CacheEntryUpdatedEvent> $eventClass
+	 */
+	#[DataProvider('insertOrUpdateEventProvider')]
+	public function testFolderEntryIsSkippedWithoutCacheLookup(string $eventClass): void {
+		$storage = $this->createMock(IStorage::class);
+		$storage->expects($this->never())->method('getCache');
+		$event = new $eventClass($storage, 'files/documentation', 4242, self::STORAGE_ID);
+
+		$this->fileAccess->expects($this->never())->method('getByFileIdInStorage');
+		$this->rootFolder->expects($this->never())->method('getFirstNodeById');
+		$this->queueService->expects($this->never())->method('insertIntoQueue');
 
 		$this->listener->handle($event);
 	}
@@ -423,6 +489,34 @@ class FileListenerTest extends TestCase {
 		$this->actionScheduler->expects($this->once())->method('deleteSources')
 			->with($this->callback(fn (array $refs) => count($refs) === 2
 				&& str_ends_with($refs[0], ': 1') && str_ends_with($refs[1], ': 2')));
+
+		$this->listener->handle($event);
+	}
+
+	/**
+	 * [target path, target mimetype or null for a folder, scheduled]
+	 *
+	 * @return array<string, array{string, ?string, bool}>
+	 */
+	public static function renameProvider(): array {
+		return [
+			'supported file' => ['/admin/files/readme.md', 'text/markdown', true],
+			'unsupported file' => ['/admin/files/photo.jpg', 'image/jpeg', false],
+			'folder' => ['/admin/files/documentation', null, true],
+		];
+	}
+
+	#[DataProvider('renameProvider')]
+	public function testRenameIsScheduledOnlyForIndexableTargets(string $path, ?string $mimetype, bool $scheduled): void {
+		if ($mimetype === null) {
+			$target = $this->createMock(Folder::class);
+			$target->method('getPath')->willReturn($path);
+		} else {
+			$target = $this->file(4242, $path, $mimetype);
+		}
+		$event = new NodeRenamedEvent($this->createMock(File::class), $target);
+
+		$this->fsEventScheduler->expects($scheduled ? $this->once() : $this->never())->method('onInsert')->with($target);
 
 		$this->listener->handle($event);
 	}

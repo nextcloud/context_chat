@@ -18,7 +18,9 @@ use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use OCP\Files\Cache\CacheEntryInsertedEvent;
 use OCP\Files\Cache\CacheEntryRemovedEvent;
+use OCP\Files\Cache\CacheEntryUpdatedEvent;
 use OCP\Files\Cache\ICacheEntry;
+use OCP\Files\Cache\ICacheEvent;
 use OCP\Files\Events\Node\BeforeNodeDeletedEvent;
 use OCP\Files\Events\Node\NodeCreatedEvent;
 use OCP\Files\Events\Node\NodeRenamedEvent;
@@ -76,24 +78,13 @@ class FileListener implements IEventListener {
 			}
 
 			if ($event instanceof CacheEntryInsertedEvent) {
-				// before any lookup (#297); also drops appdata_*, see FsEventService::allowedStoragePath()
-				if (!$this->fsEventService->allowedCacheEventPath($event)) {
-					return;
-				}
+				$this->queueCacheEntry($event, false);
+				return;
+			}
 
-				// Lookup the storage cache entry of the event (filecache table)
-				$cache = $event->getStorage()->getCache();
-				$storageCacheEntry = $cache->get($event->getPath());
-				if ($storageCacheEntry === false || !$this->fsEventService->allowedMimeType($storageCacheEntry->getMimeType())) {
-					return;
-				}
-
-				$node = $this->rootFolder->getFirstNodeById($storageCacheEntry->getId());
-				if ($node === null) {
-					return;
-				}
-
-				$this->fsEventService->onInsert($node, false);
+			// The only event for files changed outside Nextcloud and found by a scan
+			if ($event instanceof CacheEntryUpdatedEvent) {
+				$this->queueCacheEntry($event, true);
 				return;
 			}
 
@@ -127,6 +118,11 @@ class FileListener implements IEventListener {
 			// This event is also used for moves
 			if ($event instanceof NodeRenamedEvent) {
 				$targetNode = $event->getTarget();
+				// no fs_events row for non-indexable files; folders go on, their children may be indexable
+				if (!$this->fsEventService->allowedPath($targetNode->getPath())
+					|| ($targetNode instanceof File && !$this->fsEventService->allowedMimeType($targetNode->getMimetype()))) {
+					return;
+				}
 				// Asynchronous, because we potentially recurse.
 				// Index the file again to update the metadata of the source in CCB
 				// and the access list based on the new path.
@@ -181,5 +177,26 @@ class FileListener implements IEventListener {
 		} catch (InvalidPathException|Exception|NotFoundException $e) {
 			$this->logger->warning('Error in fs event listener: ' . $e->getMessage(), ['exception' => $e]);
 		}
+	}
+
+	private function queueCacheEntry(ICacheEvent $event, bool $update): void {
+		// before any lookup (#297): drops folders, unsupported extensions and internal paths like appdata_*
+		if (!$this->fsEventService->isIndexableCacheEntry($event)) {
+			return;
+		}
+
+		// Lookup the storage cache entry of the event (filecache table)
+		$cache = $event->getStorage()->getCache();
+		$storageCacheEntry = $cache->get($event->getPath());
+		if ($storageCacheEntry === false || !$this->fsEventService->allowedMimeType($storageCacheEntry->getMimeType())) {
+			return;
+		}
+
+		$node = $this->rootFolder->getFirstNodeById($storageCacheEntry->getId());
+		if ($node === null) {
+			return;
+		}
+
+		$this->fsEventService->onInsert($node, false, $update);
 	}
 }

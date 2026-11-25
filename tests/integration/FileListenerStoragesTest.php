@@ -178,13 +178,31 @@ class FileListenerStoragesTest extends TestCase {
 	}
 
 	private function isQueued(int $fileId): bool {
+		return $this->queuedUpdateFlag($fileId) !== null;
+	}
+
+	/**
+	 * @return ?bool the "update" flag of the queue row of the file, null if it is not queued
+	 */
+	private function queuedUpdateFlag(int $fileId): ?bool {
 		$qb = $this->db->getQueryBuilder();
-		$result = $qb->select('id')->from('context_chat_queue')
+		$result = $qb->select('update')->from('context_chat_queue')
 			->where($qb->expr()->eq('file_id', $qb->createNamedParameter($fileId, IQueryBuilder::PARAM_INT)))
 			->executeQuery();
-		$queued = $result->fetchOne() !== false;
+		// fetch(), Postgres returns a false flag as false like fetchOne() does for no row
+		$row = $result->fetch();
 		$result->closeCursor();
-		return $queued;
+		return $row === false ? null : (bool)$row['update'];
+	}
+
+	/**
+	 * @param list<int> $fileIds
+	 */
+	private function clearQueue(array $fileIds): void {
+		$qb = $this->db->getQueryBuilder();
+		$qb->delete('context_chat_queue')
+			->where($qb->expr()->in('file_id', $qb->createNamedParameter($fileIds, IQueryBuilder::PARAM_INT_ARRAY)))
+			->executeStatement();
 	}
 
 	private function isScheduledForDeletion(int $fileId): bool {
@@ -341,6 +359,35 @@ class FileListenerStoragesTest extends TestCase {
 
 		foreach ($ids as $path => $id) {
 			$this->assertTrue($this->isScheduledForDeletion($id), "the removal of $path from the external storage is scheduled");
+		}
+	}
+
+	/**
+	 * A file changed on the storage outside Nextcloud only fires CacheEntryUpdatedEvent on the next scan.
+	 */
+	public function testExternalStorageFileChangedOnTheDiskIsQueuedAsUpdate(): void {
+		$storage = $this->createExternalStorage(['docs/readme.md' => 'readme', 'docs/unchanged.md' => 'unchanged']);
+		$ids = $this->scan($storage, ['docs/readme.md', 'docs/unchanged.md']);
+		$this->clearQueue(array_values($ids));
+
+		$file = $this->externalDir . '/docs/readme.md';
+		file_put_contents($file, 'readme, changed');
+		touch($file, time() + 60);
+		$storage->getScanner()->scan('', Scanner::SCAN_RECURSIVE);
+
+		$this->assertTrue($this->queuedUpdateFlag($ids['docs/readme.md']), 'the changed file is queued as an update');
+		$this->assertNull($this->queuedUpdateFlag($ids['docs/unchanged.md']), 'the unchanged file is not queued');
+	}
+
+	public function testExternalStorageRescanWithoutChangesQueuesNothing(): void {
+		$storage = $this->createExternalStorage(['readme.md' => 'readme', 'docs/spec.md' => 'spec']);
+		$ids = $this->scan($storage, ['readme.md', 'docs/spec.md']);
+		$this->clearQueue(array_values($ids));
+
+		$storage->getScanner()->scan('', Scanner::SCAN_RECURSIVE);
+
+		foreach ($ids as $path => $id) {
+			$this->assertNull($this->queuedUpdateFlag($id), "$path is not queued");
 		}
 	}
 
